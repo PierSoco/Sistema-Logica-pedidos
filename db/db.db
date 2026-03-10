@@ -1,0 +1,70 @@
+-- Nombre de DB [Logistica-pedidos]
+
+-- 1. Tabla Direcciones (Independiente)
+CREATE TABLE IF NOT EXISTS Direcciones (
+    ID_direccion INT AUTO_INCREMENT PRIMARY KEY,
+    calle VARCHAR(255) NOT NULL,
+    altura INT NOT NULL,
+    Localidad VARCHAR(255) NOT NULL
+);
+
+-- 2. Tabla Clientes (Independiente)
+CREATE TABLE IF NOT EXISTS Clientes (
+    ID_cliente INT AUTO_INCREMENT PRIMARY KEY,
+    Nombre VARCHAR(100) NOT NULL,
+    Apellido VARCHAR(100) NOT NULL,
+    Telefono VARCHAR(20) NOT NULL,
+    CONSTRAINT chk_telefono_cliente CHECK (Telefono REGEXP '^[0-9]+$') -- Valida que solo tenga números
+);
+
+-- 3. Tabla Restaurantes (Depende de Direcciones)
+CREATE TABLE IF NOT EXISTS Restaurantes (
+    ID_Restaurante INT AUTO_INCREMENT PRIMARY KEY,
+    Nombre_local VARCHAR(150) NOT NULL,
+    logo_url VARCHAR(500),
+    ID_direccion INT,
+    Nombre_dueño VARCHAR(150),
+    Telefono VARCHAR(20),
+    FOREIGN KEY (ID_direccion) REFERENCES Direcciones(ID_direccion) ON DELETE SET NULL,
+    CONSTRAINT chk_telefono_restaurante CHECK (Telefono REGEXP '^[0-9]+$')
+);
+
+-- 4. Tabla Usuarios (Depende de Restaurantes)
+CREATE TABLE IF NOT EXISTS Usuarios (
+    ID_usuario INT AUTO_INCREMENT PRIMARY KEY,
+    ID_restaurantes INT, -- Puede ser NULL si es superadmin o repartidor global
+    Nombre VARCHAR(100) NOT NULL,
+    Apellido VARCHAR(100) NOT NULL,
+    Telefono VARCHAR(20),
+    Rol ENUM('superadmin', 'admin', 'recepcionista', 'repartidores', 'chef') NOT NULL,
+    Username VARCHAR(100) NOT NULL UNIQUE,
+    Password VARCHAR(255) NOT NULL,
+    FOREIGN KEY (ID_restaurantes) REFERENCES Restaurantes(ID_Restaurante) ON DELETE SET NULL,
+    CONSTRAINT chk_telefono_usuario CHECK (Telefono REGEXP '^[0-9]+$'),
+    CONSTRAINT chk_username_len CHECK (CHAR_LENGTH(Username) > 8),
+    CONSTRAINT chk_password_len CHECK (CHAR_LENGTH(Password) > 8)
+);
+
+-- 5. Tabla Pedidos (Depende de Clientes, Restaurantes y Direcciones)
+CREATE TABLE IF NOT EXISTS Pedidos (
+    ID_pedido INT AUTO_INCREMENT PRIMARY KEY,
+    ID_cliente INT NOT NULL,
+    ID_restaurante INT NOT NULL,
+    ID_direccion INT NOT NULL,
+    Total DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    FOREIGN KEY (ID_cliente) REFERENCES Clientes(ID_cliente) ON DELETE CASCADE,
+    FOREIGN KEY (ID_restaurante) REFERENCES Restaurantes(ID_Restaurante) ON DELETE CASCADE,
+    FOREIGN KEY (ID_direccion) REFERENCES Direcciones(ID_direccion) ON DELETE RESTRICT
+);
+
+-- 6. Tabla Detalle_pedido (Depende de Pedidos)
+CREATE TABLE IF NOT EXISTS Detalle_pedido (
+    ID_detalle INT AUTO_INCREMENT PRIMARY KEY,
+    ID_pedido INT NOT NULL,
+    Producto VARCHAR(150) NOT NULL,
+    Cantidad INT NOT NULL,
+    Precio DECIMAL(10, 2) NOT NULL,
+    Subtotal DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (ID_pedido) REFERENCES Pedidos(ID_pedido) ON DELETE CASCADE,
+    CONSTRAINT chk_cantidad CHECK (Cantidad > 0)
+);
