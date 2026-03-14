@@ -66,8 +66,7 @@
 
     <div class="login-container">
         <h2>Iniciar Sesión</h2>
-        <!-- El 'action' apuntará al archivo backend que procesará el login (ej. procesar_login.php) -->
-        <form action="#" method="POST">
+        <form id="formLogin">
             <div class="form-group">
                 <label for="username">Usuario</label>
                 <input type="text" id="username" name="username" placeholder="Ingresa tu usuario" required>
@@ -76,41 +75,45 @@
                 <label for="password">Contraseña</label>
                 <input type="password" id="password" name="password" placeholder="Ingresa tu contraseña" required>
             </div>
-            <button type="submit" class="login-btn" onclick="ingresarlogin(event)">Entrar</button>
+            <button type="submit" class="login-btn">Entrar</button>
         </form>
     </div>
 
     <script>
-        async function ingresarlogin(event) {
-            // Prevenir que el formulario recargue la página al hacer click
-            event.preventDefault();
+        // Escuchamos el evento 'submit' del formulario completo
+        document.getElementById('formLogin').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Detiene la recarga de la página inmediatamente
 
-            // Capturar los valores de los inputs
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
             try {
-                // Enviar petición POST al backend enviando los datos en formato JSON
+                // Asegúrate de que la ruta './backend/login.php' sea correcta según tu carpeta
                 const response = await fetch('./backend/login.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
 
+                // Si el servidor devuelve un error de código (ej. 500), esto nos avisará
+                if (!response.ok) {
+                    throw new Error("Error en la respuesta del servidor");
+                }
+
                 const result = await response.json();
 
                 if (result.success) {
-                    alert("¡Bienvenido, " + result.nombre + "! Has ingresado como " + result.rol + ".");
-                    // Redirigimos a la pantalla principal de tu app
-                    window.location.href = 'prueba.html';
+                    alert("¡Bienvenido, " + result.nombre + "!");
+                    // CAMBIO: Redirección al index.html
+                    window.location.href = 'index.html'; 
                 } else {
                     alert("Error: " + result.error);
                 }
             } catch (error) {
-                console.error("Error de conexión:", error);
-                alert("Hubo un problema al conectar con el servidor.");
+                console.error("Error detallado:", error);
+                alert("No se pudo conectar con el servidor. Revisa la consola (F12) para más detalles.");
             }
-        }
+        });
     </script>
 </body>
 </html>
