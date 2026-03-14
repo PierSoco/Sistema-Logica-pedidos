@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secciones</title>
+
+<style>
+
+body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f4f4f4;
+}
+.container{
+    max-width:900px;
+    margin:auto;
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+}
+.section{
+    background:white;
+    padding:20px;
+    border-radius:8px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+.section h2{
+    margin-top:0;
+}
+.group-elementos{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+.elemento{
+    display: flex;
+    flex-direction: column;
+    padding:10px;
+    background:#d2d6e2;
+    border-radius:5px;
+    align-items: center;
+}
+
+
+/* ---------------------------------------------
+    SECCION 1
+    -------------------------------------------- */
+/* ---------------------------------------------
+    ELEMENTO 1
+    -------------------------------------------- */
+.checkbox-container {
+  display: inline-block;
+  margin: 10px auto;
+  user-select: none;
+}
+
+.task-checkbox {
+  display: none;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  color: #374151;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.checkbox-label:hover {
+  background: rgba(16, 185, 129, 0.05);
+  color: #111827;
+}
+
+.checkbox-box {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #d1d5db;
+  border-radius: 6px;
+  margin-right: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.checkbox-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  transform: scale(0);
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  border-radius: 4px;
+  opacity: 0;
+}
+
+.checkmark {
+  position: relative;
+  z-index: 2;
+  opacity: 0;
+  transform: scale(0.3) rotate(20deg);
+  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.check-icon {
+  width: 14px;
+  height: 14px;
+  fill: white;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.success-ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(16, 185, 129, 0.4);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.checkbox-text {
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.checkbox-text::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #6b7280;
+  transition: width 0.4s ease;
+  transform: translateY(-50%);
+}
+
+.checkbox-label:hover .checkbox-box {
+  border-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+}
+
+.task-checkbox:checked + .checkbox-label .checkbox-box {
+  border-color: #10b981;
+  background: #10b981;
+  box-shadow:
+    0 4px 12px rgba(16, 185, 129, 0.3),
+    0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.task-checkbox:checked + .checkbox-label .checkbox-fill {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.task-checkbox:checked + .checkbox-label .checkmark {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+  animation: checkPop 0.3s ease-out 0.2s;
+}
+
+.task-checkbox:checked + .checkbox-label .success-ripple {
+  animation: rippleSuccess 0.6s ease-out;
+}
+
+.task-checkbox:checked + .checkbox-label .checkbox-text {
+  color: #6b7280;
+}
+
+.task-checkbox:checked + .checkbox-label .checkbox-text::after {
+  width: 100%;
+}
+
+.checkbox-label:active .checkbox-box {
+  transform: scale(0.95);
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.2) rotate(-5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes rippleSuccess {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.6;
+  }
+  70% {
+    width: 50px;
+    height: 50px;
+    opacity: 0.3;
+  }
+  100% {
+    width: 60px;
+    height: 60px;
+    opacity: 0;
+  }
+}
+
+/* ---------------------------------------------
+    ELEMENTO 2
+    -------------------------------------------- */
+/* Hide the default checkbox */
+.container-checkbox input {
+  display: none;
+}
+
+.container-checkbox {
+  display: block;
+  position: relative;
+  cursor: pointer;
+  font-size: 20px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Create a custom checkbox */
+.checkmark-2 {
+  position: relative;
+  top: 0;
+  left: 0;
+  height: 1.3em;
+  width: 1.3em;
+  background-color: #2196F300;
+  border-radius: 0.25em;
+  transition: all 0.25s;
+}
+
+/* When the checkbox is checked, add a blue background */
+.container-checkbox input:checked ~ .checkmark-2 {
+  background-color: #2196F3;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.checkmark-2:after {
+  content: "";
+  position: absolute;
+  transform: rotate(0deg);
+  border: 0.1em solid black;
+  left: 0;
+  top: 0;
+  width: 1.05em;
+  height: 1.05em;
+  border-radius: 0.25em;
+  transition: all 0.25s, border-width 0.1s;
+}
+
+/* Show the checkmark when checked */
+.container-checkbox input:checked ~ .checkmark-2:after {
+  left: 0.45em;
+  top: 0.25em;
+  width: 0.25em;
+  height: 0.5em;
+  border-color: #fff0 white white #fff0;
+  border-width: 0 0.15em 0.15em 0;
+  border-radius: 0em;
+  transform: rotate(45deg);
+}
+
+/* ---------------------------------------------
+    ELEMENTO 3
+    -------------------------------------------- */
+
+    /* From Uiverse.io by JkHuger */ 
+#checklist {
+  --background: #fff;
+  --text: #414856;
+  --check: #4f29f0;
+  --disabled: #c3c8de;
+  --width: 100px;
+  --height: 180px;
+  --border-radius: 10px;
+  background: var(--background);
+  width: var(--width);
+  height: var(--height);
+  border-radius: var(--border-radius);
+  position: relative;
+  box-shadow: 0 10px 30px rgba(65, 72, 86, 0.05);
+  padding: 30px 85px;
+  display: grid;
+  grid-template-columns: 30px auto;
+  align-items: center;
+  justify-content: center;
+}
+
+#checklist label {
+  color: var(--text);
+  position: relative;
+  cursor: pointer;
+  display: grid;
+  align-items: center;
+  width: fit-content;
+  transition: color 0.3s ease;
+  margin-right: 20px;
+}
+
+#checklist label::before, #checklist label::after {
+  content: "";
+  position: absolute;
+}
+
+#checklist label::before {
+  height: 2px;
+  width: 8px;
+  left: -27px;
+  background: var(--check);
+  border-radius: 2px;
+  transition: background 0.3s ease;
+}
+
+#checklist label:after {
+  height: 4px;
+  width: 4px;
+  top: 8px;
+  left: -25px;
+  border-radius: 50%;
+}
+
+#checklist input[type="checkbox"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  position: relative;
+  height: 15px;
+  width: 15px;
+  outline: none;
+  border: 0;
+  margin: 0 15px 0 0;
+  cursor: pointer;
+  background: var(--background);
+  display: grid;
+  align-items: center;
+  margin-right: 20px;
+}
+
+#checklist input[type="checkbox"]::before, #checklist input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  height: 2px;
+  top: auto;
+  background: var(--check);
+  border-radius: 2px;
+}
+
+#checklist input[type="checkbox"]::before {
+  width: 0px;
+  right: 60%;
+  transform-origin: right bottom;
+}
+
+#checklist input[type="checkbox"]::after {
+  width: 0px;
+  left: 40%;
+  transform-origin: left bottom;
+}
+
+#checklist input[type="checkbox"]:checked::before {
+  animation: check-01 0.4s ease forwards;
+}
+
+#checklist input[type="checkbox"]:checked::after {
+  animation: check-02 0.4s ease forwards;
+}
+
+#checklist input[type="checkbox"]:checked + label {
+  color: var(--disabled);
+  animation: move 0.3s ease 0.1s forwards;
+}
+
+#checklist input[type="checkbox"]:checked + label::before {
+  background: var(--disabled);
+  animation: slice 0.4s ease forwards;
+}
+
+#checklist input[type="checkbox"]:checked + label::after {
+  animation: firework 0.5s ease forwards 0.1s;
+}
+
+@keyframes move {
+  50% {
+    padding-left: 8px;
+    padding-right: 0px;
+  }
+
+  100% {
+    padding-right: 4px;
+  }
+}
+
+@keyframes slice {
+  60% {
+    width: 100%;
+    left: 4px;
+  }
+
+  100% {
+    width: 100%;
+    left: -2px;
+    padding-left: 0;
+  }
+}
+
+@keyframes check-01 {
+  0% {
+    width: 4px;
+    top: auto;
+    transform: rotate(0);
+  }
+
+  50% {
+    width: 0px;
+    top: auto;
+    transform: rotate(0);
+  }
+
+  51% {
+    width: 0px;
+    top: 8px;
+    transform: rotate(45deg);
+  }
+
+  100% {
+    width: 5px;
+    top: 8px;
+    transform: rotate(45deg);
+  }
+}
+
+@keyframes check-02 {
+  0% {
+    width: 4px;
+    top: auto;
+    transform: rotate(0);
+  }
+
+  50% {
+    width: 0px;
+    top: auto;
+    transform: rotate(0);
+  }
+
+  51% {
+    width: 0px;
+    top: 8px;
+    transform: rotate(-45deg);
+  }
+
+  100% {
+    width: 10px;
+    top: 8px;
+    transform: rotate(-45deg);
+  }
+}
+
+@keyframes firework {
+  0% {
+    opacity: 1;
+    box-shadow: 0 0 0 -2px #4f29f0, 0 0 0 -2px #4f29f0, 0 0 0 -2px #4f29f0, 0 0 0 -2px #4f29f0, 0 0 0 -2px #4f29f0, 0 0 0 -2px #4f29f0;
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    box-shadow: 0 -15px 0 0px #4f29f0, 14px -8px 0 0px #4f29f0, 14px 8px 0 0px #4f29f0, 0 15px 0 0px #4f29f0, -14px 8px 0 0px #4f29f0, -14px -8px 0 0px #4f29f0;
+  }
+}
+
+
+/* ---------------------------------------------
+    SECCION 2
+    -------------------------------------------- */
+/* ---------------------------------------------
+    ELEMENTO 1
+    -------------------------------------------- */
+    /* From Uiverse.io by fabiodevbr */ 
+button {
+  background-color: #f2f7fa;
+  width: 100px;
+  height: 30px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  overflow: hidden;
+  transition-duration: 700ms;
+}
+
+button span:first-child {
+  color: #0e418f;
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+button span:last-child {
+  position: absolute;
+  color: #b5ccf3;
+  opacity: 0;
+  transform: translateY(100%) translateX(-50%);
+  height: 14px;
+  line-height: 13px;
+}
+
+button:focus {
+  background-color: #0e418f;
+  width: 120px;
+  height: 40px;
+  transition-delay: 100ms;
+  transition-duration: 500ms;
+}
+
+button:focus span:first-child {
+  color: #b5ccf3;
+  transform: translateX(-50%) translateY(-150%);
+  opacity: 0;
+  transition-duration: 500ms;
+}
+
+button:focus span:last-child {
+  transform: translateX(-50%) translateY(-50%);
+  opacity: 1;
+  transition-delay: 300ms;
+  transition-duration: 500ms;
+}
+
+button:focus:end {
+  background-color: #ffffff;
+  width: 120px;
+  height: 40px;
+  transition-duration: 900ms;
+}
+
+.centralize {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.description {
+  margin-top: 10px;
+  color: #b5ccf3;
+}
+
+
+/* ---------------------------------------------
+    SECCION 3
+    -------------------------------------------- */
+/* ---------------------------------------------
+    ELEMENTO 1
+    -------------------------------------------- */
+/* From Uiverse.io by Maximinodotpy */ 
+.inputGroup {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 1em 0 1em 0;
+  max-width: 190px;
+  position: relative;
+}
+
+.inputGroup input {
+  font-size: 100%;
+  padding: 0.8em;
+  outline: none;
+  border: 2px solid rgb(200, 200, 200);
+  background-color: transparent;
+  border-radius: 20px;
+  width: 100%;
+}
+
+.inputGroup label {
+  font-size: 100%;
+  position: absolute;
+  left: 0;
+  padding: 0.8em;
+  margin-left: 0.5em;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  color: rgb(100, 100, 100);
+}
+
+.inputGroup :is(input:focus, input:valid)~label {
+  transform: translateY(-50%) scale(.9);
+  margin: 0em;
+  margin-left: 1.3em;
+  padding: 0.4em;
+  background-color: #e8e8e8;
+}
+
+.inputGroup :is(input:focus, input:valid) {
+  border-color: rgb(150, 150, 200);
+}
+
+/* ---------------------------------------------
+    ELEMENTO 2
+    -------------------------------------------- */
+/* From Uiverse.io by Satwinder04 */ 
+.input-container {
+  position: relative;
+  margin: 50px auto;
+  width: 200px;
+}
+
+.input-container input[type="text"] {
+  font-size: 20px;
+  width: 100%;
+  border: none;
+  border-bottom: 2px solid #ccc;
+  padding: 5px 0;
+  background-color: transparent;
+  outline: none;
+}
+
+.input-container .label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #ccc;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.input-container input[type="text"]:focus ~ .label,
+.input-container input[type="text"]:valid ~ .label {
+  top: -20px;
+  font-size: 16px;
+  color: #333;
+}
+
+.input-container .underline {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background-color: #333;
+  transform: scaleX(0);
+  transition: all 0.3s ease;
+}
+
+.input-container input[type="text"]:focus ~ .underline,
+.input-container input[type="text"]:valid ~ .underline {
+  transform: scaleX(1);
+}
+
+/* ---------------------------------------------
+    ELEMENTO 3
+    -------------------------------------------- */
+    /* From Uiverse.io by escannord */ 
+.input {
+  max-width: 190px;
+  display: none;
+}
+
+.labelFile {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 250px;
+  height: 190px;
+  border: 2px dashed #ccc;
+  align-items: center;
+  text-align: center;
+  padding: 5px;
+  color: #404040;
+  cursor: pointer;
+}
+
+
+/* ---------------------------------------------
+    SECCION 4
+    --------------------------------------------- */
+/* ---------------------------------------------
+    ELEMENTO 1
+    --------------------------------------------- */
+/* From Uiverse.io by Cevorob */ 
+.burger {
+  position: relative;
+  width: 40px;
+  height: 30px;
+  background: transparent;
+  cursor: pointer;
+  display: block;
+}
+
+.burger input {
+  display: none;
+}
+
+.burger span {
+  display: block;
+  position: absolute;
+  height: 4px;
+  width: 100%;
+  background: black;
+  border-radius: 9px;
+  opacity: 1;
+  left: 0;
+  transform: rotate(0deg);
+  transition: .25s ease-in-out;
+}
+
+.burger span:nth-of-type(1) {
+  top: 0px;
+  transform-origin: left center;
+}
+
+.burger span:nth-of-type(2) {
+  top: 50%;
+  transform: translateY(-50%);
+  transform-origin: left center;
+}
+
+.burger span:nth-of-type(3) {
+  top: 100%;
+  transform-origin: left center;
+  transform: translateY(-100%);
+}
+
+.burger input:checked ~ span:nth-of-type(1) {
+  transform: rotate(45deg);
+  top: 0px;
+  left: 5px;
+}
+
+.burger input:checked ~ span:nth-of-type(2) {
+  width: 0%;
+  opacity: 0;
+}
+
+.burger input:checked ~ span:nth-of-type(3) {
+  transform: rotate(-45deg);
+  top: 28px;
+  left: 5px;
+}
+
+/* ---------------------------------------------
+    ELEMENTO 2
+    --------------------------------------------- */
+    /* From Uiverse.io by 3bdel3ziz-T */ 
+.card {
+  width: 200px;
+  background-color: rgba(36, 40, 50, 1);
+  background-image: linear-gradient(
+    139deg,
+    rgba(36, 40, 50, 1) 0%,
+    rgba(36, 40, 50, 1) 0%,
+    rgba(37, 28, 40, 1) 100%
+  );
+
+  user-select: none;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card .list .element label input[type="radio"] {
+  display: none;
+}
+
+.card .separator {
+  border-top: 1.5px solid #42434a;
+}
+
+.card .list {
+  list-style-type: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0px;
+}
+
+.card .list .element > label {
+  display: flex;
+  align-items: center;
+  color: #7e8590;
+  gap: 10px;
+  transition: all 0.3s ease-out;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.card .list .element label svg {
+  width: 19px;
+  height: 19px;
+  transition: all 0.3s ease-out;
+}
+
+.card .list .element label:has(input[type="radio"]:checked),
+.card .list .element label:hover {
+  background-color: var(--color);
+  color: var(--hover-color);
+}
+
+.card .list .element label:active {
+  transform: scale(0.96);
+}
+
+.card .list .element label:has(input[type="radio"]:checked) svg,
+.card .list .element label:hover svg {
+  stroke: var(--hover-storke);
+}
+
+
+
+/* ---------------------------------------------
+    SECCION 5
+    -------------------------------------------- */
+/* ---------------------------------------------
+    ELEMENTO 1
+    -------------------------------------------- */
+    /* From Uiverse.io by Madflows */ 
+.toggle-switch {
+  position: relative;
+  width: 100px;
+  height: 50px;
+  --light: #d8dbe0;
+  --dark: #28292c;
+  --link: rgb(27, 129, 112);
+  --link-hover: rgb(24, 94, 82);
+}
+
+.switch-label {
+  position: absolute;
+  width: 100%;
+  height: 50px;
+  background-color: var(--dark);
+  border-radius: 25px;
+  cursor: pointer;
+  border: 3px solid var(--dark);
+}
+
+.checkbox {
+  position: absolute;
+  display: none;
+}
+
+.slider {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 25px;
+  -webkit-transition: 0.3s;
+  transition: 0.3s;
+}
+
+.checkbox:checked ~ .slider {
+  background-color: var(--light);
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  -webkit-box-shadow: inset 12px -4px 0px 0px var(--light);
+  box-shadow: inset 12px -4px 0px 0px var(--light);
+  background-color: var(--dark);
+  -webkit-transition: 0.3s;
+  transition: 0.3s;
+}
+
+.checkbox:checked ~ .slider::before {
+  -webkit-transform: translateX(50px);
+  -ms-transform: translateX(50px);
+  transform: translateX(50px);
+  background-color: var(--dark);
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+
+/* ---------------------------------------------
+    ELEMENTO 2
+    -------------------------------------------- */
+    /* From Uiverse.io by Bodyhc */ 
+.liquid-3 {
+  --primary: #000;
+  --secondary: #fff;
+  --time: 0.6s;
+  appearance: none;
+  position: relative;
+  cursor: pointer;
+  width: 10em;
+  aspect-ratio: 2 / 1;
+  background: var(--primary);
+  border-radius: 20em;
+  box-shadow: 0 0 0 1em var(--secondary);
+  transform: translateX(0.5px);
+  transition: transform var(--time) cubic-bezier(0.75, 0, 0.75, 50);
+  filter: blur(0.66em) contrast(20);
+  mix-blend-mode: darken;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    width: 200%;
+    height: 100%;
+    transform: translate(-25%, -50%);
+    left: 50%;
+    top: 50%;
+    background: radial-gradient(
+        closest-side circle at 12.5% 50%,
+        var(--secondary) 50%,
+        #0000 0
+      ),
+      radial-gradient(
+        closest-side circle at 87.5% 50%,
+        var(--secondary) 50%,
+        #0000 0
+      ),
+      #f000;
+    transition: transform var(--time) cubic-bezier(0.75, 0, 0.75, 1.3);
+  }
+
+  &:checked {
+    transform: translateX(-0.5px);
+    &::before {
+      transform: translate(-75%, -50%);
+    }
+  }
+}
+
+
+/* ---------------------------------------------
+    ELEMENTO 3
+    -------------------------------------------- */
+    /* From Uiverse.io by cuzpq */
+.theme-checkbox {
+  --toggle-size: 16px;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 6.25em;
+  height: 3.125em;
+  background: -webkit-gradient(linear, left top, right top, color-stop(50%, #efefef), color-stop(50%, #2a2a2a)) no-repeat;
+  background: -o-linear-gradient(left, #efefef 50%, #2a2a2a 50%) no-repeat;
+  background: linear-gradient(to right, #efefef 50%, #2a2a2a 50%) no-repeat;
+  background-size: 205%;
+  background-position: 0;
+  -webkit-transition: 0.4s;
+  -o-transition: 0.4s;
+  transition: 0.4s;
+  border-radius: 99em;
+  position: relative;
+  cursor: pointer;
+  font-size: var(--toggle-size);
+}
+
+.theme-checkbox::before {
+  content: "";
+  width: 2.25em;
+  height: 2.25em;
+  position: absolute;
+  top: 0.438em;
+  left: 0.438em;
+  background: -webkit-gradient(linear, left top, right top, color-stop(50%, #efefef), color-stop(50%, #2a2a2a)) no-repeat;
+  background: -o-linear-gradient(left, #efefef 50%, #2a2a2a 50%) no-repeat;
+  background: linear-gradient(to right, #efefef 50%, #2a2a2a 50%) no-repeat;
+  background-size: 205%;
+  background-position: 100%;
+  border-radius: 50%;
+  -webkit-transition: 0.4s;
+  -o-transition: 0.4s;
+  transition: 0.4s;
+}
+
+.theme-checkbox:checked::before {
+  left: calc(100% - 2.25em - 0.438em);
+  background-position: 0;
+}
+
+.theme-checkbox:checked {
+  background-position: 100%;
+}
+
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <section class="section">
+
+        <!-- SECCION 1 --> 
+
+        <h2>Sección 1 Checkboxes</h2>
+        <div class="group-elementos">
+            <div class="elemento">
+
+                <!-- ELEMENTO 1 --> 
+
+                <h4>Elemento 1</h4>
+
+                <!-- From Uiverse.io by SelfMadeSystem -->
+                <div class="checkbox-container">
+                    <input type="checkbox" id="task-check" class="task-checkbox" />
+                    <label for="task-check" class="checkbox-label">
+                        <div class="checkbox-box">
+                        <div class="checkbox-fill"></div>
+                        <div class="checkmark">
+                            <svg viewBox="0 0 24 24" class="check-icon">
+                            <path
+                                d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
+                            ></path>
+                            </svg>
+                        </div>
+                        <div class="success-ripple"></div>
+                        </div>
+                        <span class="checkbox-text">Complete this awesome task</span>
+                    </label>
+                </div>
+
+            </div>
+            <div class="elemento">
+                <!-- ELEMENTO 2 --> 
+                <h4>Elemento 2</h4>
+
+                <!-- From Uiverse.io by SelfMadeSystem --> 
+                <label class="container-checkbox">
+                    <input checked="checked" type="checkbox">
+                    <div class="checkmark-2"></div>
+                </label>
+
+            </div>
+            <div class="elemento">
+                <!-- ELEMENTO 3 -->     
+                <h4>Elemento 3</h4>
+
+                <!-- From Uiverse.io by JkHuger --> 
+                <div id="checklist">
+                <input checked="" value="1" name="r" type="checkbox" id="01">
+                <label for="01">Bread</label>
+                <input value="2" name="r" type="checkbox" id="02">
+                <label for="02">Cheese</label>
+                <input value="3" name="r" type="checkbox" id="03">
+                <label for="03">Coffee</label>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+
+        <!-- SECCION 2 --> 
+
+        <h2>Sección 2 Botones</h2>
+        <div class="group-elementos">
+            <div class="elemento">
+                <!-- ELEMENTO 1 --> 
+                <h4>Elemento 1</h4>
+
+                <!-- From Uiverse.io by fabiodevbr --> 
+                <div class="centralize">
+                <div>
+                    <button>
+                    <span
+                        ><svg
+                        width="12"
+                        height="12"
+                        fill="#0E418F"
+                        xmlns="http://www.w3.org/2000/svg"
+                        shape-rendering="geometricPrecision"
+                        text-rendering="geometricPrecision"
+                        image-rendering="optimizeQuality"
+                        fill-rule="evenodd"
+                        clip-rule="evenodd"
+                        viewBox="0 0 467 512.22"
+                        >
+                        <path
+                            fill-rule="nonzero"
+                            d="M131.07 372.11c.37 1 .57 2.08.57 3.2 0 1.13-.2 2.21-.57 3.21v75.91c0 10.74 4.41 20.53 11.5 27.62s16.87 11.49 27.62 11.49h239.02c10.75 0 20.53-4.4 27.62-11.49s11.49-16.88 11.49-27.62V152.42c0-10.55-4.21-20.15-11.02-27.18l-.47-.43c-7.09-7.09-16.87-11.5-27.62-11.5H170.19c-10.75 0-20.53 4.41-27.62 11.5s-11.5 16.87-11.5 27.61v219.69zm-18.67 12.54H57.23c-15.82 0-30.1-6.58-40.45-17.11C6.41 356.97 0 342.4 0 326.52V57.79c0-15.86 6.5-30.3 16.97-40.78l.04-.04C27.51 6.49 41.94 0 57.79 0h243.63c15.87 0 30.3 6.51 40.77 16.98l.03.03c10.48 10.48 16.99 24.93 16.99 40.78v36.85h50c15.9 0 30.36 6.5 40.82 16.96l.54.58c10.15 10.44 16.43 24.66 16.43 40.24v302.01c0 15.9-6.5 30.36-16.96 40.82-10.47 10.47-24.93 16.97-40.83 16.97H170.19c-15.9 0-30.35-6.5-40.82-16.97-10.47-10.46-16.97-24.92-16.97-40.82v-69.78zM340.54 94.64V57.79c0-10.74-4.41-20.53-11.5-27.63-7.09-7.08-16.86-11.48-27.62-11.48H57.79c-10.78 0-20.56 4.38-27.62 11.45l-.04.04c-7.06 7.06-11.45 16.84-11.45 27.62v268.73c0 10.86 4.34 20.79 11.38 27.97 6.95 7.07 16.54 11.49 27.17 11.49h55.17V152.42c0-15.9 6.5-30.35 16.97-40.82 10.47-10.47 24.92-16.96 40.82-16.96h170.35z"
+                        ></path>
+                        </svg>
+                        Copy link</span
+                    >
+                    <span>Copied</span>
+                    </button>
+                    <div>
+                    <div class="description">
+                        <p>Click to see what happens</p>
+                        <div>
+                        <div></div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+
+            </div>
+    </section>
+
+    <section class="section">
+
+        <!-- SECCION 3 --> 
+
+        <h2>Sección 3 Inputs</h2>
+        <div class="group-elementos">
+            <div class="elemento">
+                <!-- ELEMENTO 1 --> 
+                <h4>Elemento 1</h4>
+
+                <!-- From Uiverse.io by Maximinodotpy --> 
+                <div class="inputGroup">
+                    <input type="text" required="" autocomplete="off">
+                    <label for="name">Name</label>
+                </div>
+
+            </div>
+            <div class="elemento">
+                <!-- ELEMENTO 2 --> 
+                <h4>Elemento 2</h4>
+
+                <!-- From Uiverse.io by Satwinder04 --> 
+                <div class="input-container">
+                    <input type="text" id="input" required="">
+                    <label for="input" class="label">Enter Text</label>
+                    <div class="underline"></div>
+                </div>
+
+            </div>
+            <div class="elemento">
+                <!-- ELEMENTO 3 -->     
+                <h4>Elemento 3</h4>
+
+                <!-- From Uiverse.io by escannord --> 
+                <label for="file" class="labelFile"
+                ><span
+                    ><svg
+                    xml:space="preserve"
+                    viewBox="0 0 184.69 184.69"
+                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xmlns="http://www.w3.org/2000/svg"
+                    id="Capa_1"
+                    version="1.1"
+                    width="60px"
+                    height="60px"
+                    >
+                    <g>
+                        <g>
+                        <g>
+                            <path
+                            d="M149.968,50.186c-8.017-14.308-23.796-22.515-40.717-19.813
+                                C102.609,16.43,88.713,7.576,73.087,7.576c-22.117,0-40.112,17.994-40.112,40.115c0,0.913,0.036,1.854,0.118,2.834
+                                C14.004,54.875,0,72.11,0,91.959c0,23.456,19.082,42.535,42.538,42.535h33.623v-7.025H42.538
+                                c-19.583,0-35.509-15.929-35.509-35.509c0-17.526,13.084-32.621,30.442-35.105c0.931-0.132,1.768-0.633,2.326-1.392
+                                c0.555-0.755,0.795-1.704,0.644-2.63c-0.297-1.904-0.447-3.582-0.447-5.139c0-18.249,14.852-33.094,33.094-33.094
+                                c13.703,0,25.789,8.26,30.803,21.04c0.63,1.621,2.351,2.534,4.058,2.14c15.425-3.568,29.919,3.883,36.604,17.168
+                                c0.508,1.027,1.503,1.736,2.641,1.897c17.368,2.473,30.481,17.569,30.481,35.112c0,19.58-15.937,35.509-35.52,35.509H97.391
+                                v7.025h44.761c23.459,0,42.538-19.079,42.538-42.535C184.69,71.545,169.884,53.901,149.968,50.186z"
+                            style="fill:#010002;"
+                            ></path>
+                        </g>
+                        <g>
+                            <path
+                            d="M108.586,90.201c1.406-1.403,1.406-3.672,0-5.075L88.541,65.078
+                                c-0.701-0.698-1.614-1.045-2.534-1.045l-0.064,0.011c-0.018,0-0.036-0.011-0.054-0.011c-0.931,0-1.85,0.361-2.534,1.045
+                                L63.31,85.127c-1.403,1.403-1.403,3.672,0,5.075c1.403,1.406,3.672,1.406,5.075,0L82.296,76.29v97.227
+                                c0,1.99,1.603,3.597,3.593,3.597c1.979,0,3.59-1.607,3.59-3.597V76.165l14.033,14.036
+                                C104.91,91.608,107.183,91.608,108.586,90.201z"
+                            style="fill:#010002;"
+                            ></path>
+                        </g>
+                        </g>
+                    </g></svg
+                ></span>
+                <p>drag and drop your file here or click to select a file!</p></label
+                >
+                <input class="input" name="text" id="file" type="file" />
+
+            </div>
+        </div>
+
+    </section>
+
+    <section class="section">
+
+        <!-- SECCION 4 --> 
+
+        <h2>Sección 4 Menu</h2>
+        <div class="group-elementos">
+            <div class="elemento">
+                <!-- ELEMENTO 1 --> 
+                <h4>Elemento 1</h4>
+
+                <!-- From Uiverse.io by Cevorob --> 
+                <label class="burger" for="burger">
+                    <input type="checkbox" id="burger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </label>
+            </div>
+            <div class="elemento">
+                <!-- ELEMENTO 2 --> 
+                <h4>Elemento 2</h4>
+
+                <!-- From Uiverse.io by 3bdel3ziz-T --> 
+                <div class="card">
+                    <ul
+                        class="list"
+                        style="--color:#5353ff;--hover-storke:#fff; --hover-color:#fff"
+                    >
+                        <li class="element">
+                        <label for="rename">
+                            <input type="radio" id="rename" name="filed" checked="" />
+                            <svg
+                            class="lucide lucide-pencil"
+                            stroke-linejoin="round"
+                            stroke-linecap="round"
+                            stroke-width="2"
+                            stroke="#7e8590"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            height="25"
+                            width="25"
+                            xmlns="http://www.w3.org/2000/svg"
+                            >
+                            <path
+                                d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"
+                            ></path>
+                            <path d="m15 5 4 4"></path>
+                            </svg>
+                            Rename</label
+                        >
+                        </li>
+                        <li class="element" style="--color:#5353ff">
+                        <label class="label" for="addmember">
+                            <input type="radio" id="addmember" name="filed" />
+                            <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#7e8590"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="lucide lucide-user-round-plus"
+                            >
+                            <path d="M2 21a8 8 0 0 1 13.292-6"></path>
+                            <circle cx="10" cy="8" r="5"></circle>
+                            <path d="M19 16v6"></path>
+                            <path d="M22 19h-6"></path>
+                            </svg>
+                            Add Member</label
+                        >
+                        </li>
+                        <div class="separator"></div>
+                        <li class="element" style="--color:#5353ff">
+                        <label for="settings">
+                            <input type="radio" id="settings" name="filed" />
+                            <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#7e8590"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="lucide lucide-settings"
+                            >
+                            <path
+                                d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+                            ></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            Settings</label
+                        >
+                        </li>
+                        <li class="element delete" style="--color:#8e2a2a">
+                        <label for="delete">
+                            <input type="radio" id="delete" name="filed" />
+                            <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#7e8590"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="lucide lucide-trash-2"
+                            >
+                            <path d="M3 6h18"></path>
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                            <line x1="10" x2="10" y1="11" y2="17"></line>
+                            <line x1="14" x2="14" y1="11" y2="17"></line>
+                            </svg>
+                            Delete</label
+                        >
+                        </li>
+                        <div class="separator"></div>
+                        <li
+                        class="element"
+                        style="--color:rgba(56, 45, 71, 0.836);--hover-storke:#bd89ff;--hover-color:#bd89ff"
+                        >
+                        <label for="teamaccess">
+                            <input type="radio" id="teamaccess" name="filed" />
+
+                            <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#7e8590"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="lucide lucide-users-round"
+                            >
+                            <path d="M18 21a8 8 0 0 0-16 0"></path>
+                            <circle cx="10" cy="8" r="5"></circle>
+                            <path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"></path>
+                            </svg>
+                            Team Access</label
+                        >
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+
+    </section>
+
+    <section class="section">
+        <!-- SECCION 5 --> 
+
+        <h2>Sección 5 Toggle switches</h2>
+        <div class="group-elementos">
+            <div class="elemento">
+                <!-- ELEMENTO 1 --> 
+                <h4>Elemento 1</h4>
+
+                <!-- From Uiverse.io by Madflows --> 
+                <div class="toggle-switch">
+                <label class="switch-label">
+                    <input type="checkbox" class="checkbox">
+                    <span class="slider"></span>
+                </label>
+                </div>  
+
+            </div>
+            <div class="elemento">
+                <!-- ELEMENTO 2 --> 
+                <h4>Elemento 2</h4>
+
+                <!-- From Uiverse.io by Bodyhc --> 
+                <input type="checkbox" role="switch" class="liquid-3" />
+
+            </div>
+            <div class="elemento">
+                <!-- ELEMENTO 3 -->     
+                <h4>Elemento 3</h4>
+
+                <!-- From Uiverse.io by cuzpq --> 
+                <input type="checkbox" class="theme-checkbox">
+            
+            </div>
+        </div>
+    </section>
+
+</div>
+
+</body>
+</html>
