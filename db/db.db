@@ -4,7 +4,9 @@
 CREATE TABLE IF NOT EXISTS Direcciones (
     ID_direccion INT AUTO_INCREMENT PRIMARY KEY,
     calle VARCHAR(255) NOT NULL,
-    altura INT NOT NULL,
+    altura VARCHAR(20) NOT NULL,
+    piso_depto VARCHAR(50),
+    referencias VARCHAR(255),
     Localidad VARCHAR(255) NOT NULL
 );
 
@@ -32,39 +34,104 @@ CREATE TABLE IF NOT EXISTS Restaurantes (
 -- 4. Tabla Usuarios (Depende de Restaurantes)
 CREATE TABLE IF NOT EXISTS Usuarios (
     ID_usuario INT AUTO_INCREMENT PRIMARY KEY,
-    ID_restaurantes INT, -- Puede ser NULL si es superadmin o repartidor global
+    ID_restaurante INT, -- Puede ser NULL si es superadmin o repartidor global
     Nombre VARCHAR(100) NOT NULL,
     Apellido VARCHAR(100) NOT NULL,
     Telefono VARCHAR(20),
-    Rol ENUM('superadmin', 'admin', 'recepcionista', 'repartidores', 'chef') NOT NULL,
+    Rol ENUM('superadmin', 'admin', 'recepcionista', 'repartidor', 'chef') NOT NULL,
     Username VARCHAR(100) NOT NULL UNIQUE,
     Password VARCHAR(255) NOT NULL,
-    FOREIGN KEY (ID_restaurantes) REFERENCES Restaurantes(ID_Restaurante) ON DELETE SET NULL,
+    FOREIGN KEY (ID_restaurante) REFERENCES Restaurantes(ID_Restaurante) ON DELETE SET NULL,
     CONSTRAINT chk_telefono_usuario CHECK (Telefono REGEXP '^[0-9]+$'),
     CONSTRAINT chk_username_len CHECK (CHAR_LENGTH(Username) > 8),
     CONSTRAINT chk_password_len CHECK (CHAR_LENGTH(Password) > 8)
 );
 
--- 5. Tabla Pedidos (Depende de Clientes, Restaurantes y Direcciones)
+-- 5. Tabla Productos (Depende de Restaurantes)
+CREATE TABLE IF NOT EXISTS Productos (
+    ID_producto INT AUTO_INCREMENT PRIMARY KEY,
+    ID_restaurante INT NOT NULL,
+    Nombre_producto VARCHAR(150) NOT NULL,
+    Descripcion TEXT,
+    Precio DECIMAL(10, 2) NOT NULL,
+    Activo BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (ID_restaurante) REFERENCES Restaurantes(ID_Restaurante) ON DELETE CASCADE
+);
+
+-- 6. Tabla Pedidos (Depende de Clientes, Restaurantes y Direcciones)
 CREATE TABLE IF NOT EXISTS Pedidos (
     ID_pedido INT AUTO_INCREMENT PRIMARY KEY,
     ID_cliente INT NOT NULL,
     ID_restaurante INT NOT NULL,
     ID_direccion INT NOT NULL,
+    Estado ENUM('Pendiente', 'Preparando', 'En camino', 'Entregado', 'Cancelado') NOT NULL DEFAULT 'Pendiente',
+    Fecha_pedido DATETIME DEFAULT CURRENT_TIMESTAMP,
     Total DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     FOREIGN KEY (ID_cliente) REFERENCES Clientes(ID_cliente) ON DELETE CASCADE,
     FOREIGN KEY (ID_restaurante) REFERENCES Restaurantes(ID_Restaurante) ON DELETE CASCADE,
     FOREIGN KEY (ID_direccion) REFERENCES Direcciones(ID_direccion) ON DELETE RESTRICT
 );
 
--- 6. Tabla Detalle_pedido (Depende de Pedidos)
+-- 7. Tabla Detalle_pedido (Depende de Pedidos y Productos)
 CREATE TABLE IF NOT EXISTS Detalle_pedido (
     ID_detalle INT AUTO_INCREMENT PRIMARY KEY,
     ID_pedido INT NOT NULL,
-    Producto VARCHAR(150) NOT NULL,
+    ID_producto INT NOT NULL,
     Cantidad INT NOT NULL,
     Precio DECIMAL(10, 2) NOT NULL,
     Subtotal DECIMAL(10, 2) NOT NULL,
     FOREIGN KEY (ID_pedido) REFERENCES Pedidos(ID_pedido) ON DELETE CASCADE,
+    FOREIGN KEY (ID_producto) REFERENCES Productos(ID_producto) ON DELETE RESTRICT,
     CONSTRAINT chk_cantidad CHECK (Cantidad > 0)
 );
+
+-- ==========================================
+-- DATOS DE PRUEBA (SEED DATA)
+-- ==========================================
+
+-- 1. Insertar Direcciones (2 para restaurantes, 2 para clientes)
+INSERT INTO Direcciones (calle, altura, piso_depto, referencias, Localidad) VALUES
+('Avenida Principal', '1234', NULL, 'Local a la calle', 'Ciudad Central'),
+('Calle de los Olmos', '567', '1A', 'Puerta verde', 'Ciudad Central'),
+('Ruta Nacional 9', 'S/N', 'Local 5', 'Plaza comercial', 'Zona Norte'),
+('Pasaje San Martin', '45', 'Piso 2, Depto 4', 'Tocar timbre 2 veces', 'Ciudad Central');
+
+-- 2. Insertar Clientes
+INSERT INTO Clientes (Nombre, Apellido, Telefono) VALUES
+('Juan', 'Perez', '1122334455'),
+('Maria', 'Gomez', '1199887766');
+
+-- 3. Insertar Restaurantes (Asignando ID_direccion 1 y 3)
+INSERT INTO Restaurantes (Nombre_local, logo_url, ID_direccion, Nombre_dueño, Telefono) VALUES
+('Burger Palace', 'https://ejemplo.com/logo1.png', 1, 'Carlos Gonzalez', '1144556677'),
+('Pizzeria Napoli', 'https://ejemplo.com/logo2.png', 3, 'Luigi Rossi', '1155667788');
+
+-- 4. Insertar Usuarios (Respetando longitud de > 8 caracteres en Username y Password)
+INSERT INTO Usuarios (ID_restaurante, Nombre, Apellido, Telefono, Rol, Username, Password) VALUES
+(NULL, 'Admin', 'General', '1100000000', 'superadmin', 'superadmin01', 'password_super'),
+(1, 'Recepcion', 'Burger', '1122223333', 'recepcionista', 'recepcion_burger', 'pass_burger123'),
+(2, 'Admin', 'Pizzeria', '1133334444', 'admin', 'admin_napoli', 'pass_napoli123'),
+(NULL, 'Pedro', 'Repartidor', '1144445555', 'repartidor', 'pedro_repartidor', 'pass_pedro123');
+
+-- 5. Insertar Productos para ambos restaurantes
+INSERT INTO Productos (ID_restaurante, Nombre_producto, Descripcion, Precio, Activo) VALUES
+(1, 'Hamburguesa Clasica', 'Medallon de carne, queso, lechuga y tomate', 5500.00, TRUE),
+(1, 'Papas Fritas', 'Porcion grande de papas fritas', 2500.00, TRUE),
+(2, 'Pizza Muzarella', 'Pizza grande con salsa de tomate y queso muzarella', 8000.00, TRUE),
+(2, 'Empanada de Carne', 'Empanada frita de carne cortada a cuchillo', 1000.00, TRUE);
+
+-- 6. Insertar Pedidos (Usando las direcciones de los clientes: 2 y 4)
+INSERT INTO Pedidos (ID_cliente, ID_restaurante, ID_direccion, Estado, Total) VALUES
+(1, 1, 2, 'Pendiente', 8000.00),
+(2, 2, 4, 'Preparando', 10000.00);
+
+-- 7. Insertar Detalles de Pedidos
+-- Detalle para Pedido 1 (1 Hamburguesa + 1 Papas = 8000.00)
+INSERT INTO Detalle_pedido (ID_pedido, ID_producto, Cantidad, Precio, Subtotal) VALUES
+(1, 1, 1, 5500.00, 5500.00),
+(1, 2, 1, 2500.00, 2500.00);
+
+-- Detalle para Pedido 2 (1 Pizza + 2 Empanadas = 10000.00)
+INSERT INTO Detalle_pedido (ID_pedido, ID_producto, Cantidad, Precio, Subtotal) VALUES
+(2, 3, 1, 8000.00, 8000.00),
+(2, 4, 2, 1000.00, 2000.00);

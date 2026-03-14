@@ -1,43 +1,197 @@
 :root {
-    --primary: #FF5E00;
-    --bg-color: #f4f7f6;
-    --text-color: #333;
-    --card-bg: #ffffff;
+    /* ==========================================
+       PALETA DE COLORES
+       ========================================== */
+    --color-primary: #007bff;
+    --color-primary-hover: #0056b3;
+    
+    --color-success: #28a745;
+    --color-success-hover: #218838;
+    
+    --color-background: #f8f9fa;
+    --color-surface: #ffffff;
+    
+    --color-text-main: #333333;
+    --color-text-muted: #6c757d;
+    --color-border: #e9ecef;
+    
+    /* ==========================================
+       ESPACIADOS Y TAMAÑOS
+       ========================================== */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    
+    --border-radius-sm: 6px;
+    --border-radius-md: 10px;
+    
+    /* ==========================================
+       TIPOGRAFÍA Y TRANSICIONES
+       ========================================== */
+    --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --transition-speed: 0.2s;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-
-body { background-color: var(--bg-color); color: var(--text-color); padding: 10px; }
-
-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px 0; border-bottom: 2px solid #ddd; }
-
-/* Tarjetas de pedido Mobile-First */
-.pedido-card {
-    background: var(--card-bg);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 15px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+/* ==========================================
+   RESETEO BÁSICO (Mejores prácticas)
+   ========================================== */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-.pedido-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; }
-.pedido-info { margin-bottom: 15px; color: #555; line-height: 1.5; }
+body {
+    font-family: var(--font-family-base);
+    background-color: var(--color-background);
+    color: var(--color-text-main);
+    line-height: 1.5;
+    padding: var(--spacing-md);
+}
 
-/* Botones grandes y accesibles en exteriores */
-.btn-aceptar {
-    display: block;
-    width: 100%;
-    padding: 15px;
-    background-color: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    cursor: pointer;
+/* ==========================================
+   CONTENEDORES Y LAYOUT
+   ========================================== */
+.app-container {
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.app-header, header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--color-border);
+}
+
+.app-header h1, header h1 {
+    font-size: 1.5rem;
     text-align: center;
-    transition: background 0.3s;
+    color: var(--color-text-main);
 }
 
-.btn-aceptar:active { background-color: #cc4a00; }
-.link-mapa { display: inline-block; margin-top: 10px; color: #0066cc; text-decoration: none; font-weight: bold; }
+/* ==========================================
+   COMPONENTES: BOTONES
+   ========================================== */
+button {
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    padding: 14px 20px; /* Área táctil amplia (Accesibilidad) */
+    transition: background-color var(--transition-speed) ease, transform 0.1s ease;
+    width: 100%;
+    text-align: center;
+}
+
+/* Indicador claro al navegar con teclado */
+button:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+.btn-primary, #btn-refresh {
+    background-color: var(--color-primary);
+    color: #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 123, 255, 0.2);
+}
+
+.btn-primary:hover, #btn-refresh:hover {
+    background-color: var(--color-primary-hover);
+}
+
+.btn-aceptar {
+    background-color: var(--color-success);
+    color: #ffffff;
+    margin-top: var(--spacing-sm);
+    box-shadow: 0 4px 6px rgba(40, 167, 69, 0.2);
+}
+
+.btn-aceptar:hover {
+    background-color: var(--color-success-hover);
+}
+
+/* ==========================================
+   COMPONENTES: TARJETAS DE PEDIDO
+   ========================================== */
+.pedidos-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.loading-text {
+    text-align: center;
+    color: var(--color-text-muted);
+    padding: var(--spacing-lg) 0;
+}
+
+.pedido-card {
+    background-color: var(--color-surface);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-lg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-left: 5px solid var(--color-success);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.pedido-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    font-size: 1.25rem;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--spacing-sm);
+}
+
+.pedido-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.pedido-info p {
+    color: var(--color-text-main);
+}
+
+.pedido-info strong {
+    color: var(--color-text-muted);
+}
+
+/* ==========================================
+   COMPONENTES: ENLACES
+   ========================================== */
+.link-mapa {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 10px;
+    border: 1px solid #cce5ff;
+    border-radius: var(--border-radius-sm);
+    background-color: #e6f2ff;
+    transition: background-color var(--transition-speed) ease;
+}
+
+.link-mapa:hover {
+    background-color: #cce5ff;
+}
