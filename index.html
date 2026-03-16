@@ -3,17 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Módulo Repartidor</title>
+    <title>Panel - Logística y Pedidos</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <header>
-        <h1>Pedidos Listos</h1>
-        <button id="btn-refresh">↻ Actualizar</button>
+    <header class="app-header">
+        <h1 id="mensaje-bienvenida">Cargando...</h1>
+        <button id="btn-cerrar-sesion" class="btn-primary" style="width: auto;">Cerrar Sesión</button>
     </header>
 
-    <main id="contenedor-pedidos">
-        </main>
+    <main class="app-container">
+        
+        <section id="panel-superadmin" class="hidden">
+            <h2>Panel de Súper Administrador</h2>
+            <p>Gestión global del sistema.</p>
+        </section>
+
+        <section id="panel-admin" class="hidden">
+            <h2>Panel de Administración</h2>
+            <p>Reportes y gestión.</p>
+        </section>
+
+        <section id="panel-recepcionista" class="hidden">
+            <h2>Recepción</h2>
+            <p>Ingreso de nuevos pedidos.</p>
+        </section>
+
+        <section id="panel-chef" class="hidden">
+            <h2>Cocina</h2>
+            <p>Pedidos pendientes.</p>
+        </section>
+
+        <section id="panel-repartidor" class="hidden">
+            <h2>Logística y Envíos</h2>
+            <button id="btn-refresh" class="btn-primary">Actualizar Pedidos</button>
+            <div id="contenedor-pedidos" class="pedidos-list"></div>
+        </section>
+
+    </main>
 
     <script src="js/script.js"></script>
 </body>

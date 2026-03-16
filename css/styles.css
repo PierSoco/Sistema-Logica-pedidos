@@ -195,3 +195,38 @@ button:active {
 .link-mapa:hover {
     background-color: #cce5ff;
 }
+
+/* Clase de utilidad para ocultar elementos */
+.hidden {
+    display: none !important;
+}
+
+/* ==========================================
+   ESTILOS PARA EL OJITO DE LA CONTRASEÑA
+   ========================================== */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.password-wrapper input {
+    width: 100%;
+    /* 40px de espacio a la derecha para que el texto no se superponga al ícono */
+    padding-right: 40px !important; 
+    box-sizing: border-box; /* Evita que el padding deforme el ancho total */
+}
+
+.toggle-password {
+    position: absolute;
+    right: 12px; /* Separación desde el borde derecho del input */
+    cursor: pointer;
+    color: #6c757d; /* Color grisecito del ícono */
+    font-size: 1.1rem;
+    transition: color 0.2s; /* Pequeña animación de color */
+}
+
+.toggle-password:hover {
+    color: #333333; /* Se oscurece al pasar el mouse */
+}
