@@ -135,3 +135,41 @@ INSERT INTO Detalle_pedido (ID_pedido, ID_producto, Cantidad, Precio, Subtotal) 
 INSERT INTO Detalle_pedido (ID_pedido, ID_producto, Cantidad, Precio, Subtotal) VALUES
 (2, 3, 1, 8000.00, 8000.00),
 (2, 4, 2, 1000.00, 2000.00);
+
+-- ==========================================
+-- MODIFICACIONES
+-- ==========================================
+
+-- Tabla para los tokens de recuperación
+CREATE TABLE IF NOT EXISTS password_resets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    token_hash VARCHAR(64) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    used TINYINT(1) DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ip_request VARCHAR(45),
+    INDEX (token_hash)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabla para prevenir ataques de fuerza bruta (Rate Limit)
+CREATE TABLE IF NOT EXISTS rate_limits (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip_address VARCHAR(45) NOT NULL,
+    action_type VARCHAR(50) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX (ip_address, action_type, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ==========================================
+
+-- 1. Cambiamos el nombre de la columna de 'Username' a 'Email' y le damos 150 caracteres
+ALTER TABLE `Usuarios` CHANGE `Username` `Email` VARCHAR(150) NOT NULL;
+
+-- 2. Eliminamos el índice único viejo que se llamaba 'Username'
+ALTER TABLE `Usuarios` DROP INDEX `Username`;
+
+-- 3. Creamos el nuevo índice único para la columna 'Email' para que no haya correos repetidos
+ALTER TABLE `Usuarios` ADD UNIQUE(`Email`);
+
+-- ==========================================
