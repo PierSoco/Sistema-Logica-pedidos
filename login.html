@@ -4,88 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <title>Login - Logística y Pedidos</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .login-container {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 350px;
-        }
-        .login-container h2 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #666;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box; /* Para que el padding no desborde el ancho */
-        }
-        .form-group input:focus {
-            border-color: #007bff;
-            outline: none;
-        }
-        .login-btn {
-            width: 100%;
-            padding: 10px;
-            background-color: #007bff;
-            color: #ffffff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-        .login-btn:hover {
-            background-color: #0056b3;
-        }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
+    <title>Login — RepartoGO</title>
 </head>
-<body>
+<body class="login-body">
 
-    <div class="login-container">
-        <h2>Iniciar Sesión</h2>
-        
-        <div class="form-group">
-            <label for="username">Usuario</label>
-            <input type="text" id="username" placeholder="Ingresa tu usuario">
+    <!-- Animated background orbs -->
+    <div class="login-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <div class="login-wrapper">
+
+        <div class="login-brand">
+            <div class="login-logo">🚚</div>
+            <h1>Reparto<em>GO</em></h1>
+            <p>Sistema de logística y gestión de pedidos</p>
         </div>
-        <div class="form-group">
-            <label for="password">Contraseña</label>
-            <div class="password-wrapper">
-                <input type="password" id="password" placeholder="Ingresa tu contraseña">
-                <i class="fa-solid fa-eye toggle-password" onclick="togglePassword()"></i>
+
+        <div class="login-card">
+            <div class="form-group">
+                <label for="username">Usuario</label>
+                <input type="text" id="username" placeholder="Ingresá tu usuario" autocomplete="username">
             </div>
+
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" placeholder="Ingresá tu contraseña" autocomplete="current-password">
+                    <i class="fa-solid fa-eye toggle-password" onclick="togglePassword()"></i>
+                </div>
+            </div>
+
+            <button class="login-btn" onclick="loginUsuario()">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                Ingresar al sistema
+            </button>
         </div>
-        
-        <button class="login-btn" onclick="loginUsuario()">Entrar</button>
-        
-        <div style="text-align: center; margin-top: 15px;">
-            <a href="olvide.html" style="color: var(--color-primary); text-decoration: none; font-size: 0.9rem;">¿Olvidaste tu contraseña?</a>
+
+        <div class="login-footer">
+            <a href="olvide.html">¿Olvidaste tu contraseña?</a>
         </div>
-        
-    </div> <script src="js/script.js"></script>
+
+    </div>
+
+    <script src="js/script.js"></script>
 </body>
 </html>

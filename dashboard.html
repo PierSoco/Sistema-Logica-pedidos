@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel — RepartoGO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <div class="app-wrapper">
+
+        <header class="app-header">
+            <a href="index.html" class="brand">
+                <div class="brand-icon">🚚</div>
+                Reparto<em>GO</em>
+            </a>
+            <div class="header-right">
+                <div class="user-badge">
+                    <div class="avatar" id="avatar-inicial">?</div>
+                    <div class="user-info">
+                        <span class="user-name" id="header-nombre">Cargando...</span>
+                        <span class="user-rol" id="header-rol">—</span>
+                    </div>
+                </div>
+                <button id="btn-cerrar-sesion">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Salir
+                </button>
+            </div>
+        </header>
+
+        <main class="app-container">
+
+            <section id="panel-superadmin" class="panel-section hidden">
+                <p class="panel-title">Panel <em>Global</em></p>
+                <p class="panel-subtitle">Gestión completa del sistema. Todos los módulos disponibles.</p>
+            </section>
+
+            <section id="panel-admin" class="panel-section hidden">
+                <p class="panel-title">Adminis<em>tración</em></p>
+                <p class="panel-subtitle">Reportes, estadísticas y gestión operativa.</p>
+            </section>
+
+            <section id="panel-recepcionista" class="panel-section hidden">
+                <p class="panel-title">Recep<em>ción</em></p>
+                <p class="panel-subtitle">Registro e ingreso de nuevos pedidos al sistema.</p>
+            </section>
+
+            <section id="panel-chef" class="panel-section hidden">
+                <p class="panel-title">Co<em>cina</em></p>
+                <p class="panel-subtitle">Pedidos pendientes de preparación.</p>
+            </section>
+
+            <section id="panel-repartidor" class="panel-section hidden">
+                <p class="panel-title">Logís<em>tica</em></p>
+                <p class="panel-subtitle">Pedidos listos para salir a la calle.</p>
+
+                <div class="toolbar">
+                    <div class="status-badge">
+                        <span class="status-dot"></span>
+                        En línea
+                    </div>
+                    <button id="btn-refresh" class="btn-primary">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        Actualizar
+                    </button>
+                </div>
+
+                <div id="contenedor-pedidos" class="pedidos-list">
+                    <div class="empty-state">
+                        <span class="empty-icon">📦</span>
+                        <p>Cargando pedidos...</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="js/script.js"></script>
+    <script>
+        /* ── UI enhancements ── */
+        document.addEventListener('DOMContentLoaded', () => {
+            const nombre = localStorage.getItem('user_nombre') || '';
+            const rol    = localStorage.getItem('user_rol') || '';
+
+            const avatarEl  = document.getElementById('avatar-inicial');
+            const nombreEl  = document.getElementById('header-nombre');
+            const rolEl     = document.getElementById('header-rol');
+            const msgEl     = document.getElementById('mensaje-bienvenida');
+
+            if (nombre) {
+                if (avatarEl)  avatarEl.textContent  = nombre.charAt(0).toUpperCase();
+                if (nombreEl)  nombreEl.textContent  = nombre;
+                if (rolEl)     rolEl.textContent     = rol;
+                if (msgEl)     msgEl.textContent     = nombre; /* compat con script.js */
+            }
+
+            /* Stagger animation for cards as they load */
+            const observer = new MutationObserver(() => {
+                document.querySelectorAll('.pedido-card').forEach((card, i) => {
+                    card.style.animationDelay = `${i * 0.07}s`;
+                });
+            });
+            const contenedor = document.getElementById('contenedor-pedidos');
+            if (contenedor) observer.observe(contenedor, { childList: true });
+
+            /* Spinning refresh icon */
+            const btnRefresh = document.getElementById('btn-refresh');
+            if (btnRefresh) {
+                btnRefresh.addEventListener('click', () => {
+                    const icon = btnRefresh.querySelector('i');
+                    icon.style.transition = 'transform 0.6s ease';
+                    icon.style.transform = 'rotate(360deg)';
+                    setTimeout(() => {
+                        icon.style.transition = 'none';
+                        icon.style.transform = 'rotate(0deg)';
+                    }, 600);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

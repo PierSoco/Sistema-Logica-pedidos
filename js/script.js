@@ -38,7 +38,7 @@ function showInit(rol, nombre) {
     localStorage.setItem('user_rol', rol.trim());
     
     // 2. Redirigimos al index.html
-    window.location.href = 'index.html'; 
+    window.location.href = 'dashboard.html'; 
 }
 
 // ==========================================
