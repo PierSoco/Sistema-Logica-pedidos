@@ -11,7 +11,8 @@ async function loginUsuario() {
     }
 
     try {
-        const response = await fetch('./backend/funciones.php?action=login', {
+        // --- CAMBIO AQUÍ: Apuntamos directamente al nuevo login.php ---
+        const response = await fetch('./backend/login.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })

@@ -40,34 +40,6 @@ if (isset($_GET['action'])) {
 // FUNCIONES DE AUTENTICACIÓN
 // ==========================================
 
-function procesarLogin($pdo) {
-    $data = json_decode(file_get_contents("php://input"), true);
-    $email = $data['username'] ?? ''; // En JS pasamos el correo como 'username'
-    $password = $data['password'] ?? '';
-
-    try {
-        $stmt = $pdo->prepare("SELECT * FROM Usuarios WHERE Email = :email LIMIT 1");
-        $stmt->execute([':email' => $email]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($user && password_verify($password, $user['Password'])) {
-            $_SESSION['user_id'] = $user['ID_usuario'];
-            $_SESSION['user_rol'] = $user['Rol'];
-            $_SESSION['user_nombre'] = $user['Nombre'];
-
-            echo json_encode([
-                'success' => true,
-                'nombre' => $user['Nombre'],
-                'rol' => $user['Rol']
-            ]);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Credenciales incorrectas.']);
-        }
-    } catch (PDOException $e) {
-        echo json_encode(['success' => false, 'error' => 'Error de BD: ' . $e->getMessage()]);
-    }
-}
-
 function procesarLogout() {
     $_SESSION = array();
     if (ini_get("session_use_cookies")) {
