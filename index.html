@@ -3,45 +3,470 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel - Logística y Pedidos</title>
+    <title>RepartoGO — Sistema de Logística y Pedidos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Scroll-triggered reveal */
+        .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.65s cubic-bezier(0.16,1,0.3,1), transform 0.65s cubic-bezier(0.16,1,0.3,1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Animated counter */
+        .stat-val[data-target] { transition: none; }
+
+        /* Grid lines decorative bg */
+        .grid-bg {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+            background-size: 60px 60px;
+            -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 100%);
+            mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 100%);
+            pointer-events: none;
+        }
+
+        /* Hero gradient word */
+        .hero-gradient {
+            background: linear-gradient(135deg, #f5a623, #fdd68a, #f5a623);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient-move 3s linear infinite;
+        }
+
+        @keyframes gradient-move {
+            from { background-position: 0% center; }
+            to   { background-position: 200% center; }
+        }
+
+        /* Floating tag chips */
+        .hero-chips {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 36px;
+            animation: fadeUp 0.55s 0.42s cubic-bezier(0.16,1,0.3,1) both;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            padding: 5px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.09);
+            background: rgba(255,255,255,0.04);
+            color: var(--text-2);
+            transition: all 0.2s;
+        }
+
+        .chip:hover {
+            border-color: var(--amber-border);
+            color: var(--amber);
+            background: var(--amber-glow);
+        }
+
+        /* Screenshot mockup */
+        .hero-mockup {
+            max-width: 680px;
+            margin: 60px auto 0;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.05);
+            animation: fadeUp 0.7s 0.5s cubic-bezier(0.16,1,0.3,1) both;
+            position: relative;
+        }
+
+        .mockup-bar {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mockup-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+        }
+
+        .mockup-dot-r { background: #f87171; }
+        .mockup-dot-y { background: #f5a623; }
+        .mockup-dot-g { background: #2dd4bf; }
+
+        .mockup-url {
+            margin-left: 12px;
+            font-size: 0.72rem;
+            color: var(--text-3);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            padding: 3px 14px;
+            border-radius: 5px;
+        }
+
+        .mockup-body {
+            padding: 20px;
+        }
+
+        /* Fake card rows */
+        .fake-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            animation: fadeUp 0.4s var(--ease-out) both;
+        }
+
+        .fake-row:nth-child(1) { animation-delay: 0.7s; }
+        .fake-row:nth-child(2) { animation-delay: 0.78s; }
+        .fake-row:nth-child(3) { animation-delay: 0.86s; }
+
+        .fake-id {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--amber);
+            min-width: 54px;
+        }
+
+        .fake-info { flex: 1; }
+
+        .fake-line {
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.08);
+            margin-bottom: 5px;
+        }
+
+        .fake-line:last-child { margin-bottom: 0; width: 60%; }
+
+        .fake-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-listo  { background: rgba(45,212,191,0.15); color: var(--teal); border: 1px solid rgba(45,212,191,0.25); }
+        .badge-camino { background: var(--amber-glow); color: var(--amber); border: 1px solid var(--amber-border); }
+        .badge-nuevo  { background: rgba(96,165,250,0.12); color: var(--blue); border: 1px solid rgba(96,165,250,0.25); }
+
+        /* CTA section */
+        .cta-section {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 0 var(--sp-xl) 100px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-card {
+            background: linear-gradient(135deg, rgba(245,166,35,0.1) 0%, rgba(245,166,35,0.03) 100%);
+            border: 1px solid var(--amber-border);
+            border-radius: 20px;
+            padding: 60px var(--sp-xl);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 20%; right: 20%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--amber), transparent);
+            opacity: 0.6;
+        }
+
+        .cta-card h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(1.6rem, 4vw, 2.4rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: var(--sp-md);
+        }
+
+        .cta-card h2 em { color: var(--amber); font-style: normal; }
+
+        .cta-card p {
+            color: var(--text-2);
+            max-width: 420px;
+            margin: 0 auto var(--sp-xl);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+    </style>
 </head>
-<body>
-    <header class="app-header">
-        <h1 id="mensaje-bienvenida">Cargando...</h1>
-        <button id="btn-cerrar-sesion" class="btn-primary" style="width: auto;">Cerrar Sesión</button>
-    </header>
+<body class="home-body">
 
-    <main class="app-container">
-        
-        <section id="panel-superadmin" class="hidden">
-            <h2>Panel de Súper Administrador</h2>
-            <p>Gestión global del sistema.</p>
-        </section>
+    <!-- Background -->
+    <div class="home-orbs">
+        <div class="home-orb-1"></div>
+        <div class="home-orb-2"></div>
+    </div>
 
-        <section id="panel-admin" class="hidden">
-            <h2>Panel de Administración</h2>
-            <p>Reportes y gestión.</p>
-        </section>
+    <!-- Nav -->
+    <nav class="home-nav">
+        <a href="index.html" class="brand">
+            <div class="brand-icon">🚚</div>
+            Reparto<em>GO</em>
+        </a>
+        <div style="display:flex; gap:12px; align-items:center;">
+            <a href="login.html" style="color: var(--text-2); text-decoration:none; font-size:0.85rem; font-weight:500; transition: color 0.2s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-2)'">Iniciar sesión</a>
+            <a href="login.html">
+                <button class="btn-primary" style="padding:9px 20px; font-size:0.83rem;">
+                    <i class="fa-solid fa-bolt" style="font-size:11px;"></i>
+                    Acceder
+                </button>
+            </a>
+        </div>
+    </nav>
 
-        <section id="panel-recepcionista" class="hidden">
-            <h2>Recepción</h2>
-            <p>Ingreso de nuevos pedidos.</p>
-        </section>
+    <!-- Hero -->
+    <section class="home-hero">
+        <div class="grid-bg"></div>
 
-        <section id="panel-chef" class="hidden">
-            <h2>Cocina</h2>
-            <p>Pedidos pendientes.</p>
-        </section>
+        <div class="eyebrow">
+            <span class="eyebrow-dot"></span>
+            Sistema operativo — 24/7
+        </div>
 
-        <section id="panel-repartidor" class="hidden">
-            <h2>Logística y Envíos</h2>
-            <button id="btn-refresh" class="btn-primary">Actualizar Pedidos</button>
-            <div id="contenedor-pedidos" class="pedidos-list"></div>
-        </section>
+        <h1>
+            Cada pedido,<br>
+            <span class="hero-gradient">en el lugar correcto</span>
+        </h1>
 
-    </main>
+        <p>
+            Plataforma centralizada para equipos de cocina, recepción y reparto.
+            Del pedido a la puerta del cliente, sin fricción.
+        </p>
+
+        <div class="hero-chips">
+            <span class="chip"><i class="fa-solid fa-check" style="font-size:9px;color:var(--teal)"></i> Roles por usuario</span>
+            <span class="chip"><i class="fa-solid fa-check" style="font-size:9px;color:var(--teal)"></i> Estado en tiempo real</span>
+            <span class="chip"><i class="fa-solid fa-check" style="font-size:9px;color:var(--teal)"></i> Integrado con Maps</span>
+            <span class="chip"><i class="fa-solid fa-check" style="font-size:9px;color:var(--teal)"></i> Sin app extra</span>
+        </div>
+
+        <div class="hero-actions">
+            <a href="login.html">
+                <button class="btn-primary">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                    Acceder al sistema
+                </button>
+            </a>
+            <button class="btn-secondary" onclick="document.querySelector('.stats-row').scrollIntoView({behavior:'smooth'})">
+                <i class="fa-solid fa-circle-info"></i>
+                Ver más
+            </button>
+        </div>
+
+        <!-- UI Mockup -->
+        <div class="hero-mockup">
+            <div class="mockup-bar">
+                <span class="mockup-dot mockup-dot-r"></span>
+                <span class="mockup-dot mockup-dot-y"></span>
+                <span class="mockup-dot mockup-dot-g"></span>
+                <span class="mockup-url">repartogo.app/dashboard</span>
+            </div>
+            <div class="mockup-body">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <div>
+                        <div style="font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; letter-spacing:-0.02em;">Logís<em style="color:var(--amber); font-style:normal;">tica</em></div>
+                        <div style="font-size:0.75rem; color:var(--text-2); margin-top:2px;">Pedidos listos para salir</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="display:flex; align-items:center; gap:6px; font-size:0.72rem; color:var(--text-2); background:var(--bg3); border:1px solid var(--border); padding:5px 12px; border-radius:999px;">
+                            <span style="width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block;"></span>
+                            En línea
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fake-row">
+                    <div class="fake-id">#042</div>
+                    <div class="fake-info">
+                        <div class="fake-line"></div>
+                        <div class="fake-line"></div>
+                    </div>
+                    <span class="fake-badge badge-listo">Listo</span>
+                </div>
+                <div class="fake-row">
+                    <div class="fake-id">#039</div>
+                    <div class="fake-info">
+                        <div class="fake-line"></div>
+                        <div class="fake-line"></div>
+                    </div>
+                    <span class="fake-badge badge-camino">En camino</span>
+                </div>
+                <div class="fake-row">
+                    <div class="fake-id">#041</div>
+                    <div class="fake-info">
+                        <div class="fake-line"></div>
+                        <div class="fake-line"></div>
+                    </div>
+                    <span class="fake-badge badge-nuevo">Nuevo</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats -->
+    <div class="stats-row reveal">
+        <div class="stat-card">
+            <div class="stat-val" data-target="99">0</div>
+            <div class="stat-label">% Uptime garantizado</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val">&lt; 2s</div>
+            <div class="stat-label">Actualización de estado</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val" data-target="5">0</div>
+            <div class="stat-label">Roles disponibles</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val">∞</div>
+            <div class="stat-label">Pedidos simultáneos</div>
+        </div>
+    </div>
+
+    <hr class="home-divider reveal">
+
+    <!-- Features -->
+    <div class="features-grid">
+        <div class="feature-card reveal">
+            <div class="feature-icon">🧾</div>
+            <h3>Recepción de pedidos</h3>
+            <p>Ingresá pedidos al sistema de forma rápida. Todo queda registrado al instante y pasa al flujo automáticamente.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon">👨‍🍳</div>
+            <h3>Vista de cocina</h3>
+            <p>Los chefs ven en tiempo real qué pedidos preparar, ordenados por prioridad y tiempo de espera.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon">🛵</div>
+            <h3>Logística y reparto</h3>
+            <p>Los repartidores reciben pedidos listos, acceden al mapa con un clic y actualizan el estado al aceptar.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon">📊</div>
+            <h3>Panel administrativo</h3>
+            <p>Visibilidad completa del flujo operativo, historial de pedidos y rendimiento del equipo.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon">🔐</div>
+            <h3>Control de accesos</h3>
+            <p>Cada usuario ve solo lo que necesita según su rol. Seguro, simple y sin fricción.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon">📍</div>
+            <h3>Integración con Maps</h3>
+            <p>Enlace directo a Google Maps con la dirección exacta del cliente, listo para navegar.</p>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-section reveal">
+        <div class="cta-card">
+            <h2>Listo para <em>empezar</em>?</h2>
+            <p>Accedé al sistema con tus credenciales y empezá a gestionar los pedidos de hoy.</p>
+            <a href="login.html">
+                <button class="btn-primary" style="padding: 14px 36px; font-size: 0.92rem;">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                    Ingresar al sistema
+                </button>
+            </a>
+        </div>
+    </div>
+
+    <footer class="home-footer">
+        RepartoGO © 2025 — Sistema de logística y gestión de pedidos
+    </footer>
 
     <script src="js/script.js"></script>
+    <script>
+        /* Scroll reveal */
+        const io = new IntersectionObserver((entries) => {
+            entries.forEach((e, i) => {
+                if (e.isIntersecting) {
+                    e.target.style.transitionDelay = (i * 0.06) + 's';
+                    e.target.classList.add('visible');
+                    io.unobserve(e.target);
+                }
+            });
+        }, { threshold: 0.12 });
+
+        document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+        /* Animated number counters */
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                const els = entry.target.querySelectorAll('[data-target]');
+                els.forEach(el => {
+                    const target = parseInt(el.dataset.target);
+                    const duration = 1200;
+                    const step = 16;
+                    const increments = duration / step;
+                    let current = 0;
+                    const inc = target / increments;
+                    const timer = setInterval(() => {
+                        current += inc;
+                        if (current >= target) {
+                            el.textContent = target + (target === 99 ? '' : '');
+                            clearInterval(timer);
+                        } else {
+                            el.textContent = Math.floor(current);
+                        }
+                    }, step);
+                });
+                counterObserver.unobserve(entry.target);
+            });
+        }, { threshold: 0.3 });
+
+        document.querySelectorAll('.stats-row').forEach(el => counterObserver.observe(el));
+
+        /* Tilt effect on feature cards */
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width - 0.5;
+                const y = (e.clientY - rect.top) / rect.height - 0.5;
+                card.style.transform = `translateY(-5px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg)`;
+                card.style.transition = 'transform 0.1s';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = '';
+                card.style.transition = 'transform 0.4s cubic-bezier(0.16,1,0.3,1)';
+            });
+        });
+    </script>
 </body>
 </html>
