@@ -44,6 +44,31 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
+/* ==========================================
+   ESTILO PARA AUTOCOMPLETADO (CHROME/EDGE/SAFARI)
+   ========================================== */
+
+/* 1. Cambiar el color del texto y del fondo del autocompletado */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+    /* Esto "rellena" el fondo con el color de tus inputs (--bg3) */
+    -webkit-box-shadow: 0 0 0 1000px var(--bg) inset !important;
+    
+    /* Esto cambia el color del texto a blanco o al color que desees */
+    -webkit-text-fill-color: white !important;
+    
+    /* Mantiene la tipografía de tu proyecto */
+    font-family: 'DM Sans', sans-serif !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* 2. Opcional: Ajustar el borde durante el autocompletado */
+input:-webkit-autofill {
+    border: 1px solid var(--border-hi) !important;
+}
+
 body {
     font-family: var(--font-b);
     background: var(--bg);
@@ -611,7 +636,7 @@ body.login-body {
 .login-brand h1 em { color: var(--amber); font-style: normal; }
 
 .login-brand p {
-    font-size: 0.83rem;
+    font-size: 1rem;
     color: var(--text-2);
     margin-top: 4px;
 }
@@ -654,7 +679,7 @@ body.login-body {
 
 .form-group label {
     display: block;
-    font-size: 0.71rem;
+    font-size: 0.8rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.09em;
@@ -749,7 +774,7 @@ body.login-body {
 
 .login-footer a {
     color: var(--text-2);
-    font-size: 0.82rem;
+    font-size: 1rem;
     text-decoration: none;
     transition: color 0.2s;
     font-weight: 500;
@@ -1049,4 +1074,61 @@ body.home-body { overflow-x: hidden; }
     .user-info { display: none; }
     .pedido-header { flex-direction: column; gap: var(--sp-xs); }
     .pedido-actions { flex-direction: column; }
+}
+/* ==========================================
+   ÍCONO DE FONDO (MARCA DE AGUA)
+   ========================================== */
+/* ==========================================
+   DECORACIÓN PROFESIONAL (CAMIÓN + BOLSA)
+   ========================================== */
+.bg-decorative {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.bg-decorative i {
+    position: absolute;
+    color: rgba(100, 100, 100, 0.064);
+    font-size: 22vw; 
+    transition: all 0.5s ease;
+}
+.bg-decorative i:nth-child(1) { /* Camión */
+    font-size: 22vw; 
+}
+.bg-decorative i:nth-child(2) { /* Camión */
+    font-size: 22vw; 
+}
+
+/* Camión: Más hacia el centro desde arriba a la izquierda */
+.truck-1 {
+    top: 15%;  /* Antes 5% */
+    left: 8%;  /* Antes 2% */
+    transform: rotate(-12deg);
+    filter: blur(1px);
+}
+
+/* Bolsa: Más hacia el centro desde abajo a la derecha */
+.delivery-bag {
+    bottom: 12%; /* Antes 5% */
+    right: 12%;  /* Antes 5% */
+    transform: rotate(10deg);
+    font-size: 18vw; 
+}
+
+/* Mantenemos el login por encima */
+.login-wrapper {
+    position: relative;
+    z-index: 5;
+}
+/* Si quieres que se vea mejor en celulares, ajustamos el tamaño */
+@media (max-width: 768px) {
+    .bg-watermark {
+        font-size: 80vw;
+    }
 }
