@@ -6,6 +6,895 @@
     <title>Panel — RepartoGO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+          /* ==========================================
+   ESTILOS PARA EL CRUD DE USUARIOS
+   Agregar estos estilos a tu archivo css/styles.css
+   ========================================== */
+
+/* --- Contenedor del CRUD --- */
+.crud-container {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.crud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.crud-header h2 {
+    margin: 0;
+    font-size: 24px;
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.crud-header h2 i {
+    color: #6366f1;
+}
+
+/* --- Tabla de Usuarios --- */
+.tabla-wrapper {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.tabla-usuarios {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.tabla-usuarios thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.tabla-usuarios thead th {
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tabla-usuarios tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+    transition: background-color 0.2s ease;
+}
+
+.tabla-usuarios tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.tabla-usuarios tbody tr:last-child {
+    border-bottom: none;
+}
+
+.tabla-usuarios tbody td {
+    padding: 16px 12px;
+    font-size: 14px;
+    color: #374151;
+}
+
+.text-center {
+    text-align: center !important;
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* --- Badges de Rol --- */
+.badge-rol {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-superadmin {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.badge-admin {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.badge-recepcionista {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.badge-chef {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: white;
+}
+
+.badge-repartidor {
+    background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+    color: white;
+}
+
+/* --- Botones de Acciones --- */
+.acciones-cell {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-editar,
+.btn-eliminar {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-editar {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-editar:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.btn-eliminar {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-eliminar:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* --- Modal --- */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #1a1a1a;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s ease;
+}
+
+.btn-close:hover {
+    color: #1a1a1a;
+}
+
+/* --- Formulario --- */
+.form-usuario {
+    padding: 24px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group label i {
+    color: #6366f1;
+}
+
+.opcional {
+    font-weight: 400;
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.help-text {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* --- Botones del Formulario --- */
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 2px solid #f0f0f0;
+}
+
+.btn-primary,
+.btn-secondary {
+    flex: 1;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.btn-secondary:hover {
+    background: #e5e7eb;
+}
+
+/* --- Mensajes Toast --- */
+.mensaje-toast {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    z-index: 2000;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.3s ease;
+}
+
+.mensaje-toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.mensaje-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.mensaje-error {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.mensaje-toast i {
+    font-size: 20px;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+    .crud-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+    }
+
+    .crud-header h2 {
+        font-size: 20px;
+    }
+
+    .tabla-wrapper {
+        font-size: 12px;
+    }
+
+    .tabla-usuarios thead th,
+    .tabla-usuarios tbody td {
+        padding: 12px 8px;
+    }
+
+    .acciones-cell {
+        flex-direction: column;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 20px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .mensaje-toast {
+        right: 12px;
+        left: 12px;
+        top: 12px;
+    }
+}
+
+/* --- Animaciones adicionales --- */
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.btn-primary:active {
+    animation: pulse 0.3s ease;
+}
+
+/* ==========================================
+   ESTILOS ADICIONALES PARA TODOS LOS ROLES
+   Agregar estos estilos al archivo css/styles.css
+   (después de los estilos del CRUD)
+   ========================================== */
+
+/* --- ESTADÍSTICAS (ADMIN) --- */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+.stat-icon {
+    font-size: 48px;
+    line-height: 1;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.stat-primary .stat-value {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-warning .stat-value {
+    color: #f59e0b;
+}
+
+.stat-info .stat-value {
+    color: #3b82f6;
+}
+
+.stat-success .stat-value {
+    color: #10b981;
+}
+
+/* --- BADGES DE ESTADO --- */
+.badge-estado {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-pendiente {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-listo {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.badge-en-camino {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.badge-entregado {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.badge-cancelado {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* --- RECEPCIONISTA --- */
+.recepcion-grid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 24px;
+}
+
+.recepcion-form-container,
+.recepcion-pedidos-container {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.recepcion-form-container h3,
+.recepcion-pedidos-container h3 {
+    margin: 0 0 20px 0;
+    color: #1a1a1a;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recepcion-form-container h3 i {
+    color: #10b981;
+}
+
+.recepcion-pedidos-container h3 i {
+    color: #6366f1;
+}
+
+.form-pedido {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-pedido textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    transition: all 0.2s ease;
+}
+
+.form-pedido textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+/* Lista de pedidos recientes */
+.lista-pedidos-recientes {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.pedido-reciente-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+.pedido-reciente-card:hover {
+    background: #f3f4f6;
+    border-color: #6366f1;
+}
+
+.pedido-reciente-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.pedido-reciente-header strong {
+    color: #6366f1;
+    font-size: 16px;
+}
+
+.pedido-reciente-info p {
+    margin: 4px 0;
+    font-size: 14px;
+    color: #374151;
+}
+
+.pedido-total {
+    font-weight: 600;
+    color: #10b981;
+    margin-top: 8px !important;
+}
+
+/* --- CHEF --- */
+.pedidos-chef-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.pedido-chef-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-left: 4px solid #f59e0b;
+    transition: all 0.2s ease;
+    animation: slideIn 0.3s ease;
+}
+
+.pedido-chef-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pedido-chef-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.pedido-numero {
+    font-size: 20px;
+    font-weight: 700;
+    color: #6366f1;
+}
+
+.pedido-hora {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.pedido-chef-info p {
+    margin: 8px 0;
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.6;
+}
+
+.btn-listo {
+    width: 100%;
+    margin-top: 16px;
+    padding: 12px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-listo:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.4);
+}
+
+.btn-listo:active {
+    transform: translateY(0);
+}
+
+/* --- TOOLBAR --- */
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 16px 24px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #d1fae5;
+    color: #065f46;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* --- EMPTY STATE --- */
+.empty-state {
+    text-align: center;
+    padding: 64px 20px;
+    color: #6b7280;
+}
+
+.empty-icon {
+    font-size: 64px;
+    display: block;
+    margin-bottom: 16px;
+}
+
+.empty-state p {
+    font-size: 18px;
+    margin: 0;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 1024px) {
+    .recepcion-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .recepcion-pedidos-container {
+        order: -1;
+    }
+
+    .lista-pedidos-recientes {
+        max-height: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .pedidos-chef-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card {
+        padding: 16px;
+    }
+
+    .stat-icon {
+        font-size: 36px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+    }
+}
+
+/* --- ANIMACIONES ADICIONALES --- */
+.panel-section {
+    animation: fadeInPanel 0.4s ease;
+}
+
+@keyframes fadeInPanel {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- MEJORAS DE TABLA --- */
+.tabla-usuarios tbody tr {
+    animation: fadeInRow 0.3s ease;
+}
+
+@keyframes fadeInRow {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* --- SCROLLBAR PERSONALIZADO --- */
+.lista-pedidos-recientes::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lista-pedidos-recientes::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 10px;
+}
+
+.lista-pedidos-recientes::-webkit-scrollbar-thumb {
+    background: #6366f1;
+    border-radius: 10px;
+}
+
+.lista-pedidos-recientes::-webkit-scrollbar-thumb:hover {
+    background: #4f46e5;
+}
+    </style>
 </head>
 <body>
 
@@ -36,21 +925,323 @@
             <section id="panel-superadmin" class="panel-section hidden">
                 <p class="panel-title">Panel <em>Global</em></p>
                 <p class="panel-subtitle">Gestión completa del sistema. Todos los módulos disponibles.</p>
+
+                <div class="crud-container">
+                    <div class="crud-header">
+                        <h2><i class="fa-solid fa-users"></i> Gestión de Usuarios</h2>
+                        <button id="btn-nuevo-usuario" class="btn-primary">
+                            <i class="fa-solid fa-user-plus"></i>
+                            Nuevo Usuario
+                        </button>
+                    </div>
+
+                    <div class="tabla-wrapper">
+                        <table class="tabla-usuarios">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Rol</th>
+                                    <th>Fecha Creación</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-usuarios-body">
+                                <tr>
+                                    <td colspan="6" class="text-center">Cargando usuarios...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Modal para Crear/Editar Usuario -->
+                <div id="modal-usuario" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 id="modal-titulo">Crear Nuevo Usuario</h3>
+                            <button id="btn-cerrar-modal" class="btn-close">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <form id="form-usuario" class="form-usuario">
+                            <input type="hidden" id="usuario-id">
+
+                            <div class="form-group">
+                                <label for="usuario-nombre">
+                                    <i class="fa-solid fa-user"></i>
+                                    Nombre Completo *
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="usuario-nombre" 
+                                    name="nombre" 
+                                    required
+                                    placeholder="Ej: Juan Pérez"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="usuario-email">
+                                    <i class="fa-solid fa-envelope"></i>
+                                    Email *
+                                </label>
+                                <input 
+                                    type="email" 
+                                    id="usuario-email" 
+                                    name="email" 
+                                    required
+                                    placeholder="usuario@ejemplo.com"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="usuario-rol">
+                                    <i class="fa-solid fa-user-tag"></i>
+                                    Rol *
+                                </label>
+                                <select id="usuario-rol" name="rol" required>
+                                    <option value="">Seleccionar rol...</option>
+                                    <option value="superadmin">SuperAdmin</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="recepcionista">Recepcionista</option>
+                                    <option value="chef">Chef</option>
+                                    <option value="repartidor">Repartidor</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" id="password-group">
+                                <label for="usuario-password">
+                                    <i class="fa-solid fa-lock"></i>
+                                    Contraseña <span class="opcional">(dejar vacío para mantener actual)</span>
+                                </label>
+                                <input 
+                                    type="password" 
+                                    id="usuario-password" 
+                                    name="password"
+                                    placeholder="••••••••"
+                                    minlength="6"
+                                >
+                                <small class="help-text">Mínimo 6 caracteres</small>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" onclick="cerrarModal()" class="btn-secondary">
+                                    Cancelar
+                                </button>
+                                <button type="submit" class="btn-primary">
+                                    <i class="fa-solid fa-floppy-disk"></i>
+                                    Guardar Usuario
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </section>
 
             <section id="panel-admin" class="panel-section hidden">
                 <p class="panel-title">Adminis<em>tración</em></p>
                 <p class="panel-subtitle">Reportes, estadísticas y gestión operativa.</p>
+
+                <!-- Estadísticas -->
+                <div class="stats-grid">
+                    <div class="stat-card stat-primary">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Total Pedidos</div>
+                            <div class="stat-value" id="stat-total-pedidos">0</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stat-warning">
+                        <div class="stat-icon">⏳</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Pendientes</div>
+                            <div class="stat-value" id="stat-pendientes">0</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stat-info">
+                        <div class="stat-icon">🚚</div>
+                        <div class="stat-content">
+                            <div class="stat-label">En Camino</div>
+                            <div class="stat-value" id="stat-en-camino">0</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stat-success">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Facturado</div>
+                            <div class="stat-value" id="stat-facturado">$0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de pedidos -->
+                <div class="crud-container" style="margin-top: 24px;">
+                    <div class="crud-header">
+                        <h2><i class="fa-solid fa-list"></i> Todos los Pedidos</h2>
+                        <button id="btn-refresh-admin" class="btn-primary">
+                            <i class="fa-solid fa-rotate-right"></i>
+                            Actualizar
+                        </button>
+                    </div>
+
+                    <div class="tabla-wrapper">
+                        <table class="tabla-usuarios">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Cliente</th>
+                                    <th>Dirección</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-pedidos-admin">
+                                <tr>
+                                    <td colspan="6" class="text-center">Cargando pedidos...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
 
             <section id="panel-recepcionista" class="panel-section hidden">
                 <p class="panel-title">Recep<em>ción</em></p>
                 <p class="panel-subtitle">Registro e ingreso de nuevos pedidos al sistema.</p>
+
+                <div class="recepcion-grid">
+                    <!-- Formulario de nuevo pedido -->
+                    <div class="recepcion-form-container">
+                        <h3><i class="fa-solid fa-plus-circle"></i> Nuevo Pedido</h3>
+                        
+                        <form id="form-pedido" class="form-pedido">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="pedido-cliente">
+                                        <i class="fa-solid fa-user"></i>
+                                        Cliente *
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="pedido-cliente" 
+                                        required
+                                        placeholder="Nombre del cliente"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="pedido-total">
+                                        <i class="fa-solid fa-dollar-sign"></i>
+                                        Total *
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        id="pedido-total" 
+                                        required
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="0.00"
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="pedido-calle">
+                                        <i class="fa-solid fa-road"></i>
+                                        Calle *
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="pedido-calle" 
+                                        required
+                                        placeholder="Nombre de la calle"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="pedido-altura">
+                                        <i class="fa-solid fa-hashtag"></i>
+                                        Altura *
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="pedido-altura" 
+                                        required
+                                        placeholder="1234"
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="pedido-localidad">
+                                    <i class="fa-solid fa-map-marker-alt"></i>
+                                    Localidad
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="pedido-localidad"
+                                    placeholder="Ciudad o localidad"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="pedido-detalle">
+                                    <i class="fa-solid fa-note-sticky"></i>
+                                    Detalle del Pedido
+                                </label>
+                                <textarea 
+                                    id="pedido-detalle"
+                                    rows="3"
+                                    placeholder="Ej: 2 pizzas medianas, 1 empanadas..."
+                                ></textarea>
+                            </div>
+
+                            <button type="submit" class="btn-primary btn-block">
+                                <i class="fa-solid fa-paper-plane"></i>
+                                Registrar Pedido
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Pedidos recientes -->
+                    <div class="recepcion-pedidos-container">
+                        <h3><i class="fa-solid fa-clock"></i> Pedidos Recientes</h3>
+                        <div id="lista-pedidos-recientes" class="lista-pedidos-recientes">
+                            <p class="text-center">Cargando...</p>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <section id="panel-chef" class="panel-section hidden">
                 <p class="panel-title">Co<em>cina</em></p>
                 <p class="panel-subtitle">Pedidos pendientes de preparación.</p>
+
+                <div class="toolbar">
+                    <div class="status-badge">
+                        <span class="status-dot"></span>
+                        En cocina
+                    </div>
+                    <button id="btn-refresh-chef" class="btn-primary">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        Actualizar
+                    </button>
+                </div>
+
+                <div id="contenedor-pedidos-chef" class="pedidos-chef-grid">
+                    <div class="empty-state">
+                        <span class="empty-icon">👨‍🍳</span>
+                        <p>Cargando pedidos...</p>
+                    </div>
+                </div>
             </section>
 
             <section id="panel-repartidor" class="panel-section hidden">
@@ -80,47 +1271,5 @@
     </div>
 
     <script src="js/script.js"></script>
-    <script>
-        /* ── UI enhancements ── */
-        document.addEventListener('DOMContentLoaded', () => {
-            const nombre = localStorage.getItem('user_nombre') || '';
-            const rol    = localStorage.getItem('user_rol') || '';
-
-            const avatarEl  = document.getElementById('avatar-inicial');
-            const nombreEl  = document.getElementById('header-nombre');
-            const rolEl     = document.getElementById('header-rol');
-            const msgEl     = document.getElementById('mensaje-bienvenida');
-
-            if (nombre) {
-                if (avatarEl)  avatarEl.textContent  = nombre.charAt(0).toUpperCase();
-                if (nombreEl)  nombreEl.textContent  = nombre;
-                if (rolEl)     rolEl.textContent     = rol;
-                if (msgEl)     msgEl.textContent     = nombre; /* compat con script.js */
-            }
-
-            /* Stagger animation for cards as they load */
-            const observer = new MutationObserver(() => {
-                document.querySelectorAll('.pedido-card').forEach((card, i) => {
-                    card.style.animationDelay = `${i * 0.07}s`;
-                });
-            });
-            const contenedor = document.getElementById('contenedor-pedidos');
-            if (contenedor) observer.observe(contenedor, { childList: true });
-
-            /* Spinning refresh icon */
-            const btnRefresh = document.getElementById('btn-refresh');
-            if (btnRefresh) {
-                btnRefresh.addEventListener('click', () => {
-                    const icon = btnRefresh.querySelector('i');
-                    icon.style.transition = 'transform 0.6s ease';
-                    icon.style.transform = 'rotate(360deg)';
-                    setTimeout(() => {
-                        icon.style.transition = 'none';
-                        icon.style.transform = 'rotate(0deg)';
-                    }, 600);
-                });
-            }
-        });
-    </script>
 </body>
 </html>
