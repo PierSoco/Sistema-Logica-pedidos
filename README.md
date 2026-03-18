@@ -1,5 +1,15 @@
 URL: https://zatmeni.ar/zple/index.html
 
+libreria de iconos: <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+ejemplo de iconos: 
+<i class="fa-solid fa-user"></i>
+<i class="fa-solid fa-house"></i>
+<i class="fa-solid fa-gear"></i>
+<i class="fa-solid fa-right-from-bracket"></i>
+<i class="fa-solid fa-database"></i>
+
+---
+
 ## 1. Visión General
 
 El objetivo es desarrollar una aplicación web de gestión logística para restaurantes que centralice el ciclo de vida de un pedido desde su recepción hasta la entrega final, coordinando tres perfiles de usuario clave: **Recepcionista, Cocinero y Repartidor.**
