@@ -1,3 +1,5 @@
+URL: https://zatmeni.ar/zple/index.html
+
 ## 1. Visión General
 
 El objetivo es desarrollar una aplicación web de gestión logística para restaurantes que centralice el ciclo de vida de un pedido desde su recepción hasta la entrega final, coordinando tres perfiles de usuario clave: **Recepcionista, Cocinero y Repartidor.**
