@@ -1,175 +1,421 @@
--- Nombre de DB [Logistica-pedidos]
+-- phpMyAdmin SQL Dump
+-- version 5.2.2
+-- https://www.phpmyadmin.net/
+--
+-- Servidor: localhost:3306
+-- Tiempo de generación: 20-03-2026 a las 22:22:48
+-- Versión del servidor: 10.6.22-MariaDB
+-- Versión de PHP: 8.4.18
 
--- 1. Tabla Direcciones (Independiente)
-CREATE TABLE IF NOT EXISTS Direcciones (
-    ID_direccion INT AUTO_INCREMENT PRIMARY KEY,
-    calle VARCHAR(255) NOT NULL,
-    altura VARCHAR(20) NOT NULL,
-    piso_depto VARCHAR(50),
-    referencias VARCHAR(255),
-    Localidad VARCHAR(255) NOT NULL
-);
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
 
--- 2. Tabla Clientes (Independiente)
-CREATE TABLE IF NOT EXISTS Clientes (
-    ID_cliente INT AUTO_INCREMENT PRIMARY KEY,
-    Nombre VARCHAR(100) NOT NULL,
-    Apellido VARCHAR(100) NOT NULL,
-    Telefono VARCHAR(20) NOT NULL,
-    CONSTRAINT chk_telefono_cliente CHECK (Telefono REGEXP '^[0-9]+$') -- Valida que solo tenga números
-);
 
--- 3. Tabla Restaurantes (Depende de Direcciones)
-CREATE TABLE IF NOT EXISTS Restaurantes (
-    ID_Restaurante INT AUTO_INCREMENT PRIMARY KEY,
-    Nombre_local VARCHAR(150) NOT NULL,
-    logo_url VARCHAR(500),
-    ID_direccion INT,
-    Nombre_dueño VARCHAR(150),
-    Telefono VARCHAR(20),
-    FOREIGN KEY (ID_direccion) REFERENCES Direcciones(ID_direccion) ON DELETE SET NULL,
-    CONSTRAINT chk_telefono_restaurante CHECK (Telefono REGEXP '^[0-9]+$')
-);
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
 
--- 4. Tabla Usuarios (Depende de Restaurantes)
-CREATE TABLE IF NOT EXISTS Usuarios (
-    ID_usuario INT AUTO_INCREMENT PRIMARY KEY,
-    ID_restaurante INT, -- Puede ser NULL si es superadmin o repartidor global
-    Nombre VARCHAR(100) NOT NULL,
-    Apellido VARCHAR(100) NOT NULL,
-    Telefono VARCHAR(20),
-    Rol ENUM('superadmin', 'admin', 'recepcionista', 'repartidor', 'chef') NOT NULL,
-    Username VARCHAR(100) NOT NULL UNIQUE,
-    Password VARCHAR(255) NOT NULL,
-    FOREIGN KEY (ID_restaurante) REFERENCES Restaurantes(ID_Restaurante) ON DELETE SET NULL,
-    CONSTRAINT chk_telefono_usuario CHECK (Telefono REGEXP '^[0-9]+$'),
-    CONSTRAINT chk_username_len CHECK (CHAR_LENGTH(Username) > 8),
-    CONSTRAINT chk_password_len CHECK (CHAR_LENGTH(Password) > 8)
-);
+--
+-- Base de datos: `zatmeni8_Logistica-pedidos`
+--
 
--- 5. Tabla Productos (Depende de Restaurantes)
-CREATE TABLE IF NOT EXISTS Productos (
-    ID_producto INT AUTO_INCREMENT PRIMARY KEY,
-    ID_restaurante INT NOT NULL,
-    Nombre_producto VARCHAR(150) NOT NULL,
-    Descripcion TEXT,
-    Precio DECIMAL(10, 2) NOT NULL,
-    Activo BOOLEAN DEFAULT TRUE,
-    FOREIGN KEY (ID_restaurante) REFERENCES Restaurantes(ID_Restaurante) ON DELETE CASCADE
-);
+-- --------------------------------------------------------
 
--- 6. Tabla Pedidos (Depende de Clientes, Restaurantes y Direcciones)
-CREATE TABLE IF NOT EXISTS Pedidos (
-    ID_pedido INT AUTO_INCREMENT PRIMARY KEY,
-    ID_cliente INT NOT NULL,
-    ID_restaurante INT NOT NULL,
-    ID_direccion INT NOT NULL,
-    Estado ENUM('Pendiente', 'Preparando', 'En camino', 'Entregado', 'Cancelado') NOT NULL DEFAULT 'Pendiente',
-    Fecha_pedido DATETIME DEFAULT CURRENT_TIMESTAMP,
-    Total DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
-    FOREIGN KEY (ID_cliente) REFERENCES Clientes(ID_cliente) ON DELETE CASCADE,
-    FOREIGN KEY (ID_restaurante) REFERENCES Restaurantes(ID_Restaurante) ON DELETE CASCADE,
-    FOREIGN KEY (ID_direccion) REFERENCES Direcciones(ID_direccion) ON DELETE RESTRICT
-);
+--
+-- Estructura de tabla para la tabla `Clientes`
+--
 
--- 7. Tabla Detalle_pedido (Depende de Pedidos y Productos)
-CREATE TABLE IF NOT EXISTS Detalle_pedido (
-    ID_detalle INT AUTO_INCREMENT PRIMARY KEY,
-    ID_pedido INT NOT NULL,
-    ID_producto INT NOT NULL,
-    Cantidad INT NOT NULL,
-    Precio DECIMAL(10, 2) NOT NULL,
-    Subtotal DECIMAL(10, 2) NOT NULL,
-    FOREIGN KEY (ID_pedido) REFERENCES Pedidos(ID_pedido) ON DELETE CASCADE,
-    FOREIGN KEY (ID_producto) REFERENCES Productos(ID_producto) ON DELETE RESTRICT,
-    CONSTRAINT chk_cantidad CHECK (Cantidad > 0)
-);
+CREATE TABLE `Clientes` (
+  `ID_cliente` int(11) NOT NULL,
+  `Nombre` varchar(100) NOT NULL,
+  `Apellido` varchar(100) NOT NULL,
+  `Telefono` varchar(20) NOT NULL
+) ;
 
--- ==========================================
--- DATOS DE PRUEBA (SEED DATA)
--- ==========================================
+--
+-- Volcado de datos para la tabla `Clientes`
+--
 
--- 1. Insertar Direcciones (2 para restaurantes, 2 para clientes)
-INSERT INTO Direcciones (calle, altura, piso_depto, referencias, Localidad) VALUES
-('Avenida Principal', '1234', NULL, 'Local a la calle', 'Ciudad Central'),
-('Calle de los Olmos', '567', '1A', 'Puerta verde', 'Ciudad Central'),
-('Ruta Nacional 9', 'S/N', 'Local 5', 'Plaza comercial', 'Zona Norte'),
-('Pasaje San Martin', '45', 'Piso 2, Depto 4', 'Tocar timbre 2 veces', 'Ciudad Central');
+INSERT INTO `Clientes` (`ID_cliente`, `Nombre`, `Apellido`, `Telefono`) VALUES
+(1, 'Juan', 'Perez', '1122334455'),
+(2, 'Maria', 'Gomez', '1199887766');
 
--- 2. Insertar Clientes
-INSERT INTO Clientes (Nombre, Apellido, Telefono) VALUES
-('Juan', 'Perez', '1122334455'),
-('Maria', 'Gomez', '1199887766');
+-- --------------------------------------------------------
 
--- 3. Insertar Restaurantes (Asignando ID_direccion 1 y 3)
-INSERT INTO Restaurantes (Nombre_local, logo_url, ID_direccion, Nombre_dueño, Telefono) VALUES
-('Burger Palace', 'https://ejemplo.com/logo1.png', 1, 'Carlos Gonzalez', '1144556677'),
-('Pizzeria Napoli', 'https://ejemplo.com/logo2.png', 3, 'Luigi Rossi', '1155667788');
+--
+-- Estructura de tabla para la tabla `Detalle_pedido`
+--
 
--- 4. Insertar Usuarios (Respetando longitud de > 8 caracteres en Username y Password)
-INSERT INTO Usuarios (ID_restaurante, Nombre, Apellido, Telefono, Rol, Username, Password) VALUES
-(NULL, 'Admin', 'General', '1100000000', 'superadmin', 'superadmin01', 'password_super'),
-(1, 'Recepcion', 'Burger', '1122223333', 'recepcionista', 'recepcion_burger', 'pass_burger123'),
-(2, 'Admin', 'Pizzeria', '1133334444', 'admin', 'admin_napoli', 'pass_napoli123'),
-(NULL, 'Pedro', 'Repartidor', '1144445555', 'repartidor', 'pedro_repartidor', 'pass_pedro123');
+CREATE TABLE `Detalle_pedido` (
+  `ID_detalle` int(11) NOT NULL,
+  `ID_pedido` int(11) NOT NULL,
+  `ID_producto` int(11) NOT NULL,
+  `Cantidad` int(11) NOT NULL,
+  `Precio` decimal(10,2) NOT NULL,
+  `Subtotal` decimal(10,2) NOT NULL
+) ;
 
--- 5. Insertar Productos para ambos restaurantes
-INSERT INTO Productos (ID_restaurante, Nombre_producto, Descripcion, Precio, Activo) VALUES
-(1, 'Hamburguesa Clasica', 'Medallon de carne, queso, lechuga y tomate', 5500.00, TRUE),
-(1, 'Papas Fritas', 'Porcion grande de papas fritas', 2500.00, TRUE),
-(2, 'Pizza Muzarella', 'Pizza grande con salsa de tomate y queso muzarella', 8000.00, TRUE),
-(2, 'Empanada de Carne', 'Empanada frita de carne cortada a cuchillo', 1000.00, TRUE);
+--
+-- Volcado de datos para la tabla `Detalle_pedido`
+--
 
--- 6. Insertar Pedidos (Usando las direcciones de los clientes: 2 y 4)
-INSERT INTO Pedidos (ID_cliente, ID_restaurante, ID_direccion, Estado, Total) VALUES
-(1, 1, 2, 'Pendiente', 8000.00),
-(2, 2, 4, 'Preparando', 10000.00);
+INSERT INTO `Detalle_pedido` (`ID_detalle`, `ID_pedido`, `ID_producto`, `Cantidad`, `Precio`, `Subtotal`) VALUES
+(1, 1, 1, 1, 5500.00, 5500.00),
+(2, 1, 2, 1, 2500.00, 2500.00),
+(3, 2, 3, 1, 8000.00, 8000.00),
+(4, 2, 4, 2, 1000.00, 2000.00);
 
--- 7. Insertar Detalles de Pedidos
--- Detalle para Pedido 1 (1 Hamburguesa + 1 Papas = 8000.00)
-INSERT INTO Detalle_pedido (ID_pedido, ID_producto, Cantidad, Precio, Subtotal) VALUES
-(1, 1, 1, 5500.00, 5500.00),
-(1, 2, 1, 2500.00, 2500.00);
+-- --------------------------------------------------------
 
--- Detalle para Pedido 2 (1 Pizza + 2 Empanadas = 10000.00)
-INSERT INTO Detalle_pedido (ID_pedido, ID_producto, Cantidad, Precio, Subtotal) VALUES
-(2, 3, 1, 8000.00, 8000.00),
-(2, 4, 2, 1000.00, 2000.00);
+--
+-- Estructura de tabla para la tabla `Direcciones`
+--
 
--- ==========================================
--- MODIFICACIONES
--- ==========================================
+CREATE TABLE `Direcciones` (
+  `ID_direccion` int(11) NOT NULL,
+  `calle` varchar(255) NOT NULL,
+  `altura` varchar(20) NOT NULL,
+  `piso_depto` varchar(50) DEFAULT NULL,
+  `referencias` varchar(255) DEFAULT NULL,
+  `Localidad` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
--- Tabla para los tokens de recuperación
-CREATE TABLE IF NOT EXISTS password_resets (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    token_hash VARCHAR(64) NOT NULL,
-    expires_at DATETIME NOT NULL,
-    used TINYINT(1) DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    ip_request VARCHAR(45),
-    INDEX (token_hash)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+--
+-- Volcado de datos para la tabla `Direcciones`
+--
 
--- Tabla para prevenir ataques de fuerza bruta (Rate Limit)
-CREATE TABLE IF NOT EXISTS rate_limits (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ip_address VARCHAR(45) NOT NULL,
-    action_type VARCHAR(50) NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX (ip_address, action_type, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+INSERT INTO `Direcciones` (`ID_direccion`, `calle`, `altura`, `piso_depto`, `referencias`, `Localidad`) VALUES
+(1, 'Avenida Principal', '1234', NULL, 'Local a la calle', 'Ciudad Central'),
+(2, 'Calle de los Olmos', '567', '1A', 'Puerta verde', 'Ciudad Central'),
+(3, 'Ruta Nacional 9', 'S/N', 'Local 5', 'Plaza comercial', 'Zona Norte'),
+(4, 'Pasaje San Martin', '45', 'Piso 2, Depto 4', 'Tocar timbre 2 veces', 'Ciudad Central');
 
--- ==========================================
+-- --------------------------------------------------------
 
--- 1. Cambiamos el nombre de la columna de 'Username' a 'Email' y le damos 150 caracteres
-ALTER TABLE `Usuarios` CHANGE `Username` `Email` VARCHAR(150) NOT NULL;
+--
+-- Estructura de tabla para la tabla `password_resets`
+--
 
--- 2. Eliminamos el índice único viejo que se llamaba 'Username'
-ALTER TABLE `Usuarios` DROP INDEX `Username`;
+CREATE TABLE `password_resets` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `token_hash` varchar(64) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `used` tinyint(1) DEFAULT 0,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `ip_request` varchar(45) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- 3. Creamos el nuevo índice único para la columna 'Email' para que no haya correos repetidos
-ALTER TABLE `Usuarios` ADD UNIQUE(`Email`);
+--
+-- Volcado de datos para la tabla `password_resets`
+--
 
--- ==========================================
+INSERT INTO `password_resets` (`id`, `user_id`, `token_hash`, `expires_at`, `used`, `created_at`, `ip_request`) VALUES
+(3, 1, '0a2375d8131aba268edef48687caeb1711f372d91d96c09fa9556f6710245639', '2026-03-16 06:24:14', 1, '2026-03-16 01:54:14', '45.191.156.132'),
+(4, 2, 'c34b04264b61dd4006529f5567bd420008f20dfc36152118764cd75f15a32e6a', '2026-03-17 04:37:52', 1, '2026-03-17 00:07:52', '45.191.156.132'),
+(5, 2, '362005b7d07658c35f29ac0843ac99ac283e7482a481c00f756dde1fdce68228', '2026-03-18 02:52:32', 0, '2026-03-17 22:22:32', '45.191.156.132'),
+(6, 2, '8c10bc8a9152c6f59c35acdabae85bef2f3e080c72d7a5f74b3d82b22cda1989', '2026-03-18 02:52:59', 1, '2026-03-17 22:22:59', '45.191.156.132'),
+(7, 3, '9faa087ea23c29ec0dc367182a88143c8012f6602f03c58cc34be1b54c166ba0', '2026-03-18 02:55:33', 1, '2026-03-17 22:25:33', '45.191.156.132'),
+(8, 4, '98a9a32d9164f8ccd8ad5a3344ff92e4eb46ec9c157721e64249e895e564dcca', '2026-03-18 05:29:46', 1, '2026-03-18 00:59:46', '45.191.156.132'),
+(9, 5, '9397f979380769d41fa78bfe984f933b4c347d266b8f7940ce93e964eed47a92', '2026-03-18 05:31:05', 1, '2026-03-18 01:01:05', '45.191.156.132');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `Pedidos`
+--
+
+CREATE TABLE `Pedidos` (
+  `ID_pedido` int(11) NOT NULL,
+  `ID_cliente` int(11) NOT NULL,
+  `ID_restaurante` int(11) NOT NULL,
+  `ID_direccion` int(11) NOT NULL,
+  `Estado` enum('Pendiente','Preparando','En camino','Entregado','Cancelado') NOT NULL DEFAULT 'Pendiente',
+  `Fecha_pedido` datetime DEFAULT current_timestamp(),
+  `Total` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `detalle` text DEFAULT NULL COMMENT 'Detalle del pedido',
+  `fecha_creacion` datetime DEFAULT current_timestamp() COMMENT 'Fecha de creación'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+--
+-- Volcado de datos para la tabla `Pedidos`
+--
+
+INSERT INTO `Pedidos` (`ID_pedido`, `ID_cliente`, `ID_restaurante`, `ID_direccion`, `Estado`, `Fecha_pedido`, `Total`, `detalle`, `fecha_creacion`) VALUES
+(1, 1, 1, 2, 'Pendiente', '2026-03-14 01:13:24', 8000.00, NULL, '2026-03-18 01:19:04'),
+(2, 2, 2, 4, 'Preparando', '2026-03-14 01:13:24', 10000.00, NULL, '2026-03-18 01:19:04');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `Productos`
+--
+
+CREATE TABLE `Productos` (
+  `ID_producto` int(11) NOT NULL,
+  `ID_restaurante` int(11) NOT NULL,
+  `Nombre_producto` varchar(150) NOT NULL,
+  `Descripcion` text DEFAULT NULL,
+  `Precio` decimal(10,2) NOT NULL,
+  `Activo` tinyint(1) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+--
+-- Volcado de datos para la tabla `Productos`
+--
+
+INSERT INTO `Productos` (`ID_producto`, `ID_restaurante`, `Nombre_producto`, `Descripcion`, `Precio`, `Activo`) VALUES
+(1, 1, 'Hamburguesa Clasica', 'Medallon de carne, queso, lechuga y tomate', 5500.00, 1),
+(2, 1, 'Papas Fritas', 'Porcion grande de papas fritas', 2500.00, 1),
+(3, 2, 'Pizza Muzarella', 'Pizza grande con salsa de tomate y queso muzarella', 8000.00, 1),
+(4, 2, 'Empanada de Carne', 'Empanada frita de carne cortada a cuchillo', 1000.00, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `rate_limits`
+--
+
+CREATE TABLE `rate_limits` (
+  `id` int(11) NOT NULL,
+  `ip_address` varchar(45) NOT NULL,
+  `action_type` varchar(50) NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `rate_limits`
+--
+
+INSERT INTO `rate_limits` (`id`, `ip_address`, `action_type`, `created_at`) VALUES
+(9, '45.191.156.132', 'password_reset', '2026-03-18 00:59:46'),
+(10, '45.191.156.132', 'password_reset', '2026-03-18 01:01:05');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `Restaurantes`
+--
+
+CREATE TABLE `Restaurantes` (
+  `ID_Restaurante` int(11) NOT NULL,
+  `Nombre_local` varchar(150) NOT NULL,
+  `logo_url` varchar(500) DEFAULT NULL,
+  `ID_direccion` int(11) DEFAULT NULL,
+  `Nombre_dueño` varchar(150) DEFAULT NULL,
+  `Telefono` varchar(20) DEFAULT NULL
+) ;
+
+--
+-- Volcado de datos para la tabla `Restaurantes`
+--
+
+INSERT INTO `Restaurantes` (`ID_Restaurante`, `Nombre_local`, `logo_url`, `ID_direccion`, `Nombre_dueño`, `Telefono`) VALUES
+(1, 'Burger Palace', 'https://ejemplo.com/logo1.png', 1, 'Carlos Gonzalez', '1144556677'),
+(2, 'Pizzeria Napoli', 'https://ejemplo.com/logo2.png', 3, 'Luigi Rossi', '1155667788');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `Usuarios`
+--
+
+CREATE TABLE `Usuarios` (
+  `ID_usuario` int(11) NOT NULL,
+  `ID_restaurante` int(11) DEFAULT NULL,
+  `Nombre` varchar(100) NOT NULL,
+  `Apellido` varchar(100) NOT NULL,
+  `Telefono` varchar(20) DEFAULT NULL,
+  `Rol` enum('superadmin','admin','recepcionista','repartidor','chef') NOT NULL,
+  `Email` varchar(150) NOT NULL,
+  `Password` varchar(255) NOT NULL,
+  `activo` tinyint(1) DEFAULT 1 COMMENT 'Usuario activo (1) o eliminado (0)',
+  `fecha_creacion` datetime DEFAULT current_timestamp() COMMENT 'Fecha de creación del usuario'
+) ;
+
+--
+-- Volcado de datos para la tabla `Usuarios`
+--
+
+INSERT INTO `Usuarios` (`ID_usuario`, `ID_restaurante`, `Nombre`, `Apellido`, `Telefono`, `Rol`, `Email`, `Password`, `activo`, `fecha_creacion`) VALUES
+(1, NULL, 'Admin', 'General', '1100000000', 'superadmin', 'pierreetche2006@gmail.com', '$2y$10$/IKytnF7w/JxQ45YEh/Kf.Uog8ezHZ3YzPiPDGeNQWve7AS1OvMta', 1, '2026-03-18 00:05:26'),
+(2, 1, 'Recepcion', 'Burger', '1122223333', 'recepcionista', 'tiagomaidana90@gmail.com', '$2y$10$ayc09obe74OtmoyZLUBz1uSZ5qnozAjFRumvEKNIi6qyE//gE.kue', 1, '2026-03-18 00:05:26'),
+(3, 2, 'Admin', 'Pizzeria', '1133334444', 'admin', 'tiagomaidana15@gmail.com', '$2y$10$NytnrSbxeRQg3Htb4lkb1eqSE9v6gEzu2VOqqgGjutzF4uoWY.gFC', 1, '2026-03-18 00:05:26'),
+(4, NULL, 'Pedro', 'Repartidor', '1144445555', 'repartidor', 'rutaslibres17@gmail.com', '$2y$10$ObKw3Rupdtr0q2s7cA.Jt.DS6H47KFpkyv6HXiBazNU6Q5ck9qGGu', 1, '2026-03-18 00:05:26'),
+(5, 1, 'juan', 'perez', '2241121314', 'chef', 'info@zatmeni.ar', '$2y$10$8AtguhZsV.Oan9h8p36acek29JKcAasjZMlym9YUtnMvxeMRiAx6q', 1, '2026-03-18 00:05:26');
+
+--
+-- Índices para tablas volcadas
+--
+
+--
+-- Indices de la tabla `Clientes`
+--
+ALTER TABLE `Clientes`
+  ADD PRIMARY KEY (`ID_cliente`);
+
+--
+-- Indices de la tabla `Detalle_pedido`
+--
+ALTER TABLE `Detalle_pedido`
+  ADD PRIMARY KEY (`ID_detalle`),
+  ADD KEY `ID_pedido` (`ID_pedido`),
+  ADD KEY `ID_producto` (`ID_producto`);
+
+--
+-- Indices de la tabla `Direcciones`
+--
+ALTER TABLE `Direcciones`
+  ADD PRIMARY KEY (`ID_direccion`);
+
+--
+-- Indices de la tabla `password_resets`
+--
+ALTER TABLE `password_resets`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `token_hash` (`token_hash`);
+
+--
+-- Indices de la tabla `Pedidos`
+--
+ALTER TABLE `Pedidos`
+  ADD PRIMARY KEY (`ID_pedido`),
+  ADD KEY `ID_cliente` (`ID_cliente`),
+  ADD KEY `ID_restaurante` (`ID_restaurante`),
+  ADD KEY `ID_direccion` (`ID_direccion`),
+  ADD KEY `idx_pedidos_estado` (`Estado`),
+  ADD KEY `idx_pedidos_fecha` (`fecha_creacion`);
+
+--
+-- Indices de la tabla `Productos`
+--
+ALTER TABLE `Productos`
+  ADD PRIMARY KEY (`ID_producto`),
+  ADD KEY `ID_restaurante` (`ID_restaurante`);
+
+--
+-- Indices de la tabla `rate_limits`
+--
+ALTER TABLE `rate_limits`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `ip_address` (`ip_address`,`action_type`,`created_at`);
+
+--
+-- Indices de la tabla `Restaurantes`
+--
+ALTER TABLE `Restaurantes`
+  ADD PRIMARY KEY (`ID_Restaurante`),
+  ADD KEY `ID_direccion` (`ID_direccion`);
+
+--
+-- Indices de la tabla `Usuarios`
+--
+ALTER TABLE `Usuarios`
+  ADD PRIMARY KEY (`ID_usuario`),
+  ADD UNIQUE KEY `Email` (`Email`),
+  ADD KEY `ID_restaurante` (`ID_restaurante`),
+  ADD KEY `idx_usuarios_email` (`Email`),
+  ADD KEY `idx_usuarios_rol` (`Rol`),
+  ADD KEY `idx_usuarios_activo` (`activo`);
+
+--
+-- AUTO_INCREMENT de las tablas volcadas
+--
+
+--
+-- AUTO_INCREMENT de la tabla `Clientes`
+--
+ALTER TABLE `Clientes`
+  MODIFY `ID_cliente` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `Detalle_pedido`
+--
+ALTER TABLE `Detalle_pedido`
+  MODIFY `ID_detalle` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `Direcciones`
+--
+ALTER TABLE `Direcciones`
+  MODIFY `ID_direccion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT de la tabla `password_resets`
+--
+ALTER TABLE `password_resets`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT de la tabla `Pedidos`
+--
+ALTER TABLE `Pedidos`
+  MODIFY `ID_pedido` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT de la tabla `Productos`
+--
+ALTER TABLE `Productos`
+  MODIFY `ID_producto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT de la tabla `rate_limits`
+--
+ALTER TABLE `rate_limits`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+
+--
+-- AUTO_INCREMENT de la tabla `Restaurantes`
+--
+ALTER TABLE `Restaurantes`
+  MODIFY `ID_Restaurante` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `Usuarios`
+--
+ALTER TABLE `Usuarios`
+  MODIFY `ID_usuario` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- Restricciones para tablas volcadas
+--
+
+--
+-- Filtros para la tabla `Detalle_pedido`
+--
+ALTER TABLE `Detalle_pedido`
+  ADD CONSTRAINT `Detalle_pedido_ibfk_1` FOREIGN KEY (`ID_pedido`) REFERENCES `Pedidos` (`ID_pedido`) ON DELETE CASCADE,
+  ADD CONSTRAINT `Detalle_pedido_ibfk_2` FOREIGN KEY (`ID_producto`) REFERENCES `Productos` (`ID_producto`);
+
+--
+-- Filtros para la tabla `Pedidos`
+--
+ALTER TABLE `Pedidos`
+  ADD CONSTRAINT `Pedidos_ibfk_1` FOREIGN KEY (`ID_cliente`) REFERENCES `Clientes` (`ID_cliente`) ON DELETE CASCADE,
+  ADD CONSTRAINT `Pedidos_ibfk_2` FOREIGN KEY (`ID_restaurante`) REFERENCES `Restaurantes` (`ID_Restaurante`) ON DELETE CASCADE,
+  ADD CONSTRAINT `Pedidos_ibfk_3` FOREIGN KEY (`ID_direccion`) REFERENCES `Direcciones` (`ID_direccion`);
+
+--
+-- Filtros para la tabla `Productos`
+--
+ALTER TABLE `Productos`
+  ADD CONSTRAINT `Productos_ibfk_1` FOREIGN KEY (`ID_restaurante`) REFERENCES `Restaurantes` (`ID_Restaurante`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `Restaurantes`
+--
+ALTER TABLE `Restaurantes`
+  ADD CONSTRAINT `Restaurantes_ibfk_1` FOREIGN KEY (`ID_direccion`) REFERENCES `Direcciones` (`ID_direccion`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `Usuarios`
+--
+ALTER TABLE `Usuarios`
+  ADD CONSTRAINT `Usuarios_ibfk_1` FOREIGN KEY (`ID_restaurante`) REFERENCES `Restaurantes` (`ID_Restaurante`) ON DELETE SET NULL;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
