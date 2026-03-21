@@ -91,7 +91,7 @@ function procesarLogout() {
 
 function obtenerPedidosListos($pdo) {
     try {
-        $stmt = $pdo->prepare("SELECT ID_pedido, Total, cliente, calle, altura, Localidad FROM Pedidos WHERE estado = 'LISTO' ORDER BY ID_pedido DESC");
+        $stmt = $pdo->prepare("SELECT ID_pedido, Total, cliente, calle, altura, Localidad FROM pedidos WHERE estado = 'LISTO' ORDER BY ID_pedido DESC");
         $stmt->execute();
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
     } catch (PDOException $e) {
@@ -102,7 +102,7 @@ function obtenerPedidosListos($pdo) {
 function actualizarEstadoPedido($pdo) {
     $data = json_decode(file_get_contents("php://input"), true);
     try {
-        $stmt = $pdo->prepare("UPDATE Pedidos SET estado = :estado WHERE ID_pedido = :id");
+        $stmt = $pdo->prepare("UPDATE pedidos SET estado = :estado WHERE ID_pedido = :id");
         $stmt->execute([
             ':estado' => $data['estado'],
             ':id' => $data['id']
@@ -148,7 +148,7 @@ function procesarForgotPassword($pdo) {
             return;
         }
 
-        $stmt = $pdo->prepare("SELECT ID_usuario FROM Usuarios WHERE Email = :email LIMIT 1");
+        $stmt = $pdo->prepare("SELECT ID_usuario FROM usuarios WHERE Email = :email LIMIT 1");
         $stmt->execute([':email' => $email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -183,7 +183,7 @@ function procesarResetPassword($pdo) {
         }
 
         $pdo->beginTransaction();
-        $stmt = $pdo->prepare("UPDATE Usuarios SET Password = ? WHERE ID_usuario = ?");
+        $stmt = $pdo->prepare("UPDATE usuarios SET Password = ? WHERE ID_usuario = ?");
         $stmt->execute([password_hash($data['password'], PASSWORD_DEFAULT), $resetReq['user_id']]);
         
         $stmt = $pdo->prepare("UPDATE password_resets SET used = 1 WHERE id = ?");
@@ -241,7 +241,7 @@ function obtenerUsuarios($pdo) {
             SELECT ID_usuario, Nombre, Email, Rol, 
                    DATE_FORMAT(fecha_creacion, '%Y-%m-%d %H:%i') as fecha_creacion,
                    activo
-            FROM Usuarios 
+            FROM usuarios 
             WHERE activo = 1 
             ORDER BY fecha_creacion DESC
         ");
@@ -293,7 +293,7 @@ function obtenerUsuarioPorId($pdo) {
             SELECT ID_usuario, Nombre, Email, Rol, 
                    DATE_FORMAT(fecha_creacion, '%Y-%m-%d %H:%i') as fecha_creacion,
                    activo
-            FROM Usuarios 
+            FROM usuarios 
             WHERE ID_usuario = :id AND activo = 1
             LIMIT 1
         ");
@@ -378,7 +378,7 @@ function crearUsuario($pdo) {
 
     try {
         // Verificar si el email ya existe
-        $stmt = $pdo->prepare("SELECT ID_usuario FROM Usuarios WHERE Email = :email LIMIT 1");
+        $stmt = $pdo->prepare("SELECT ID_usuario FROM usuarios WHERE Email = :email LIMIT 1");
         $stmt->execute([':email' => $email]);
         if ($stmt->fetch()) {
             echo json_encode([
@@ -392,7 +392,7 @@ function crearUsuario($pdo) {
         // Crear usuario
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
         $stmt = $pdo->prepare("
-            INSERT INTO Usuarios (Nombre, Email, Password, Rol, activo, fecha_creacion) 
+            INSERT INTO usuarios (Nombre, Email, Password, Rol, activo, fecha_creacion) 
             VALUES (:nombre, :email, :password, :rol, 1, NOW())
         ");
         
@@ -485,7 +485,7 @@ function actualizarUsuario($pdo) {
 
     try {
         // Verificar si el usuario existe
-        $stmt = $pdo->prepare("SELECT ID_usuario FROM Usuarios WHERE ID_usuario = :id AND activo = 1 LIMIT 1");
+        $stmt = $pdo->prepare("SELECT ID_usuario FROM usuarios WHERE ID_usuario = :id AND activo = 1 LIMIT 1");
         $stmt->execute([':id' => $id]);
         if (!$stmt->fetch()) {
             echo json_encode([
@@ -497,7 +497,7 @@ function actualizarUsuario($pdo) {
         }
 
         // Verificar si el email ya existe en otro usuario
-        $stmt = $pdo->prepare("SELECT ID_usuario FROM Usuarios WHERE Email = :email AND ID_usuario != :id LIMIT 1");
+        $stmt = $pdo->prepare("SELECT ID_usuario FROM usuarios WHERE Email = :email AND ID_usuario != :id LIMIT 1");
         $stmt->execute([':email' => $email, ':id' => $id]);
         if ($stmt->fetch()) {
             echo json_encode([
@@ -515,7 +515,7 @@ function actualizarUsuario($pdo) {
             // Si se proporciona nueva contraseña
             $passwordHash = password_hash($data['password'], PASSWORD_DEFAULT);
             $stmt = $pdo->prepare("
-                UPDATE Usuarios 
+                UPDATE usuarios 
                 SET Nombre = :nombre, Email = :email, Rol = :rol, Password = :password
                 WHERE ID_usuario = :id
             ");
@@ -529,7 +529,7 @@ function actualizarUsuario($pdo) {
         } else {
             // Sin cambiar contraseña
             $stmt = $pdo->prepare("
-                UPDATE Usuarios 
+                UPDATE usuarios 
                 SET Nombre = :nombre, Email = :email, Rol = :rol
                 WHERE ID_usuario = :id
             ");
@@ -598,7 +598,7 @@ function eliminarUsuario($pdo) {
 
     try {
         // Verificar si el usuario existe
-        $stmt = $pdo->prepare("SELECT ID_usuario FROM Usuarios WHERE ID_usuario = :id AND activo = 1 LIMIT 1");
+        $stmt = $pdo->prepare("SELECT ID_usuario FROM usuarios WHERE ID_usuario = :id AND activo = 1 LIMIT 1");
         $stmt->execute([':id' => $id]);
         if (!$stmt->fetch()) {
             echo json_encode([
@@ -610,7 +610,7 @@ function eliminarUsuario($pdo) {
         }
 
         // Soft delete (marcar como inactivo)
-        $stmt = $pdo->prepare("UPDATE Usuarios SET activo = 0 WHERE ID_usuario = :id");
+        $stmt = $pdo->prepare("UPDATE usuarios SET activo = 0 WHERE ID_usuario = :id");
         $stmt->execute([':id' => $id]);
 
         echo json_encode([
@@ -643,19 +643,19 @@ function obtenerEstadisticas($pdo) {
 
     try {
         // Total de pedidos
-        $stmt = $pdo->query("SELECT COUNT(*) as total FROM Pedidos");
+        $stmt = $pdo->query("SELECT COUNT(*) as total FROM pedidos");
         $total_pedidos = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
         // Pendientes
-        $stmt = $pdo->query("SELECT COUNT(*) as total FROM Pedidos WHERE estado = 'PENDIENTE'");
+        $stmt = $pdo->query("SELECT COUNT(*) as total FROM pedidos WHERE estado = 'PENDIENTE'");
         $pendientes = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
         // En camino
-        $stmt = $pdo->query("SELECT COUNT(*) as total FROM Pedidos WHERE estado = 'EN_CAMINO'");
+        $stmt = $pdo->query("SELECT COUNT(*) as total FROM pedidos WHERE estado = 'EN_CAMINO'");
         $en_camino = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
         // Total facturado
-        $stmt = $pdo->query("SELECT COALESCE(SUM(Total), 0) as total FROM Pedidos WHERE estado = 'ENTREGADO'");
+        $stmt = $pdo->query("SELECT COALESCE(SUM(Total), 0) as total FROM pedidos WHERE estado = 'ENTREGADO'");
         $facturado = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
         echo json_encode([
@@ -691,7 +691,7 @@ function obtenerTodosPedidos($pdo) {
         $stmt = $pdo->prepare("
             SELECT ID_pedido, cliente, calle, altura, Total, estado,
                    DATE_FORMAT(fecha_creacion, '%Y-%m-%d %H:%i') as fecha_creacion
-            FROM Pedidos 
+            FROM pedidos 
             ORDER BY ID_pedido DESC 
             LIMIT 100
         ");
@@ -748,7 +748,7 @@ function crearPedido($pdo) {
 
     try {
         $stmt = $pdo->prepare("
-            INSERT INTO Pedidos (cliente, calle, altura, Localidad, Total, detalle, estado, fecha_creacion)
+            INSERT INTO pedidos (cliente, calle, altura, Localidad, Total, detalle, estado, fecha_creacion)
             VALUES (:cliente, :calle, :altura, :localidad, :total, :detalle, 'PENDIENTE', NOW())
         ");
         
@@ -791,7 +791,7 @@ function obtenerPedidosRecientes($pdo) {
         $stmt = $pdo->prepare("
             SELECT ID_pedido, cliente, calle, altura, Total, estado,
                    DATE_FORMAT(fecha_creacion, '%H:%i') as fecha_creacion
-            FROM Pedidos 
+            FROM pedidos 
             ORDER BY ID_pedido DESC 
             LIMIT 10
         ");
@@ -830,7 +830,7 @@ function obtenerPedidosPendientes($pdo) {
         $stmt = $pdo->prepare("
             SELECT ID_pedido, cliente, Total, detalle,
                    DATE_FORMAT(fecha_creacion, '%H:%i') as fecha_creacion
-            FROM Pedidos 
+            FROM pedidos 
             WHERE estado = 'PENDIENTE'
             ORDER BY ID_pedido ASC
         ");
@@ -874,7 +874,7 @@ function marcarPedidoListo($pdo) {
     }
 
     try {
-        $stmt = $pdo->prepare("UPDATE Pedidos SET estado = 'LISTO' WHERE ID_pedido = :id");
+        $stmt = $pdo->prepare("UPDATE pedidos SET estado = 'LISTO' WHERE ID_pedido = :id");
         $stmt->execute([':id' => $id]);
 
         echo json_encode([
