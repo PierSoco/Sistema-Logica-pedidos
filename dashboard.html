@@ -877,22 +877,554 @@
 }
 
 /* --- SCROLLBAR PERSONALIZADO --- */
-.lista-pedidos-recientes::-webkit-scrollbar {
-    width: 6px;
+.lista-pedidos-recientes::-webkit-scrollbar { width: 6px; }
+.lista-pedidos-recientes::-webkit-scrollbar-track { background:#f3f4f6; border-radius:10px; }
+.lista-pedidos-recientes::-webkit-scrollbar-thumb { background:#6366f1; border-radius:10px; }
+.lista-pedidos-recientes::-webkit-scrollbar-thumb:hover { background:#4f46e5; }
+
+/* ==========================================
+   ESTILOS RECEPCIONISTA — REDISEÑO COMPLETO
+   ========================================== */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@700;800&display=swap');
+
+/* --- Tabla de pedidos recepcionista --- */
+.crud-table { width:100%; border-collapse:collapse; background:white; font-family:'DM Sans',sans-serif; }
+.crud-table thead tr { background:#0f172a; color:white; }
+.crud-table thead th { padding:14px 16px; text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.8px; }
+.crud-table tbody tr { border-bottom:1px solid #f1f5f9; transition:background .12s; }
+.crud-table tbody tr:hover { background:#fafbff; }
+.crud-table tbody td { padding:14px 16px; font-size:13.5px; color:#334155; vertical-align:middle; }
+.table-responsive { overflow-x:auto; border-radius:10px; border:1px solid #e2e8f0; }
+
+/* --- Precio tag --- */
+.precio-tag { font-weight:700; color:#0d9488; font-size:14px; letter-spacing:-.3px; }
+
+/* --- Estado chips inline --- */
+.select-estado {
+    padding:5px 10px 5px 8px;
+    border:1.5px solid #e2e8f0;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
+    background:white;
+    cursor:pointer;
+    transition:all .2s;
+    min-width:140px;
+    appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 8px center;
+    padding-right:24px;
+}
+.select-estado:focus { outline:none; border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,.12); }
+
+/* --- Botones de acción en tabla --- */
+.btn-icon {
+    width:32px; height:32px;
+    border:none; border-radius:8px;
+    cursor:pointer; font-size:13px;
+    background:#f1f5f9; color:#475569;
+    transition:all .18s;
+    display:inline-flex; align-items:center; justify-content:center;
+    margin-right:4px;
+}
+.btn-icon:hover { background:#e2e8f0; transform:translateY(-1px); color:#1e293b; }
+.btn-icon.btn-danger { background:#fff1f2; color:#e11d48; }
+.btn-icon.btn-danger:hover { background:#ffe4e6; }
+
+/* --- Buscador general --- */
+.search-bar-container { position:relative; }
+.search-bar-container input {
+    padding:10px 16px 10px 40px;
+    border:1.5px solid #e2e8f0;
+    border-radius:10px;
+    font-size:13.5px;
+    font-family:'DM Sans',sans-serif;
+    transition:all .2s;
+    background:#f8fafc;
+}
+.search-bar-container::before {
+    content:'\f002';
+    font-family:'Font Awesome 6 Free';
+    font-weight:900;
+    position:absolute;
+    left:13px; top:50%;
+    transform:translateY(-50%);
+    color:#94a3b8;
+    font-size:13px;
+    pointer-events:none;
+}
+.search-bar-container input:focus {
+    outline:none; border-color:#6366f1;
+    background:white;
+    box-shadow:0 0 0 3px rgba(99,102,241,.1);
 }
 
-.lista-pedidos-recientes::-webkit-scrollbar-track {
-    background: #f3f4f6;
-    border-radius: 10px;
+/* ==========================================
+   MODAL NUEVO PEDIDO — REDISEÑO TOTAL
+   ========================================== */
+.modal-overlay {
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(15,23,42,.55);
+    backdrop-filter:blur(6px);
+    z-index:1000;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+}
+.modal-overlay.visible { display:flex; animation:overlayIn .22s ease; }
+@keyframes overlayIn { from{opacity:0} to{opacity:1} }
+
+.modal-sheet {
+    background:white;
+    border-radius:20px;
+    width:100%;
+    max-width:640px;
+    max-height:92vh;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 32px 80px rgba(0,0,0,.22), 0 0 0 1px rgba(255,255,255,.06);
+    animation:sheetIn .28s cubic-bezier(.22,.68,0,1.2);
+}
+@keyframes sheetIn {
+    from { transform:translateY(40px) scale(.97); opacity:0; }
+    to   { transform:translateY(0)    scale(1);   opacity:1; }
 }
 
-.lista-pedidos-recientes::-webkit-scrollbar-thumb {
-    background: #6366f1;
-    border-radius: 10px;
+/* Header del modal */
+.modal-sheet-header {
+    padding:22px 28px 18px;
+    border-bottom:1px solid #f1f5f9;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-shrink:0;
+    background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
+    color:white;
+    border-radius:20px 20px 0 0;
+}
+.modal-sheet-header-left { display:flex; align-items:center; gap:12px; }
+.modal-sheet-icon {
+    width:40px; height:40px;
+    background:rgba(255,255,255,.12);
+    border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px;
+}
+.modal-sheet-title { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; color:white; margin:0; }
+.modal-sheet-sub   { font-size:12px; color:rgba(255,255,255,.55); margin:2px 0 0; }
+.modal-close-btn {
+    width:34px; height:34px;
+    background:rgba(255,255,255,.1);
+    border:none; border-radius:8px;
+    color:rgba(255,255,255,.7);
+    cursor:pointer; font-size:16px;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .18s;
+}
+.modal-close-btn:hover { background:rgba(255,255,255,.2); color:white; }
+
+/* Steps indicator */
+.modal-steps {
+    display:flex;
+    padding:16px 28px;
+    gap:0;
+    background:#f8fafc;
+    border-bottom:1px solid #f1f5f9;
+    flex-shrink:0;
+}
+.modal-step {
+    flex:1;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+    padding:6px 0;
+    position:relative;
+}
+.modal-step:not(:last-child)::after {
+    content:'';
+    position:absolute;
+    right:0; top:50%;
+    transform:translateY(-50%);
+    width:24px; height:1px;
+    background:#e2e8f0;
+    right:-12px;
+    z-index:1;
+}
+.step-num {
+    width:26px; height:26px;
+    border-radius:50%;
+    background:#e2e8f0;
+    color:#94a3b8;
+    font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .2s;
+    flex-shrink:0;
+}
+.step-label { font-size:12px; font-weight:600; color:#94a3b8; transition:color .2s; white-space:nowrap; }
+.modal-step.active .step-num   { background:#6366f1; color:white; box-shadow:0 0 0 4px rgba(99,102,241,.2); }
+.modal-step.active .step-label { color:#1e293b; }
+.modal-step.done .step-num     { background:#0d9488; color:white; }
+.modal-step.done .step-label   { color:#0d9488; }
+
+/* Cuerpo scrollable */
+.modal-sheet-body {
+    flex:1;
+    overflow-y:auto;
+    padding:24px 28px;
+    scrollbar-width:thin;
+    scrollbar-color:#e2e8f0 transparent;
 }
 
-.lista-pedidos-recientes::-webkit-scrollbar-thumb:hover {
-    background: #4f46e5;
+/* Paneles de steps */
+.step-panel { display:none; }
+.step-panel.active { display:block; animation:panelIn .2s ease; }
+@keyframes panelIn { from{opacity:0;transform:translateX(8px)} to{opacity:1;transform:translateX(0)} }
+
+/* Sección dentro del step */
+.form-section-label {
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.8px;
+    color:#94a3b8;
+    margin:0 0 14px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+.form-section-label::after {
+    content:'';
+    flex:1;
+    height:1px;
+    background:#f1f5f9;
+}
+
+/* Inputs con label flotante */
+.field-wrap {
+    position:relative;
+    margin-bottom:14px;
+}
+.field-wrap input,
+.field-wrap textarea {
+    width:100%;
+    padding:14px 14px 6px;
+    border:1.5px solid #e2e8f0;
+    border-radius:10px;
+    font-size:14px;
+    font-family:'DM Sans',sans-serif;
+    background:white;
+    transition:all .2s;
+    box-sizing:border-box;
+    color:#1e293b;
+}
+.field-wrap input:focus,
+.field-wrap textarea:focus {
+    outline:none;
+    border-color:#6366f1;
+    box-shadow:0 0 0 3px rgba(99,102,241,.1);
+}
+.field-wrap label {
+    position:absolute;
+    top:50%; left:14px;
+    transform:translateY(-50%);
+    font-size:13px;
+    color:#94a3b8;
+    pointer-events:none;
+    transition:all .18s;
+    font-family:'DM Sans',sans-serif;
+    background:transparent;
+}
+.field-wrap input:focus ~ label,
+.field-wrap input:not(:placeholder-shown) ~ label,
+.field-wrap textarea:focus ~ label,
+.field-wrap textarea:not(:placeholder-shown) ~ label {
+    top:8px;
+    transform:none;
+    font-size:10px;
+    font-weight:700;
+    color:#6366f1;
+    letter-spacing:.4px;
+    text-transform:uppercase;
+}
+.field-wrap input { padding-top:20px; padding-bottom:8px; }
+.field-wrap input::placeholder,
+.field-wrap textarea::placeholder { color:transparent; }
+
+/* Input con icono derecho */
+.field-wrap .field-icon {
+    position:absolute;
+    right:12px; top:50%;
+    transform:translateY(-50%);
+    color:#94a3b8;
+    font-size:13px;
+    pointer-events:none;
+}
+.field-wrap.has-badge input { padding-right:72px; }
+.field-localidad-badge {
+    position:absolute;
+    right:10px; top:50%;
+    transform:translateY(-50%);
+    background:#0d9488;
+    color:white;
+    font-size:10px;
+    font-weight:700;
+    padding:3px 8px;
+    border-radius:10px;
+    letter-spacing:.3px;
+}
+
+/* Grid 2 columnas */
+.fields-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.fields-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+
+/* --- Buscador de productos --- */
+.product-search-wrap {
+    position:relative;
+    margin-bottom:6px;
+}
+.product-search-wrap input {
+    width:100%;
+    padding:13px 44px 13px 16px;
+    border:1.5px solid #e2e8f0;
+    border-radius:10px;
+    font-size:14px;
+    font-family:'DM Sans',sans-serif;
+    background:#f8fafc;
+    transition:all .2s;
+    box-sizing:border-box;
+}
+.product-search-wrap input:focus {
+    outline:none;
+    border-color:#6366f1;
+    background:white;
+    box-shadow:0 0 0 3px rgba(99,102,241,.1);
+}
+.product-search-wrap .search-icon {
+    position:absolute;
+    right:14px; top:50%;
+    transform:translateY(-50%);
+    color:#94a3b8; font-size:14px;
+    pointer-events:none;
+}
+/* Dropdown */
+.product-dropdown {
+    position:absolute;
+    top:calc(100% + 4px); left:0; right:0;
+    background:white;
+    border:1.5px solid #e2e8f0;
+    border-radius:12px;
+    box-shadow:0 16px 40px rgba(0,0,0,.14);
+    z-index:200;
+    overflow:hidden;
+    max-height:220px;
+    overflow-y:auto;
+    display:none;
+}
+.product-dropdown.open { display:block; animation:dropIn .16s ease; }
+@keyframes dropIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+.product-dropdown li {
+    list-style:none;
+    padding:11px 16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    cursor:pointer;
+    font-size:13.5px;
+    font-family:'DM Sans',sans-serif;
+    border-bottom:1px solid #f8fafc;
+    transition:background .12s;
+}
+.product-dropdown li:hover { background:#f8fafc; }
+.product-dropdown li .prod-name { color:#1e293b; font-weight:500; }
+.product-dropdown li .prod-meta { display:flex; align-items:center; gap:8px; }
+.prod-price { color:#0d9488; font-weight:700; font-size:13px; }
+.prod-stock { font-size:11px; color:#94a3b8; background:#f1f5f9; padding:2px 7px; border-radius:8px; }
+.prod-stock.low { color:#d97706; background:#fef3c7; }
+.prod-stock.out { color:#e11d48; background:#fff1f2; }
+.prod-no-results { padding:16px; text-align:center; color:#94a3b8; font-size:13px; font-style:italic; }
+
+/* Fila de cantidad + agregar */
+.add-product-row {
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin-bottom:16px;
+}
+.qty-input-wrap {
+    display:flex;
+    align-items:center;
+    border:1.5px solid #e2e8f0;
+    border-radius:10px;
+    overflow:hidden;
+    background:white;
+    flex-shrink:0;
+}
+.qty-btn {
+    width:32px; height:40px;
+    border:none; background:none;
+    cursor:pointer;
+    font-size:16px; color:#475569;
+    transition:background .15s;
+    display:flex; align-items:center; justify-content:center;
+}
+.qty-btn:hover { background:#f1f5f9; }
+.qty-input-wrap input[type=number] {
+    width:46px; border:none;
+    text-align:center;
+    font-size:15px; font-weight:600;
+    font-family:'DM Sans',sans-serif;
+    padding:0;
+    -moz-appearance:textfield;
+}
+.qty-input-wrap input[type=number]::-webkit-outer-spin-button,
+.qty-input-wrap input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; }
+.btn-add-product {
+    flex:1;
+    padding:10px 16px;
+    background:#6366f1;
+    color:white;
+    border:none;
+    border-radius:10px;
+    font-size:13.5px;
+    font-weight:600;
+    font-family:'DM Sans',sans-serif;
+    cursor:pointer;
+    transition:all .18s;
+    display:flex; align-items:center; justify-content:center; gap:7px;
+}
+.btn-add-product:hover { background:#4f46e5; transform:translateY(-1px); box-shadow:0 6px 18px rgba(99,102,241,.35); }
+
+/* Carrito */
+.carrito-empty {
+    text-align:center;
+    padding:24px;
+    color:#94a3b8;
+    font-size:13px;
+    border:2px dashed #e2e8f0;
+    border-radius:12px;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+}
+.carrito-empty i { font-size:28px; color:#cbd5e1; }
+.carrito-items { display:flex; flex-direction:column; gap:8px; }
+.carrito-item {
+    display:grid;
+    grid-template-columns:1fr auto auto auto;
+    gap:10px;
+    align-items:center;
+    background:#f8fafc;
+    border:1.5px solid #f1f5f9;
+    border-radius:10px;
+    padding:10px 14px;
+    transition:all .15s;
+    animation:itemIn .2s ease;
+}
+@keyframes itemIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+.carrito-item:hover { border-color:#e2e8f0; background:#f1f5f9; }
+.item-nombre { font-size:13.5px; font-weight:500; color:#1e293b; }
+.item-precio-unit { font-size:11px; color:#94a3b8; }
+.item-qty-ctrl { display:flex; align-items:center; gap:4px; }
+.item-qty-ctrl input {
+    width:38px; height:28px;
+    border:1.5px solid #e2e8f0; border-radius:7px;
+    text-align:center; font-size:13px; font-weight:600;
+    font-family:'DM Sans',sans-serif;
+    -moz-appearance:textfield;
+}
+.item-qty-ctrl input::-webkit-outer-spin-button,
+.item-qty-ctrl input::-webkit-inner-spin-button { -webkit-appearance:none; }
+.item-subtotal { font-size:13.5px; font-weight:700; color:#0d9488; min-width:64px; text-align:right; }
+.item-remove {
+    width:28px; height:28px;
+    border:none; border-radius:7px;
+    background:#fff1f2; color:#e11d48;
+    cursor:pointer; font-size:12px;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .15s;
+}
+.item-remove:hover { background:#ffe4e6; transform:scale(1.1); }
+
+/* Total bar */
+.total-bar {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:16px;
+    padding:14px 18px;
+    background:linear-gradient(135deg,#0f172a,#1e293b);
+    border-radius:12px;
+    color:white;
+}
+.total-bar-label { font-size:13px; color:rgba(255,255,255,.6); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+.total-bar-amount { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:#34d399; }
+
+/* Footer del modal */
+.modal-sheet-footer {
+    padding:16px 28px;
+    border-top:1px solid #f1f5f9;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-shrink:0;
+    background:#fafbff;
+    border-radius:0 0 20px 20px;
+}
+.btn-prev, .btn-next, .btn-submit-pedido {
+    padding:11px 22px;
+    border-radius:10px;
+    font-size:13.5px;
+    font-weight:600;
+    font-family:'DM Sans',sans-serif;
+    border:none;
+    cursor:pointer;
+    display:flex; align-items:center; gap:7px;
+    transition:all .18s;
+}
+.btn-prev { background:#f1f5f9; color:#475569; }
+.btn-prev:hover { background:#e2e8f0; }
+.btn-next { background:#6366f1; color:white; }
+.btn-next:hover { background:#4f46e5; box-shadow:0 6px 18px rgba(99,102,241,.35); transform:translateY(-1px); }
+.btn-submit-pedido { background:linear-gradient(135deg,#0d9488,#059669); color:white; }
+.btn-submit-pedido:hover { box-shadow:0 6px 18px rgba(13,148,136,.4); transform:translateY(-1px); }
+.btn-submit-pedido:disabled { opacity:.6; cursor:not-allowed; transform:none; box-shadow:none; }
+
+/* --- Modal detalle pedido --- */
+#modal-detalle-pedido .modal-sheet { max-width:560px; }
+.detalle-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+.detalle-card {
+    background:#f8fafc;
+    border:1px solid #f1f5f9;
+    border-radius:12px;
+    padding:16px;
+}
+.detalle-card-title {
+    font-size:10px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.8px; color:#94a3b8; margin:0 0 10px;
+    display:flex; align-items:center; gap:5px;
+}
+.detalle-card p { margin:5px 0; font-size:13.5px; color:#334155; }
+.detalle-card p strong { color:#1e293b; }
+.tabla-detalle-pedido { width:100%; border-collapse:collapse; font-size:13px; }
+.tabla-detalle-pedido th { background:#f1f5f9; padding:9px 12px; text-align:left; font-weight:600; color:#475569; font-size:11px; text-transform:uppercase; letter-spacing:.5px; }
+.tabla-detalle-pedido td { padding:10px 12px; border-bottom:1px solid #f8fafc; color:#334155; }
+.tabla-detalle-pedido tbody tr:last-child td { border-bottom:none; }
+
+/* --- Badge preparando --- */
+.badge-preparando { background:#dbeafe; color:#1e40af; }
+
+/* Responsive */
+@media (max-width:600px) {
+    .fields-row, .fields-row-3 { grid-template-columns:1fr; }
+    .detalle-grid { grid-template-columns:1fr; }
+    .modal-sheet-body { padding:16px 18px; }
+    .modal-sheet-footer { padding:14px 18px; }
+    .modal-sheet-header { padding:18px 18px 14px; }
+    .modal-steps { padding:12px 18px; }
+    .carrito-item { grid-template-columns:1fr auto auto; }
+    .item-precio-unit { display:none; }
 }
     </style>
 </head>
@@ -1114,109 +1646,42 @@
 
             <section id="panel-recepcionista" class="panel-section hidden">
                 <p class="panel-title">Recep<em>ción</em></p>
-                <p class="panel-subtitle">Registro e ingreso de nuevos pedidos al sistema.</p>
+                <p class="panel-subtitle">Gestión de ingresos y nuevos despachos.</p>
 
-                <div class="recepcion-grid">
-                    <!-- Formulario de nuevo pedido -->
-                    <div class="recepcion-form-container">
-                        <h3><i class="fa-solid fa-plus-circle"></i> Nuevo Pedido</h3>
-                        
-                        <form id="form-pedido" class="form-pedido">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="pedido-cliente">
-                                        <i class="fa-solid fa-user"></i>
-                                        Cliente *
-                                    </label>
-                                    <input 
-                                        type="text" 
-                                        id="pedido-cliente" 
-                                        required
-                                        placeholder="Nombre del cliente"
-                                    >
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="pedido-total">
-                                        <i class="fa-solid fa-dollar-sign"></i>
-                                        Total *
-                                    </label>
-                                    <input 
-                                        type="number" 
-                                        id="pedido-total" 
-                                        required
-                                        step="0.01"
-                                        min="0"
-                                        placeholder="0.00"
-                                    >
-                                </div>
+                <div class="crud-container">
+                    <div class="crud-header">
+                        <h2><i class="fa-solid fa-list-check"></i> Pedidos Actuales</h2>
+                        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <div class="search-bar-container">
+                                <input type="text" id="buscador-pedidos-gral"
+                                       placeholder="🔍 Buscar por N°, cliente, dirección..."
+                                       style="width:260px;">
                             </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="pedido-calle">
-                                        <i class="fa-solid fa-road"></i>
-                                        Calle *
-                                    </label>
-                                    <input 
-                                        type="text" 
-                                        id="pedido-calle" 
-                                        required
-                                        placeholder="Nombre de la calle"
-                                    >
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="pedido-altura">
-                                        <i class="fa-solid fa-hashtag"></i>
-                                        Altura *
-                                    </label>
-                                    <input 
-                                        type="text" 
-                                        id="pedido-altura" 
-                                        required
-                                        placeholder="1234"
-                                    >
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="pedido-localidad">
-                                    <i class="fa-solid fa-map-marker-alt"></i>
-                                    Localidad
-                                </label>
-                                <input 
-                                    type="text" 
-                                    id="pedido-localidad"
-                                    placeholder="Ciudad o localidad"
-                                >
-                            </div>
-
-                            <div class="form-group">
-                                <label for="pedido-detalle">
-                                    <i class="fa-solid fa-note-sticky"></i>
-                                    Detalle del Pedido
-                                </label>
-                                <textarea 
-                                    id="pedido-detalle"
-                                    rows="3"
-                                    placeholder="Ej: 2 pizzas medianas, 1 empanadas..."
-                                ></textarea>
-                            </div>
-
-                            <button type="submit" class="btn-primary btn-block">
-                                <i class="fa-solid fa-paper-plane"></i>
-                                Registrar Pedido
+                            <button class="btn-primary" onclick="recargarPedidosActuales()" title="Actualizar lista">
+                                <i class="fa-solid fa-rotate-right"></i>
                             </button>
-                        </form>
-                    </div>
-
-                    <!-- Pedidos recientes -->
-                    <div class="recepcion-pedidos-container">
-                        <h3><i class="fa-solid fa-clock"></i> Pedidos Recientes</h3>
-                        <div id="lista-pedidos-recientes" class="lista-pedidos-recientes">
-                            <p class="text-center">Cargando...</p>
+                            <button class="btn-primary" onclick="abrirModalNuevoPedido()">
+                                <i class="fa-solid fa-plus"></i> Nuevo Pedido
+                            </button>
                         </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="crud-table" id="tabla-pedidos-recepcion">
+                            <thead>
+                                <tr>
+                                    <th>N° Pedido</th>
+                                    <th>Cliente</th>
+                                    <th>Direcci&#xF3;n</th>
+                                    <th>Detalle</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="7" style="text-align:center;padding:24px;color:#888;">Cargando pedidos...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
@@ -1266,6 +1731,183 @@
                     </div>
                 </div>
             </section>
+
+
+            <!-- MODAL: NUEVO PEDIDO — DISEÑO POR STEPS -->
+            <div id="modal-nuevo-pedido" class="modal-overlay">
+                <div class="modal-sheet">
+
+                    <!-- Header -->
+                    <div class="modal-sheet-header">
+                        <div class="modal-sheet-header-left">
+                            <div class="modal-sheet-icon">🛵</div>
+                            <div>
+                                <p class="modal-sheet-title">Nuevo Pedido</p>
+                                <p class="modal-sheet-sub">Completá los datos en 3 pasos</p>
+                            </div>
+                        </div>
+                        <button class="modal-close-btn" onclick="cerrarModalNuevoPedido()">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Steps indicator -->
+                    <div class="modal-steps">
+                        <div class="modal-step active" id="step-ind-1" onclick="irStep(1)">
+                            <div class="step-num">1</div>
+                            <span class="step-label">Cliente</span>
+                        </div>
+                        <div class="modal-step" id="step-ind-2" onclick="irStep(2)">
+                            <div class="step-num">2</div>
+                            <span class="step-label">Dirección</span>
+                        </div>
+                        <div class="modal-step" id="step-ind-3" onclick="irStep(3)">
+                            <div class="step-num">3</div>
+                            <span class="step-label">Productos</span>
+                        </div>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="modal-sheet-body">
+                        <form id="form-nuevo-pedido" onsubmit="event.preventDefault();">
+
+                            <!-- STEP 1: CLIENTE -->
+                            <div class="step-panel active" id="step-panel-1">
+                                <p class="form-section-label"><i class="fa-solid fa-user"></i> Datos del cliente</p>
+                                <div class="fields-row">
+                                    <div class="field-wrap">
+                                        <input type="text" id="cliente-nombre" placeholder=" " required autocomplete="off">
+                                        <label>Nombre *</label>
+                                    </div>
+                                    <div class="field-wrap">
+                                        <input type="text" id="cliente-apellido" placeholder=" " required autocomplete="off">
+                                        <label>Apellido *</label>
+                                    </div>
+                                </div>
+                                <div class="field-wrap">
+                                    <input type="tel" id="cliente-telefono" placeholder=" " required autocomplete="off">
+                                    <label>Teléfono *</label>
+                                    <i class="fa-solid fa-phone field-icon"></i>
+                                </div>
+                            </div>
+
+                            <!-- STEP 2: DIRECCIÓN -->
+                            <div class="step-panel" id="step-panel-2">
+                                <p class="form-section-label"><i class="fa-solid fa-map-marker-alt"></i> Dirección de entrega</p>
+                                <div class="fields-row">
+                                    <div class="field-wrap">
+                                        <input type="text" id="dir-calle" placeholder=" " required autocomplete="off">
+                                        <label>Calle *</label>
+                                    </div>
+                                    <div class="field-wrap">
+                                        <input type="text" id="dir-numero" placeholder=" " required autocomplete="off">
+                                        <label>Número *</label>
+                                    </div>
+                                </div>
+                                <div class="fields-row">
+                                    <div class="field-wrap">
+                                        <input type="text" id="dir-piso" placeholder=" " autocomplete="off">
+                                        <label>Piso / Depto</label>
+                                    </div>
+                                    <div class="field-wrap">
+                                        <input type="text" id="dir-ref" placeholder=" " autocomplete="off">
+                                        <label>Referencia</label>
+                                    </div>
+                                </div>
+                                <div class="field-wrap has-badge">
+                                    <input type="text" id="dir-localidad" placeholder=" " readonly
+                                           style="background:#f8fafc; cursor:default; color:#0d9488; font-weight:600;">
+                                    <label>Localidad del restaurante</label>
+                                    <span class="field-localidad-badge">
+                                        <i class="fa-solid fa-store"></i> Auto
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- STEP 3: PRODUCTOS -->
+                            <div class="step-panel" id="step-panel-3">
+                                <p class="form-section-label"><i class="fa-solid fa-utensils"></i> Búsqueda de productos</p>
+
+                                <div class="product-search-wrap">
+                                    <input type="text" id="buscador-producto"
+                                           placeholder="Escribí el nombre del producto..."
+                                           oninput="buscarProductosLive()"
+                                           autocomplete="off">
+                                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                                    <ul id="resultados-busqueda-productos" class="product-dropdown"></ul>
+                                </div>
+
+                                <div class="add-product-row">
+                                    <div class="qty-input-wrap">
+                                        <button type="button" class="qty-btn" onclick="cambiarCantTemp(-1)">−</button>
+                                        <input type="number" id="cantidad-producto" value="1" min="1">
+                                        <button type="button" class="qty-btn" onclick="cambiarCantTemp(1)">+</button>
+                                    </div>
+                                    <button type="button" class="btn-add-product" onclick="agregarProductoAlCarrito()">
+                                        <i class="fa-solid fa-cart-plus"></i>
+                                        Agregar al pedido
+                                    </button>
+                                </div>
+
+                                <p class="form-section-label" style="margin-top:4px;"><i class="fa-solid fa-receipt"></i> Resumen del pedido</p>
+
+                                <div id="carrito-wrapper">
+                                    <div class="carrito-empty" id="carrito-vacio">
+                                        <i class="fa-solid fa-basket-shopping"></i>
+                                        <span>Todavía no agregaste productos</span>
+                                    </div>
+                                    <div class="carrito-items" id="lista-carrito"></div>
+                                </div>
+
+                                <div class="total-bar" id="total-bar" style="display:none;">
+                                    <span class="total-bar-label">Total del pedido</span>
+                                    <span class="total-bar-amount" id="pedido-total-calculado">$0.00</span>
+                                </div>
+
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Footer con navegación -->
+                    <div class="modal-sheet-footer">
+                        <button class="btn-prev" id="btn-step-prev" onclick="navegarStep(-1)" style="display:none;">
+                            <i class="fa-solid fa-arrow-left"></i> Anterior
+                        </button>
+                        <span id="step-counter" style="font-size:12px;color:#94a3b8;font-weight:600;">Paso 1 de 3</span>
+                        <div style="display:flex;gap:8px;">
+                            <button class="btn-next" id="btn-step-next" onclick="navegarStep(1)">
+                                Siguiente <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                            <button class="btn-submit-pedido" id="btn-guardar-pedido"
+                                    onclick="guardarNuevoPedido()" style="display:none;">
+                                <i class="fa-solid fa-check"></i> Confirmar pedido
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- MODAL: DETALLE DE PEDIDO -->
+            <div id="modal-detalle-pedido" class="modal-overlay">
+                <div class="modal-sheet">
+                    <div class="modal-sheet-header">
+                        <div class="modal-sheet-header-left">
+                            <div class="modal-sheet-icon">📋</div>
+                            <div>
+                                <p class="modal-sheet-title" id="detalle-pedido-titulo">Detalle del Pedido</p>
+                                <p class="modal-sheet-sub">Información completa</p>
+                            </div>
+                        </div>
+                        <button class="modal-close-btn" onclick="cerrarModalDetalle()">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div class="modal-sheet-body" id="detalle-pedido-contenido">
+                        <p style="text-align:center;color:#94a3b8;padding:32px 0;">Cargando...</p>
+                    </div>
+                </div>
+            </div>
 
         </main>
     </div>

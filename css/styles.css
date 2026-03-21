@@ -132,7 +132,7 @@ body::before {
 }
 
 /* ── UTILITIES ──────────────────────── */
-.hidden { display: none !important; }
+.hidden { display: none; }
 
 /* ── APP LAYOUT ─────────────────────── */
 .app-wrapper {
@@ -1131,4 +1131,22 @@ body.home-body { overflow-x: hidden; }
     .bg-watermark {
         font-size: 80vw;
     }
+}
+
+#resultados-busqueda-productos {
+    background: var(--bg3);
+    border: 1px solid var(--border-hi);
+    border-radius: 8px;
+    margin-top: 5px;
+    max-height: 200px;
+    overflow-y: auto;
+    position: absolute;
+    width: 100%;
+    z-index: 100;
+    list-style: none;
+    padding: 0;
+}
+
+#resultados-busqueda-productos li:hover {
+    background: rgba(255,255,255,0.05);
 }
