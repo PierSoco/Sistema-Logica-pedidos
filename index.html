@@ -5,26 +5,118 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RepartoGO — Sistema de Logística y Pedidos</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://api.fontshare.com/v2/css?f[]=boska@200&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
     <style>
-        /* Scroll-triggered reveal */
+        /* ── REVEAL ─────────────────────────────────── */
         .reveal {
-            opacity: 0;
-            transform: translateY(28px);
-            transition: opacity 0.65s cubic-bezier(0.16,1,0.3,1), transform 0.65s cubic-bezier(0.16,1,0.3,1);
+            opacity: 0; transform: translateY(28px);
+            transition: opacity 0.65s cubic-bezier(0.16,1,0.3,1),
+                        transform  0.65s cubic-bezier(0.16,1,0.3,1);
         }
-        .reveal.visible {
-            opacity: 1;
-            transform: translateY(0);
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        /* ── HERO GRADIENT TEXT ─────────────────────── */
+        .hero-gradient {
+            background: linear-gradient(135deg, #f5a623, #fdd68a, #f5a623);
+            background-size: 200% auto;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient-move 3s linear infinite;
+        }
+        @keyframes gradient-move {
+            from { background-position: 0% center; }
+            to   { background-position: 200% center; }
         }
 
-        /* Animated counter */
-        .stat-val[data-target] { transition: none; }
+        /* ── TEXT CLIP REVEAL ───────────────────────── */
+        .line-reveal {
+            display: block;
+            overflow: hidden;
+            line-height: 1.15;
+        }
+        .line-reveal span {
+            display: block;
+            animation: line-up 0.75s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        .line-reveal:nth-child(1) span { animation-delay: 0.05s; }
+        .line-reveal:nth-child(2) span { animation-delay: 0.2s; }
+        @keyframes line-up {
+            from { transform: translateY(110%); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
 
-        /* Grid lines decorative bg */
+        /* ── FLOATING MOCKUP ────────────────────────── */
+        @keyframes float-mockup {
+            0%, 100% { transform: translateY(0px); }
+            50%       { transform: translateY(-10px); }
+        }
+        .hero-mockup {
+            animation: fadeUp 0.7s 0.5s cubic-bezier(0.16,1,0.3,1) both,
+                       float-mockup 6s 1.5s ease-in-out infinite !important;
+            position: relative;
+        }
+
+        /* ── MOCKUP SHIMMER SCAN ─────────────────────── */
+        .mockup-shimmer {
+            position: absolute; inset: 0; pointer-events: none; z-index: 10; border-radius: 18px;
+            background: linear-gradient(
+                105deg,
+                transparent 30%,
+                rgba(255,255,255,0.028) 50%,
+                transparent 70%
+            );
+            background-size: 300% 100%;
+            animation: shimmer-scan 4.5s 2s ease-in-out infinite;
+        }
+        @keyframes shimmer-scan {
+            0%   { background-position: 200% center; opacity: 0; }
+            8%   { opacity: 1; }
+            92%  { opacity: 1; }
+            100% { background-position: -100% center; opacity: 0; }
+        }
+
+        /* ── STAT CARD ENTRANCE STAGGER ─────────────── */
+        .stats-row .stat-card { opacity: 0; transform: translateY(20px); transition: opacity 0.5s, transform 0.5s; }
+        .stats-row.visible .stat-card { opacity: 1; transform: translateY(0); }
+        .stats-row.visible .stat-card:nth-child(1) { transition-delay: 0s; }
+        .stats-row.visible .stat-card:nth-child(2) { transition-delay: 0.09s; }
+        .stats-row.visible .stat-card:nth-child(3) { transition-delay: 0.18s; }
+        .stats-row.visible .stat-card:nth-child(4) { transition-delay: 0.27s; }
+
+        /* ── FEATURE CARD STAGGER ────────────────────── */
+        .features-grid .feature-card:nth-child(1).visible { transition-delay: 0s !important; }
+        .features-grid .feature-card:nth-child(2).visible { transition-delay: 0.07s !important; }
+        .features-grid .feature-card:nth-child(3).visible { transition-delay: 0.14s !important; }
+        .features-grid .feature-card:nth-child(4).visible { transition-delay: 0.21s !important; }
+        .features-grid .feature-card:nth-child(5).visible { transition-delay: 0.28s !important; }
+        .features-grid .feature-card:nth-child(6).visible { transition-delay: 0.35s !important; }
+
+        /* ── CHIPS ──────────────────────────────────── */
+        .hero-chips {
+            display: flex; justify-content: center; flex-wrap: wrap;
+            gap: 8px; margin-bottom: 36px;
+            animation: fadeUp 0.55s 0.42s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        .chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.07em; padding: 5px 12px; border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.09);
+            background: rgba(255,255,255,0.04); color: var(--text-2);
+            transition: all 0.2s;
+        }
+        .chip:hover { border-color: var(--amber-border); color: var(--amber); background: var(--amber-glow); }
+
+        /* ── PARALLAX BACKGROUND CANVAS ─────────────── */
+        #bg-canvas {
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 0; opacity: 0.45;
+        }
+
+        /* ── GRID OVERLAY ───────────────────────────── */
         .grid-bg {
-            position: absolute;
-            inset: 0;
+            position: absolute; inset: 0;
             background-image:
                 linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
@@ -34,220 +126,264 @@
             pointer-events: none;
         }
 
-        /* Hero gradient word */
-        .hero-gradient {
-            background: linear-gradient(135deg, #f5a623, #fdd68a, #f5a623);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradient-move 3s linear infinite;
-        }
-
-        @keyframes gradient-move {
-            from { background-position: 0% center; }
-            to   { background-position: 200% center; }
-        }
-
-        /* Floating tag chips */
-        .hero-chips {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 36px;
-            animation: fadeUp 0.55s 0.42s cubic-bezier(0.16,1,0.3,1) both;
-        }
-
-        .chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            padding: 5px 12px;
-            border-radius: 999px;
-            border: 1px solid rgba(255,255,255,0.09);
-            background: rgba(255,255,255,0.04);
-            color: var(--text-2);
-            transition: all 0.2s;
-        }
-
-        .chip:hover {
-            border-color: var(--amber-border);
-            color: var(--amber);
-            background: var(--amber-glow);
-        }
-
-        /* Screenshot mockup */
+        /* ── MOCKUP REDESIGN ─────────────────────────── */
         .hero-mockup {
-            max-width: 680px;
-            margin: 60px auto 0;
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.05);
+            max-width: 820px; margin: 60px auto 0;
+            background: var(--bg2); border: 1px solid var(--border);
+            border-radius: 18px; overflow: hidden;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.7),
+                        0 0 0 1px rgba(255,255,255,0.05),
+                        0 0 80px rgba(245,166,35,0.06);
             animation: fadeUp 0.7s 0.5s cubic-bezier(0.16,1,0.3,1) both;
-            position: relative;
         }
-
-        .mockup-bar {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            padding: 12px 16px;
-            background: rgba(0,0,0,0.3);
+        .mockup-titlebar {
+            display: flex; align-items: center; gap: 7px;
+            padding: 11px 16px; background: rgba(0,0,0,0.35);
             border-bottom: 1px solid var(--border);
         }
-
-        .mockup-dot {
-            width: 10px; height: 10px;
-            border-radius: 50%;
-        }
-
+        .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
         .mockup-dot-r { background: #f87171; }
         .mockup-dot-y { background: #f5a623; }
         .mockup-dot-g { background: #2dd4bf; }
-
         .mockup-url {
-            margin-left: 12px;
-            font-size: 0.72rem;
-            color: var(--text-3);
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--border);
-            padding: 3px 14px;
-            border-radius: 5px;
+            margin-left: 10px; font-size: 0.7rem; color: var(--text-3);
+            background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+            padding: 3px 14px; border-radius: 5px;
         }
 
-        .mockup-body {
-            padding: 20px;
+        /* Dashboard layout */
+        .dash-wrap { display: flex; height: 360px; }
+
+        /* Sidebar */
+        .dash-sidebar {
+            width: 52px; background: rgba(0,0,0,0.25);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: center;
+            padding: 14px 0; gap: 4px;
+        }
+        .dash-sb-logo {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: var(--amber-glow); border: 1px solid var(--amber-border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--amber); font-size: 0.75rem; margin-bottom: 14px;
+        }
+        .dash-sb-item {
+            width: 36px; height: 36px; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-3); font-size: 0.78rem; transition: all 0.18s;
+        }
+        .dash-sb-item.active { background: rgba(245,166,35,0.12); color: var(--amber); border: 1px solid var(--amber-border); }
+
+        /* Main */
+        .dash-main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+        /* Top bar */
+        .dash-topbar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 16px; border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.015);
+        }
+        .dash-topbar-title { font-family: 'Syne',sans-serif; font-size: 0.85rem; font-weight: 800; letter-spacing: -0.02em; }
+        .dash-topbar-title em { color: var(--amber); font-style: normal; }
+        .dash-status {
+            display: flex; align-items: center; gap: 5px; font-size: 0.68rem; color: var(--text-2);
+            background: rgba(45,212,191,0.08); border: 1px solid rgba(45,212,191,0.2);
+            padding: 3px 10px; border-radius: 999px;
+        }
+        .dash-status-dot {
+            width: 6px; height: 6px; border-radius: 50%; background: var(--teal);
+            animation: pulse-dot 1.8s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%,100% { opacity:1; transform:scale(1); }
+            50%      { opacity:0.5; transform:scale(0.75); }
         }
 
-        /* Fake card rows */
-        .fake-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 14px 16px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            margin-bottom: 10px;
-            animation: fadeUp 0.4s var(--ease-out) both;
+        /* Stat chips */
+        .dash-stat-row { display: flex; gap: 8px; padding: 9px 14px; border-bottom: 1px solid var(--border); }
+        .dash-stat-chip {
+            font-size: 0.65rem; padding: 3px 10px; border-radius: 6px;
+            border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text-2);
+        }
+        .dash-stat-chip strong { color: var(--text); font-size: 0.7rem; margin-right: 3px; }
+        .dash-stat-chip.amber { border-color: var(--amber-border); background: var(--amber-glow); }
+        .dash-stat-chip.amber strong { color: var(--amber); }
+        .dash-stat-chip.teal  { border-color: rgba(45,212,191,0.3); background: rgba(45,212,191,0.08); }
+        .dash-stat-chip.teal  strong { color: var(--teal); }
+
+        /* Kanban */
+        .dash-kanban { flex: 1; display: flex; overflow: hidden; }
+        .dash-col {
+            flex: 1; padding: 10px; border-right: 1px solid var(--border); overflow: hidden;
+        }
+        .dash-col:last-child { border-right: none; }
+        .dash-col-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .dash-col-title { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); }
+        .dash-col-count { font-size: 0.6rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
+        .col-nuevo  .dash-col-count { background: rgba(96,165,250,0.15);   color: var(--blue); }
+        .col-prep   .dash-col-count { background: rgba(245,166,35,0.15);   color: var(--amber); }
+        .col-listo  .dash-col-count { background: rgba(45,212,191,0.12);   color: var(--teal); }
+        .col-camino .dash-col-count { background: rgba(167,139,250,0.15);  color: #a78bfa; }
+
+        .dash-order-card {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+            border-radius: 8px; padding: 8px 10px; margin-bottom: 6px;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .doc-num { font-family: 'Syne',sans-serif; font-size: 0.75rem; font-weight: 800; color: var(--amber); margin-bottom: 4px; }
+        .doc-name { font-size: 0.65rem; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .doc-addr { font-size: 0.6rem; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .doc-time  { font-size: 0.58rem; color: var(--text-3); margin-top: 5px; display: flex; align-items: center; gap: 4px; }
+
+        @keyframes card-in {
+            from { opacity:0; transform: translateY(-8px); }
+            to   { opacity:1; transform: translateY(0); }
+        }
+        .card-animate { animation: card-in 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+
+        /* ── STATS ──────────────────────────────────── */
+        .stat-card { position: relative; overflow: hidden; }
+        .stat-card::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--amber), transparent);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .stat-card:hover::after { opacity: 1; }
+        .stat-icon {
+            width: 36px; height: 36px; border-radius: 9px; margin-bottom: 12px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--amber-glow); border: 1px solid var(--amber-border);
+            color: var(--amber); font-size: 0.85rem;
         }
 
-        .fake-row:nth-child(1) { animation-delay: 0.7s; }
-        .fake-row:nth-child(2) { animation-delay: 0.78s; }
-        .fake-row:nth-child(3) { animation-delay: 0.86s; }
-
-        .fake-id {
-            font-family: 'Syne', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: var(--amber);
-            min-width: 54px;
+        /* ── FEATURES ───────────────────────────────── */
+        .feature-icon-wrap {
+            width: 48px; height: 48px; border-radius: 12px; margin-bottom: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border); transition: all 0.25s; color: var(--text-2);
+        }
+        .feature-card:hover .feature-icon-wrap {
+            background: var(--amber-glow); border-color: var(--amber-border);
+            color: var(--amber); transform: scale(1.05);
         }
 
-        .fake-info { flex: 1; }
-
-        .fake-line {
-            height: 8px;
-            border-radius: 4px;
-            background: rgba(255,255,255,0.08);
-            margin-bottom: 5px;
-        }
-
-        .fake-line:last-child { margin-bottom: 0; width: 60%; }
-
-        .fake-badge {
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .badge-listo  { background: rgba(45,212,191,0.15); color: var(--teal); border: 1px solid rgba(45,212,191,0.25); }
-        .badge-camino { background: var(--amber-glow); color: var(--amber); border: 1px solid var(--amber-border); }
-        .badge-nuevo  { background: rgba(96,165,250,0.12); color: var(--blue); border: 1px solid rgba(96,165,250,0.25); }
-
-        /* CTA section */
+        /* ── CTA / CONTACT ──────────────────────────── */
         .cta-section {
-            max-width: 860px;
-            margin: 0 auto;
-            padding: 0 var(--sp-xl) 100px;
-            position: relative;
-            z-index: 1;
+            max-width: 860px; margin: 0 auto;
+            padding: 0 var(--sp-xl) 100px; position: relative; z-index: 1;
         }
-
         .cta-card {
             background: linear-gradient(135deg, rgba(245,166,35,0.1) 0%, rgba(245,166,35,0.03) 100%);
-            border: 1px solid var(--amber-border);
-            border-radius: 20px;
-            padding: 60px var(--sp-xl);
-            text-align: center;
-            position: relative;
-            overflow: hidden;
+            border: 1px solid var(--amber-border); border-radius: 20px;
+            padding: 60px var(--sp-xl); text-align: center; position: relative; overflow: hidden;
         }
-
         .cta-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 20%; right: 20%;
-            height: 1px;
+            content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 1px;
             background: linear-gradient(90deg, transparent, var(--amber), transparent);
             opacity: 0.6;
         }
-
-        .cta-card h2 {
-            font-family: 'Syne', sans-serif;
-            font-size: clamp(1.6rem, 4vw, 2.4rem);
-            font-weight: 800;
-            letter-spacing: -0.03em;
-            margin-bottom: var(--sp-md);
+        h2 {
+            font-family: 'Syne', sans-serif; font-size: clamp(1.6rem, 4vw, 2.4rem);
+            font-weight: 800; letter-spacing: -0.03em; margin-bottom: var(--sp-md);
+        }
+        h2 em { color: var(--amber); font-style: normal; }
+        .cta-card p {
+            color: var(--text-2); max-width: 420px;
+            margin: 0 auto var(--sp-xl); font-size: 0.95rem; line-height: 1.7;
         }
 
-        .cta-card h2 em { color: var(--amber); font-style: normal; }
+        /* ── FOOTER ─────────────────────────────────── */
+        .site-footer {
+            background: rgba(0,0,0,0.3); border-top: 1px solid var(--border);
+            position: relative; z-index: 1; padding: 60px var(--sp-xl) 32px;
+        }
+        .footer-inner { max-width: 1100px; margin: 0 auto; }
+        .footer-top {
+            display: grid; grid-template-columns: 1.8fr 1fr 1fr;
+            gap: 48px; padding-bottom: 48px;
+            border-bottom: 1px solid var(--border); margin-bottom: 32px;
+        }
+        .footer-brand-logo {
+            display: flex; align-items: center; gap: 10px;
+            font-family: 'Syne',sans-serif; font-size: 1.25rem;
+            font-weight: 800; letter-spacing: -0.03em;
+            color: var(--text); margin-bottom: 14px; text-decoration: none;
+        }
+        .footer-brand-icon {
+            width: 36px; height: 36px; border-radius: 9px;
+            background: var(--amber-glow); border: 1px solid var(--amber-border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--amber); font-size: 0.9rem;
+        }
+        .footer-brand-logo em { color: var(--amber); font-style: normal; }
+        .footer-tagline { font-size: 0.88rem; color: var(--text-2); line-height: 1.7; max-width: 280px; margin-bottom: 20px; }
+        .footer-dev {
+            display: inline-flex; align-items: center; gap: 7px;
+            font-size: 0.75rem; color: var(--text-3);
+            background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+            padding: 5px 12px; border-radius: 999px;
+        }
+        .footer-dev i { color: var(--amber); }
+        .footer-col-title {
+            font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.1em; color: var(--text-3); margin-bottom: 16px;
+        }
+        .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+        .footer-links a {
+            font-size: 0.85rem; color: var(--text-2); text-decoration: none;
+            display: flex; align-items: center; gap: 8px; transition: color 0.2s;
+        }
+        .footer-links a i { font-size: 0.7rem; color: var(--text-3); transition: color 0.2s; width: 14px; }
+        .footer-links a:hover { color: var(--amber); }
+        .footer-links a:hover i { color: var(--amber); }
+        .footer-bottom {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 12px;
+        }
+        .footer-copy { font-size: 0.78rem; color: var(--text-3); }
+        .footer-copy em { color: var(--amber); font-style: normal; }
+        .footer-badge { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-3); }
+        .footer-badge-dot {
+            width: 6px; height: 6px; border-radius: 50%; background: var(--teal);
+            animation: pulse-dot 1.8s ease-in-out infinite;
+        }
 
-        .cta-card p {
-            color: var(--text-2);
-            max-width: 420px;
-            margin: 0 auto var(--sp-xl);
-            font-size: 0.95rem;
-            line-height: 1.7;
+        @media (max-width: 720px) {
+            .footer-top { grid-template-columns: 1fr; gap: 32px; }
+            .dash-wrap { height: 300px; }
+            .dash-col:nth-child(3), .dash-col:nth-child(4) { display: none; }
         }
     </style>
 </head>
 <body class="home-body">
 
-    <!-- Background -->
+    <!-- PARALLAX CANVAS -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Background orbs -->
     <div class="home-orbs">
         <div class="home-orb-1"></div>
         <div class="home-orb-2"></div>
     </div>
 
-    <!-- Nav -->
+    <!-- NAV -->
     <nav class="home-nav">
         <a href="index.html" class="brand">
-            <div class="brand-icon">🚚</div>
+            <div class="brand-icon"><i class="fa-solid fa-truck"></i></div>
             Reparto<em>GO</em>
         </a>
-        <div style="display:flex; gap:12px; align-items:center;">
-            <a href="login.html" style="color: var(--text-2); text-decoration:none; font-size:0.85rem; font-weight:500; transition: color 0.2s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-2)'">Iniciar sesión</a>
+        <div style="display:flex;gap:12px;align-items:center;">
             <a href="login.html">
-                <button class="btn-primary" style="padding:9px 20px; font-size:0.83rem;">
-                    <i class="fa-solid fa-bolt" style="font-size:11px;"></i>
+                <button class="btn-primary" style="padding:9px 20px;font-size:0.83rem;">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
                     Acceder
                 </button>
             </a>
         </div>
     </nav>
 
-    <!-- Hero -->
+    <!-- HERO -->
     <section class="home-hero">
         <div class="grid-bg"></div>
 
@@ -257,8 +393,8 @@
         </div>
 
         <h1>
-            Cada pedido,<br>
-            <span class="hero-gradient">en el lugar correcto</span>
+            <span class="line-reveal"><span>Cada pedido,</span></span>
+            <span class="line-reveal"><span class="hero-gradient">en el lugar correcto</span></span>
         </h1>
 
         <p>
@@ -274,199 +410,565 @@
         </div>
 
         <div class="hero-actions">
-            <a href="login.html">
+            <a href="#contacto-seccion">
                 <button class="btn-primary">
                     <i class="fa-solid fa-arrow-right-to-bracket"></i>
                     Acceder al sistema
                 </button>
             </a>
-            <button class="btn-secondary" onclick="document.querySelector('.stats-row').scrollIntoView({behavior:'smooth'})">
-                <i class="fa-solid fa-circle-info"></i>
-                Ver más
+            <button class="btn-secondary" id="ver-demo-btn">
+                <i class="fa-solid fa-play"></i>
+                Ver Demo
             </button>
         </div>
 
-        <!-- UI Mockup -->
+        <!-- MOCKUP REDISEÑADO: mini dashboard con kanban -->
         <div class="hero-mockup">
-            <div class="mockup-bar">
+            <div class="mockup-shimmer"></div>
+            <div class="mockup-titlebar">
                 <span class="mockup-dot mockup-dot-r"></span>
                 <span class="mockup-dot mockup-dot-y"></span>
                 <span class="mockup-dot mockup-dot-g"></span>
                 <span class="mockup-url">repartogo.app/dashboard</span>
             </div>
-            <div class="mockup-body">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                    <div>
-                        <div style="font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; letter-spacing:-0.02em;">Logís<em style="color:var(--amber); font-style:normal;">tica</em></div>
-                        <div style="font-size:0.75rem; color:var(--text-2); margin-top:2px;">Pedidos listos para salir</div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="display:flex; align-items:center; gap:6px; font-size:0.72rem; color:var(--text-2); background:var(--bg3); border:1px solid var(--border); padding:5px 12px; border-radius:999px;">
-                            <span style="width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block;"></span>
+
+            <div class="dash-wrap">
+                <!-- Sidebar icons -->
+                <div class="dash-sidebar">
+                    <div class="dash-sb-logo"><i class="fa-solid fa-truck"></i></div>
+                    <div class="dash-sb-item active"><i class="fa-solid fa-chart-line"></i></div>
+                    <div class="dash-sb-item"><i class="fa-solid fa-receipt"></i></div>
+                    <div class="dash-sb-item"><i class="fa-solid fa-motorcycle"></i></div>
+                    <div class="dash-sb-item"><i class="fa-solid fa-utensils"></i></div>
+                    <div class="dash-sb-item" style="margin-top:auto;"><i class="fa-solid fa-gear"></i></div>
+                </div>
+
+                <!-- Main content -->
+                <div class="dash-main">
+                    <div class="dash-topbar">
+                        <div class="dash-topbar-title">Panel <em>Operativo</em></div>
+                        <div class="dash-status">
+                            <span class="dash-status-dot"></span>
                             En línea
                         </div>
                     </div>
-                </div>
 
-                <div class="fake-row">
-                    <div class="fake-id">#042</div>
-                    <div class="fake-info">
-                        <div class="fake-line"></div>
-                        <div class="fake-line"></div>
+                    <div class="dash-stat-row">
+                        <div class="dash-stat-chip amber"><strong id="mc-nuevos">3</strong> Nuevos</div>
+                        <div class="dash-stat-chip"><strong>5</strong> En prep.</div>
+                        <div class="dash-stat-chip teal"><strong id="mc-listos">4</strong> Listos</div>
+                        <div class="dash-stat-chip"><strong>12</strong> Entregados hoy</div>
                     </div>
-                    <span class="fake-badge badge-listo">Listo</span>
-                </div>
-                <div class="fake-row">
-                    <div class="fake-id">#039</div>
-                    <div class="fake-info">
-                        <div class="fake-line"></div>
-                        <div class="fake-line"></div>
+
+                    <!-- Kanban columns -->
+                    <div class="dash-kanban">
+
+                        <div class="dash-col col-nuevo">
+                            <div class="dash-col-header">
+                                <span class="dash-col-title"><i class="fa-solid fa-plus" style="font-size:.5rem;margin-right:3px;"></i>Nuevos</span>
+                                <span class="dash-col-count" id="cnt-nuevo">3</span>
+                            </div>
+                            <div id="col-nuevo-cards">
+                                <div class="dash-order-card card-animate" style="animation-delay:.7s">
+                                    <div class="doc-num">#047</div>
+                                    <div class="doc-name">Martínez, Luis</div>
+                                    <div class="doc-addr"><i class="fa-solid fa-location-dot" style="font-size:.5rem;color:var(--text-3)"></i> Av. Colón 1234</div>
+                                    <div class="doc-time"><i class="fa-regular fa-clock"></i> hace 1 min</div>
+                                </div>
+                                <div class="dash-order-card card-animate" style="animation-delay:.78s">
+                                    <div class="doc-num">#046</div>
+                                    <div class="doc-name">Rodríguez, Ana</div>
+                                    <div class="doc-addr"><i class="fa-solid fa-location-dot" style="font-size:.5rem;color:var(--text-3)"></i> Belgrano 567</div>
+                                    <div class="doc-time"><i class="fa-regular fa-clock"></i> hace 3 min</div>
+                                </div>
+                                <div class="dash-order-card card-animate" style="animation-delay:.86s">
+                                    <div class="doc-num">#045</div>
+                                    <div class="doc-name">García, Tomás</div>
+                                    <div class="doc-addr"><i class="fa-solid fa-location-dot" style="font-size:.5rem;color:var(--text-3)"></i> San Martín 890</div>
+                                    <div class="doc-time"><i class="fa-regular fa-clock"></i> hace 5 min</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dash-col col-prep">
+                            <div class="dash-col-header">
+                                <span class="dash-col-title"><i class="fa-solid fa-utensils" style="font-size:.5rem;margin-right:3px;"></i>En prep.</span>
+                                <span class="dash-col-count">2</span>
+                            </div>
+                            <div class="dash-order-card card-animate" style="animation-delay:.72s">
+                                <div class="doc-num">#044</div>
+                                <div class="doc-name">López, Carla</div>
+                                <div class="doc-addr"><i class="fa-solid fa-location-dot" style="font-size:.5rem;color:var(--text-3)"></i> Rivadavia 2100</div>
+                                <div class="doc-time"><i class="fa-regular fa-clock"></i> 8 min</div>
+                            </div>
+                            <div class="dash-order-card card-animate" style="animation-delay:.80s">
+                                <div class="doc-num">#043</div>
+                                <div class="doc-name">Fernández, J.</div>
+                                <div class="doc-addr"><i class="fa-solid fa-location-dot" style="font-size:.5rem;color:var(--text-3)"></i> Corrientes 450</div>
+                                <div class="doc-time"><i class="fa-regular fa-clock"></i> 14 min</div>
+                            </div>
+                        </div>
+
+                        <div class="dash-col col-listo">
+                            <div class="dash-col-header">
+                                <span class="dash-col-title"><i class="fa-solid fa-check" style="font-size:.5rem;margin-right:3px;"></i>Listos</span>
+                                <span class="dash-col-count">2</span>
+                            </div>
+                            <div class="dash-order-card card-animate" style="animation-delay:.74s;border-color:rgba(45,212,191,0.2)">
+                                <div class="doc-num">#042</div>
+                                <div class="doc-name">Pérez, Roberto</div>
+                                <div class="doc-addr"><i class="fa-solid fa-location-dot" style="font-size:.5rem;color:var(--text-3)"></i> Mitre 788</div>
+                                <div class="doc-time"><i class="fa-solid fa-motorcycle" style="color:var(--teal)"></i> <span style="color:var(--teal)">Asignado</span></div>
+                            </div>
+                            <div class="dash-order-card card-animate" style="animation-delay:.82s;border-color:rgba(45,212,191,0.2)">
+                                <div class="doc-num">#041</div>
+                                <div class="doc-name">Torres, Valeria</div>
+                                <div class="doc-addr"><i class="fa-solid fa-location-dot" style="font-size:.5rem;color:var(--text-3)"></i> Palermo 312</div>
+                                <div class="doc-time"><i class="fa-solid fa-motorcycle" style="color:var(--teal)"></i> <span style="color:var(--teal)">Asignado</span></div>
+                            </div>
+                        </div>
+
+                        <div class="dash-col col-camino">
+                            <div class="dash-col-header">
+                                <span class="dash-col-title"><i class="fa-solid fa-motorcycle" style="font-size:.5rem;margin-right:3px;"></i>En camino</span>
+                                <span class="dash-col-count">2</span>
+                            </div>
+                            <div class="dash-order-card card-animate" style="animation-delay:.76s;border-color:rgba(167,139,250,0.2)">
+                                <div class="doc-num">#040</div>
+                                <div class="doc-name">Sánchez, Mario</div>
+                                <div class="doc-addr"><i class="fa-solid fa-location-dot" style="font-size:.5rem;color:var(--text-3)"></i> Independencia 90</div>
+                                <div class="doc-time"><i class="fa-solid fa-location-arrow" style="color:#a78bfa"></i> <span style="color:#a78bfa">~8 min</span></div>
+                            </div>
+                            <div class="dash-order-card card-animate" style="animation-delay:.84s;border-color:rgba(167,139,250,0.2)">
+                                <div class="doc-num">#039</div>
+                                <div class="doc-name">Díaz, Sofía</div>
+                                <div class="doc-addr"><i class="fa-solid fa-location-dot" style="font-size:.5rem;color:var(--text-3)"></i> Tucumán 1560</div>
+                                <div class="doc-time"><i class="fa-solid fa-location-arrow" style="color:#a78bfa"></i> <span style="color:#a78bfa">~3 min</span></div>
+                            </div>
+                        </div>
+
                     </div>
-                    <span class="fake-badge badge-camino">En camino</span>
-                </div>
-                <div class="fake-row">
-                    <div class="fake-id">#041</div>
-                    <div class="fake-info">
-                        <div class="fake-line"></div>
-                        <div class="fake-line"></div>
-                    </div>
-                    <span class="fake-badge badge-nuevo">Nuevo</span>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Stats -->
+    <!-- STATS -->
     <div class="stats-row reveal">
         <div class="stat-card">
-            <div class="stat-val" data-target="99">0</div>
-            <div class="stat-label">% Uptime garantizado</div>
+            <div class="stat-icon"><i class="fa-solid fa-box-open"></i></div>
+            <div class="stat-val" data-target="2400" data-suffix="+">0</div>
+            <div class="stat-label">Pedidos gestionados</div>
         </div>
         <div class="stat-card">
-            <div class="stat-val">&lt; 2s</div>
-            <div class="stat-label">Actualización de estado</div>
+            <div class="stat-icon"><i class="fa-solid fa-bolt"></i></div>
+            <div class="stat-val">&lt;&nbsp;2 min</div>
+            <div class="stat-label">Tiempo de asignación</div>
         </div>
         <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
             <div class="stat-val" data-target="5">0</div>
-            <div class="stat-label">Roles disponibles</div>
+            <div class="stat-label">Roles de usuario</div>
         </div>
         <div class="stat-card">
-            <div class="stat-val">∞</div>
-            <div class="stat-label">Pedidos simultáneos</div>
+            <div class="stat-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="stat-val" data-target="99" data-suffix=".9%">0</div>
+            <div class="stat-label">Disponibilidad</div>
         </div>
     </div>
 
     <hr class="home-divider reveal">
 
-    <!-- Features -->
+    <h2 class="titulo-seccion">Todo en un <em>solo lugar</em></h2>
+
+    <!-- FEATURES -->
     <div class="features-grid">
         <div class="feature-card reveal">
-            <div class="feature-icon">🧾</div>
+            <div class="feature-icon-wrap"><i class="fa-solid fa-receipt"></i></div>
             <h3>Recepción de pedidos</h3>
             <p>Ingresá pedidos al sistema de forma rápida. Todo queda registrado al instante y pasa al flujo automáticamente.</p>
         </div>
         <div class="feature-card reveal">
-            <div class="feature-icon">👨‍🍳</div>
+            <div class="feature-icon-wrap"><i class="fa-solid fa-utensils"></i></div>
             <h3>Vista de cocina</h3>
             <p>Los chefs ven en tiempo real qué pedidos preparar, ordenados por prioridad y tiempo de espera.</p>
         </div>
         <div class="feature-card reveal">
-            <div class="feature-icon">🛵</div>
+            <div class="feature-icon-wrap"><i class="fa-solid fa-motorcycle"></i></div>
             <h3>Logística y reparto</h3>
             <p>Los repartidores reciben pedidos listos, acceden al mapa con un clic y actualizan el estado al aceptar.</p>
         </div>
         <div class="feature-card reveal">
-            <div class="feature-icon">📊</div>
+            <div class="feature-icon-wrap"><i class="fa-solid fa-chart-line"></i></div>
             <h3>Panel administrativo</h3>
             <p>Visibilidad completa del flujo operativo, historial de pedidos y rendimiento del equipo.</p>
         </div>
         <div class="feature-card reveal">
-            <div class="feature-icon">🔐</div>
+            <div class="feature-icon-wrap"><i class="fa-solid fa-lock"></i></div>
             <h3>Control de accesos</h3>
             <p>Cada usuario ve solo lo que necesita según su rol. Seguro, simple y sin fricción.</p>
         </div>
         <div class="feature-card reveal">
-            <div class="feature-icon">📍</div>
+            <div class="feature-icon-wrap"><i class="fa-solid fa-location-dot"></i></div>
             <h3>Integración con Maps</h3>
             <p>Enlace directo a Google Maps con la dirección exacta del cliente, listo para navegar.</p>
         </div>
     </div>
 
-    <!-- CTA -->
-    <div class="cta-section reveal">
-        <div class="cta-card">
+    <!-- CONTACTO -->
+    <div class="cta-section reveal" id="contacto-seccion">
+        <div class="cta-card contact-card">
             <h2>Listo para <em>empezar</em>?</h2>
-            <p>Accedé al sistema con tus credenciales y empezá a gestionar los pedidos de hoy.</p>
-            <a href="login.html">
-                <button class="btn-primary" style="padding: 14px 36px; font-size: 0.92rem;">
-                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
-                    Ingresar al sistema
-                </button>
-            </a>
+            <p class="contact-intro">Completá el formulario y nos ponemos en contacto a la brevedad.</p>
+
+            <form id="contactForm" class="contact-form" novalidate>
+                <div class="cf-group-title"><i class="fa-solid fa-user"></i> Datos</div>
+                <div class="cf-row">
+                    <div class="cf-field">
+                        <label for="cf-nombre">Nombre y apellido <span class="req">*</span></label>
+                        <input type="text" id="cf-nombre" name="nombre" placeholder="Juan García" required>
+                    </div>
+                    <div class="cf-field">
+                        <label for="cf-email">Correo electrónico <span class="req">*</span></label>
+                        <input type="email" id="cf-email" name="email" placeholder="juan@ejemplo.com" required>
+                    </div>
+                </div>
+                <div class="cf-row">
+                    <div class="cf-field">
+                        <label for="cf-telefono">Teléfono <span class="opt">(opcional)</span></label>
+                        <input type="tel" id="cf-telefono" name="telefono" placeholder="+54 9 11 1234-5678">
+                    </div>
+                    <div class="cf-field">
+                        <label for="cf-empresa">Empresa / Negocio <span class="opt">(opcional)</span></label>
+                        <input type="text" id="cf-empresa" name="empresa" placeholder="Mi empresa S.A.">
+                    </div>
+                </div>
+                <div class="cf-group-title"><i class="fa-solid fa-tag"></i> Motivo</div>
+                <div class="cf-field cf-field-full">
+                    <label for="cf-asunto">Asunto / Motivo <span class="req">*</span></label>
+                    <select id="cf-asunto" name="asunto" required>
+                        <option value="" disabled selected>Seleccioná un motivo…</option>
+                        <option value="Consulta general">Consulta general</option>
+                        <option value="Solicitar información">Solicitar información</option>
+                        <option value="Contratar servicio">Contratar servicio</option>
+                        <option value="Soporte técnico">Soporte técnico</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+                <div class="cf-group-title"><i class="fa-solid fa-comment-dots"></i> Consulta</div>
+                <div class="cf-field cf-field-full">
+                    <label for="cf-mensaje">Mensaje <span class="req">*</span></label>
+                    <textarea id="cf-mensaje" name="mensaje" rows="5" placeholder="Contanos en qué podemos ayudarte…" required></textarea>
+                </div>
+                <div class="cf-legal">
+                    <label class="cf-checkbox-label">
+                        <input type="checkbox" id="cf-privacidad" name="privacidad" required>
+                        <span class="cf-checkbox-custom"></span>
+                        <span>Acepto la <a href="#" class="cf-link">política de privacidad</a></span>
+                    </label>
+                </div>
+                <div class="cf-submit-row">
+                    <button type="submit" class="btn-primary cf-btn-submit" id="cf-submit-btn">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        Enviar mensaje
+                    </button>
+                </div>
+                <div id="cf-feedback" class="cf-feedback" style="display:none;"></div>
+            </form>
         </div>
     </div>
 
-    <footer class="home-footer">
-        RepartoGO © 2025 — Sistema de logística y gestión de pedidos
+    <!-- FOOTER -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-top">
+                <div>
+                    <a href="index.html" class="footer-brand-logo">
+                        <div class="footer-brand-icon"><i class="fa-solid fa-truck"></i></div>
+                        Reparto<em>GO</em>
+                    </a>
+                    <p class="footer-tagline">
+                        Del pedido a la puerta, sin fricción.<br>
+                        La plataforma que conecta cocina, recepción y reparto en tiempo real.
+                    </p>
+                    <div class="footer-dev">
+                        <i class="fa-solid fa-code"></i>
+                        Desarrollado por <strong style="color:var(--text-2);margin-left:4px;">Zatmeni</strong>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="footer-col-title">Sistema</p>
+                    <ul class="footer-links">
+                        <li><a href="login.html"><i class="fa-solid fa-arrow-right-to-bracket"></i> Acceder</a></li>
+                        <li><a href="#contacto-seccion"><i class="fa-solid fa-envelope"></i> Contacto</a></li>
+                        <li><a href="#"><i class="fa-solid fa-shield-halved"></i> Política de privacidad</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <p class="footer-col-title">Módulos</p>
+                    <ul class="footer-links">
+                        <li><a href="#"><i class="fa-solid fa-receipt"></i> Recepción</a></li>
+                        <li><a href="#"><i class="fa-solid fa-utensils"></i> Cocina</a></li>
+                        <li><a href="#"><i class="fa-solid fa-motorcycle"></i> Reparto</a></li>
+                        <li><a href="#"><i class="fa-solid fa-chart-line"></i> Administración</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p class="footer-copy">© 2025 <em>RepartoGO</em> — Sistema de logística y gestión de pedidos</p>
+                <div class="footer-badge">
+                    <span class="footer-badge-dot"></span>
+                    Todos los sistemas operativos
+                </div>
+            </div>
+        </div>
     </footer>
 
     <script src="js/script.js"></script>
     <script>
-        /* Scroll reveal */
-        const io = new IntersectionObserver((entries) => {
-            entries.forEach((e, i) => {
-                if (e.isIntersecting) {
-                    e.target.style.transitionDelay = (i * 0.06) + 's';
-                    e.target.classList.add('visible');
-                    io.unobserve(e.target);
+    /* ═══════════════════════════════════════════
+       CANVAS PARALLAX — nodos flotantes + líneas
+    ═══════════════════════════════════════════ */
+    (function () {
+        const canvas = document.getElementById('bg-canvas');
+        const ctx    = canvas.getContext('2d');
+        let W, H;
+        const mouse = { x: 0, y: 0 };
+        let nodes = [];
+
+        function resize() {
+            W = canvas.width  = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+        }
+
+        function mkNodes(n) {
+            return Array.from({ length: n }, (_, i) => ({
+                x:        Math.random() * (window.innerWidth  || 1200),
+                y:        Math.random() * (window.innerHeight * 3 || 2400),
+                r:        Math.random() * 1.8 + 0.4,
+                drift:    Math.random() * 0.016 + 0.005,
+                parallax: Math.random() * 0.55 + 0.08,
+                opacity:  Math.random() * 0.5 + 0.12,
+                shape:    i % 6 === 0 ? 'hex' : 'circle',
+                color:    i % 5 === 0 ? '#f5a623' : (i % 4 === 0 ? '#2dd4bf' : 'rgba(255,255,255,0.7)'),
+            }));
+        }
+
+        function hexPath(cx, cy, r) {
+            ctx.beginPath();
+            for (let k = 0; k < 6; k++) {
+                const a = (Math.PI / 3) * k - Math.PI / 6;
+                k === 0
+                    ? ctx.moveTo(cx + r * Math.cos(a), cy + r * Math.sin(a))
+                    : ctx.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+            }
+            ctx.closePath();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+            const sy = window.scrollY;
+
+            nodes.forEach((n, i) => {
+                const vy = n.y - sy * n.parallax;
+
+                // slow mouse attract
+                n.x += (mouse.x - n.x) * 0.00012;
+                n.y += (mouse.y - vy)  * 0.00012;
+                n.y -= n.drift;
+                if (n.y < -40) n.y = H * 3;
+                if (vy < -40 || vy > H + 40) return;
+
+                ctx.globalAlpha = n.opacity;
+                ctx.fillStyle   = n.color;
+
+                if (n.shape === 'hex') {
+                    hexPath(n.x, vy, n.r * 3.8);
+                    ctx.strokeStyle = n.color;
+                    ctx.lineWidth   = 0.7;
+                    ctx.stroke();
+                    ctx.globalAlpha = n.opacity * 0.1;
+                    ctx.fill();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(n.x, vy, n.r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // connecting lines (sparse)
+                if (i % 3 === 0) {
+                    for (let j = i + 1; j < Math.min(i + 9, nodes.length); j++) {
+                        const b   = nodes[j];
+                        const bvy = b.y - sy * b.parallax;
+                        const dx  = n.x - b.x;
+                        const dy  = vy  - bvy;
+                        const d   = Math.sqrt(dx * dx + dy * dy);
+                        if (d < 150) {
+                            ctx.beginPath();
+                            ctx.moveTo(n.x, vy);
+                            ctx.lineTo(b.x, bvy);
+                            ctx.strokeStyle = `rgba(245,166,35,${(1 - d / 150) * 0.06})`;
+                            ctx.lineWidth   = 0.5;
+                            ctx.globalAlpha = 1;
+                            ctx.stroke();
+                        }
+                    }
                 }
             });
-        }, { threshold: 0.12 });
 
-        document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+            ctx.globalAlpha = 1;
+            requestAnimationFrame(draw);
+        }
 
-        /* Animated number counters */
-        const counterObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (!entry.isIntersecting) return;
-                const els = entry.target.querySelectorAll('[data-target]');
-                els.forEach(el => {
-                    const target = parseInt(el.dataset.target);
-                    const duration = 1200;
-                    const step = 16;
-                    const increments = duration / step;
-                    let current = 0;
-                    const inc = target / increments;
-                    const timer = setInterval(() => {
-                        current += inc;
-                        if (current >= target) {
-                            el.textContent = target + (target === 99 ? '' : '');
-                            clearInterval(timer);
-                        } else {
-                            el.textContent = Math.floor(current);
-                        }
-                    }, step);
-                });
-                counterObserver.unobserve(entry.target);
-            });
-        }, { threshold: 0.3 });
+        resize();
+        nodes = mkNodes(95);
+        draw();
 
-        document.querySelectorAll('.stats-row').forEach(el => counterObserver.observe(el));
+        window.addEventListener('resize',    resize);
+        window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+    })();
 
-        /* Tilt effect on feature cards */
-        document.querySelectorAll('.feature-card').forEach(card => {
-            card.addEventListener('mousemove', (e) => {
-                const rect = card.getBoundingClientRect();
-                const x = (e.clientX - rect.left) / rect.width - 0.5;
-                const y = (e.clientY - rect.top) / rect.height - 0.5;
-                card.style.transform = `translateY(-5px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg)`;
-                card.style.transition = 'transform 0.1s';
-            });
-            card.addEventListener('mouseleave', () => {
-                card.style.transform = '';
-                card.style.transition = 'transform 0.4s cubic-bezier(0.16,1,0.3,1)';
-            });
+    /* ═══════════════════════════════════════════
+       SCROLL REVEAL
+    ═══════════════════════════════════════════ */
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach((e, i) => {
+            if (e.isIntersecting) {
+                e.target.style.transitionDelay = (i * 0.06) + 's';
+                e.target.classList.add('visible');
+                io.unobserve(e.target);
+            }
         });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+    /* ═══════════════════════════════════════════
+       ANIMATED COUNTERS
+    ═══════════════════════════════════════════ */
+    const counterObs = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            entry.target.querySelectorAll('[data-target]').forEach(el => {
+                const target = parseInt(el.dataset.target);
+                const suffix = el.dataset.suffix || '';
+                let current  = 0;
+                const inc    = target / (1400 / 16);
+                const t = setInterval(() => {
+                    current += inc;
+                    if (current >= target) {
+                        el.textContent = target.toLocaleString('es-AR') + suffix;
+                        clearInterval(t);
+                    } else {
+                        el.textContent = Math.floor(current).toLocaleString('es-AR');
+                    }
+                }, 16);
+            });
+            counterObs.unobserve(entry.target);
+        });
+    }, { threshold: 0.3 });
+    document.querySelectorAll('.stats-row').forEach(el => counterObs.observe(el));
+
+    /* ═══════════════════════════════════════════
+       FEATURE CARD 3D TILT
+    ═══════════════════════════════════════════ */
+    document.querySelectorAll('.feature-card').forEach(card => {
+        card.addEventListener('mousemove', e => {
+            const r = card.getBoundingClientRect();
+            const x = (e.clientX - r.left)  / r.width  - 0.5;
+            const y = (e.clientY - r.top)   / r.height - 0.5;
+            card.style.transform  = `translateY(-5px) rotateY(${x*6}deg) rotateX(${-y*6}deg)`;
+            card.style.transition = 'transform 0.1s';
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform  = '';
+            card.style.transition = 'transform 0.4s cubic-bezier(0.16,1,0.3,1)';
+        });
+    });
+
+    /* ═══════════════════════════════════════════
+       MOCKUP LIVE — nuevo pedido cada 5s
+    ═══════════════════════════════════════════ */
+    const fakeNames   = ['Herrera, Diego','Ruiz, Paola','Castro, Esteban','Gomez, Nico','Varela, Nadia','Ortiz, Fabio','Acosta, Sol'];
+    const fakeStreets = ['Roca 224','Alvear 1100','Urquiza 890','25 de Mayo 77','Brown 540','Paz 333','Moreno 1500'];
+    let orderNum = 48;
+    let newCount = 3;
+
+    setInterval(() => {
+        orderNum++; newCount++;
+        const card = document.createElement('div');
+        card.className = 'dash-order-card card-animate';
+        card.innerHTML = `
+            <div class="doc-num">#${orderNum}</div>
+            <div class="doc-name">${fakeNames[Math.floor(Math.random()*fakeNames.length)]}</div>
+            <div class="doc-addr"><i class="fa-solid fa-location-dot" style="font-size:.5rem;color:var(--text-3)"></i> ${fakeStreets[Math.floor(Math.random()*fakeStreets.length)]}</div>
+            <div class="doc-time"><i class="fa-regular fa-clock"></i> ahora</div>`;
+        const col = document.getElementById('col-nuevo-cards');
+        col.insertBefore(card, col.firstChild);
+        if (col.children.length > 3) col.removeChild(col.lastChild);
+        document.getElementById('cnt-nuevo').textContent   = Math.min(newCount, 9);
+        document.getElementById('mc-nuevos').textContent   = Math.min(newCount, 9);
+    }, 5000);
+
+    /* ═══════════════════════════════════════════
+       VER DEMO → scroll to mockup
+    ═══════════════════════════════════════════ */
+    document.getElementById('ver-demo-btn').addEventListener('click', () => {
+        document.querySelector('.hero-mockup').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    /* ═══════════════════════════════════════════
+       FORMULARIO CONTACTO
+    ═══════════════════════════════════════════ */
+    document.getElementById('contactForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn      = document.getElementById('cf-submit-btn');
+        const nombre   = document.getElementById('cf-nombre').value.trim();
+        const email    = document.getElementById('cf-email').value.trim();
+        const asunto   = document.getElementById('cf-asunto').value;
+        const mensaje  = document.getElementById('cf-mensaje').value.trim();
+        const privacidad = document.getElementById('cf-privacidad').checked;
+        const telefono = document.getElementById('cf-telefono').value.trim();
+        const empresa  = document.getElementById('cf-empresa').value.trim();
+
+        if (!nombre || !email || !asunto || !mensaje) {
+            showFeedback('error','<i class="fa-solid fa-circle-exclamation"></i> Por favor completá todos los campos obligatorios.');
+            return;
+        }
+        if (!privacidad) {
+            showFeedback('error','<i class="fa-solid fa-circle-exclamation"></i> Debés aceptar la política de privacidad.');
+            return;
+        }
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Enviando…';
+        try {
+            const res  = await fetch('backend/funciones.php?action=enviarContacto', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre, email, telefono, empresa, asunto, mensaje })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showFeedback('success','<i class="fa-solid fa-circle-check"></i> ¡Mensaje enviado! Te enviamos una confirmación a tu correo.');
+                document.getElementById('contactForm').reset();
+            } else {
+                showFeedback('error','<i class="fa-solid fa-circle-exclamation"></i> ' + (data.mensaje || 'Ocurrió un error.'));
+            }
+        } catch {
+            showFeedback('error','<i class="fa-solid fa-circle-exclamation"></i> Error de conexión.');
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar mensaje';
+    });
+
+    function showFeedback(type, html) {
+        const fb = document.getElementById('cf-feedback');
+        fb.className    = 'cf-feedback cf-feedback--' + type;
+        fb.innerHTML    = html;
+        fb.style.display = 'flex';
+        fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
     </script>
 </body>
 </html>
