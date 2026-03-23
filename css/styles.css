@@ -24,7 +24,7 @@
     --text-3:       #454b6b;
 
     --font-d: 'Syne', sans-serif;
-    --font-b: 'DM Sans', sans-serif;
+    --font-b: 'Boska', serif;
 
     --r-sm: 8px;
     --r-md: 12px;
@@ -1149,4 +1149,244 @@ body.home-body { overflow-x: hidden; }
 
 #resultados-busqueda-productos li:hover {
     background: rgba(255,255,255,0.05);
+}
+
+
+.titulo-seccion{
+    display: flex;
+    justify-content: center;
+}
+/* ==========================================
+   FORMULARIO DE CONTACTO
+   ========================================== */
+
+.contact-card {
+    text-align: left !important;
+    padding: 48px 52px !important;
+}
+
+.contact-intro {
+    text-align: center;
+    color: var(--text-2);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    max-width: 480px;
+    margin: 0 auto 36px !important;
+}
+
+.contact-form {
+    width: 100%;
+}
+
+/* Títulos de grupo */
+.cf-group-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--amber);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-top: 28px;
+}
+
+.cf-group-title:first-child { margin-top: 0; }
+
+/* Filas y campos */
+.cf-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.cf-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.cf-field-full {
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+.cf-field label,
+.cf-field-full label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-2);
+    letter-spacing: 0.02em;
+}
+
+.req { color: var(--amber); }
+.opt { color: var(--text-3); font-weight: 400; font-size: 0.74rem; }
+
+.cf-field input,
+.cf-field-full input,
+.cf-field select,
+.cf-field-full select,
+.cf-field textarea,
+.cf-field-full textarea {
+    background: rgba(255,255,255,0.035);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-md);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    padding: 11px 14px;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    outline: none;
+    width: 100%;
+}
+
+.cf-field input::placeholder,
+.cf-field-full input::placeholder,
+.cf-field textarea::placeholder,
+.cf-field-full textarea::placeholder {
+    color: var(--text-3);
+}
+
+.cf-field input:focus,
+.cf-field-full input:focus,
+.cf-field select:focus,
+.cf-field-full select:focus,
+.cf-field textarea:focus,
+.cf-field-full textarea:focus {
+    border-color: var(--amber-border);
+    box-shadow: 0 0 0 3px var(--amber-glow);
+    background: rgba(245,166,35,0.04);
+}
+
+/* Select arrow */
+.cf-field select,
+.cf-field-full select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238891b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 40px;
+    cursor: pointer;
+}
+
+.cf-field select option,
+.cf-field-full select option {
+    background: var(--bg2);
+    color: var(--text);
+}
+
+.cf-field textarea,
+.cf-field-full textarea {
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.6;
+}
+
+/* Checkbox legal */
+.cf-legal {
+    margin: 20px 0 24px;
+}
+
+.cf-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 0.83rem;
+    color: var(--text-2);
+    user-select: none;
+}
+
+.cf-checkbox-label input[type="checkbox"] {
+    display: none;
+}
+
+.cf-checkbox-custom {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    border: 1.5px solid var(--border-hi);
+    border-radius: 5px;
+    background: rgba(255,255,255,0.03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.cf-checkbox-label input[type="checkbox"]:checked + .cf-checkbox-custom {
+    background: var(--amber);
+    border-color: var(--amber);
+}
+
+.cf-checkbox-label input[type="checkbox"]:checked + .cf-checkbox-custom::after {
+    content: '';
+    width: 5px;
+    height: 9px;
+    border: 2px solid #000;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg) translateY(-1px);
+    display: block;
+}
+
+.cf-link {
+    color: var(--amber);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* Botón submit */
+.cf-submit-row {
+    display: flex;
+    justify-content: center;
+}
+
+.cf-btn-submit {
+    padding: 14px 40px !important;
+    font-size: 0.92rem !important;
+    width: 100%;
+    justify-content: center;
+}
+
+/* Feedback */
+.cf-feedback {
+    margin-top: 20px;
+    padding: 14px 18px;
+    border-radius: var(--r-md);
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: fadeUp 0.3s var(--ease-out) both;
+}
+
+.cf-feedback--success {
+    background: rgba(45,212,191,0.12);
+    border: 1px solid rgba(45,212,191,0.3);
+    color: var(--teal);
+}
+
+.cf-feedback--error {
+    background: rgba(248,113,113,0.1);
+    border: 1px solid rgba(248,113,113,0.3);
+    color: var(--red);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .contact-card {
+        padding: 32px 24px !important;
+    }
+    .cf-row {
+        grid-template-columns: 1fr;
+    }
 }
