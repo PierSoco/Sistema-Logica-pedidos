@@ -38,8 +38,9 @@ try {
 
         echo json_encode([
             'success' => true,
-            'nombre' => $user['Nombre'],
-            'rol' => $user['Rol']
+            'nombre'  => $user['Nombre'],
+            'rol'     => $user['Rol'],
+            'email'   => $user['Email'],
         ]);
     } else {
         echo json_encode(['success' => false, 'error' => 'Credenciales incorrectas.']);
