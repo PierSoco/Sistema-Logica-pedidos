@@ -90,6 +90,9 @@ if (isset($_GET['action'])) {
         case 'marcarListo':
             marcarPedidoListo($pdo);
             break;
+        case 'enviarContacto':
+            enviarFormularioContacto();
+            break;
         default:
             echo json_encode(['error' => 'Acción no válida']);
             break;
@@ -819,6 +822,222 @@ function checkRateLimit($pdo, $ip, $action) {
     return true;
 }
 
+// ==========================================
+// FORMULARIO DE CONTACTO PÚBLICO
+// ==========================================
+
+function enviarFormularioContacto() {
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    // --- Sanitizar y validar ---
+    $nombre   = trim(strip_tags($data['nombre']   ?? ''));
+    $email    = filter_var(trim($data['email'] ?? ''), FILTER_VALIDATE_EMAIL);
+    $telefono = trim(strip_tags($data['telefono'] ?? ''));
+    $empresa  = trim(strip_tags($data['empresa']  ?? ''));
+    $asunto   = trim(strip_tags($data['asunto']   ?? ''));
+    $mensaje  = trim(strip_tags($data['mensaje']  ?? ''));
+
+    // Validación básica
+    if (!$nombre || !$email || !$asunto || !$mensaje) {
+        echo json_encode(['success' => false, 'mensaje' => 'Faltan campos obligatorios.']);
+        return;
+    }
+
+    // Asuntos permitidos
+    $asuntosValidos = ['Consulta general', 'Solicitar información', 'Contratar servicio', 'Soporte técnico', 'Otro'];
+    if (!in_array($asunto, $asuntosValidos)) {
+        echo json_encode(['success' => false, 'mensaje' => 'Asunto no válido.']);
+        return;
+    }
+
+    $telefonoLinea = $telefono ?: '—';
+    $empresaLinea  = $empresa  ?: '—';
+    $fechaEnvio    = date('d/m/Y \a \l\a\s H:i') . 'hs';
+    $mensajeHtml   = nl2br(htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8'));
+
+    // HELPER: fila de dato para tablas HTML
+    function emailRow($label, $value) {
+        return '
+        <tr>
+          <td style="padding:10px 0;border-bottom:1px solid #1e2235;width:130px;vertical-align:top;">
+            <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#454b6b;">'
+            . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>
+          </td>
+          <td style="padding:10px 0;border-bottom:1px solid #1e2235;vertical-align:top;">
+            <span style="font-size:14px;color:#eef0f8;">'
+            . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '</span>
+          </td>
+        </tr>';
+    }
+
+    // Wrapper HTML base
+    $baseWrap = '
+    <div style="background:#0a0c12;margin:0;padding:0;font-family:\'DM Sans\',Arial,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0c12;min-height:100vh;">
+    <tr><td align="center" style="padding:40px 16px;">';
+    $baseWrapClose = '</td></tr></table></div>';
+
+    // ── CORREO INTERNO ────────────────────────────────────────────
+    $destinatarioInterno = 'info@zatmeni.ar'; // ← Cambiar por el correo de destino
+    $asuntoInterno       = "Nuevo contacto: {$asunto} — {$nombre}";
+
+    $htmlInterno = $baseWrap . '
+      <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#10131e;border-radius:16px;border:1px solid #1a1f35;overflow:hidden;">
+        <tr>
+          <td style="background:linear-gradient(135deg,rgba(245,166,35,.18) 0%,rgba(245,166,35,.04) 100%);padding:0;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr><td style="height:3px;background:linear-gradient(90deg,transparent,#f5a623,transparent);"></td></tr>
+              <tr>
+                <td style="padding:36px 40px 28px;">
+                  <table cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);border-radius:10px;padding:8px 14px;">
+                        <span style="font-size:18px;">🚚</span>
+                        <span style="font-size:16px;font-weight:800;color:#eef0f8;letter-spacing:-.02em;vertical-align:middle;margin-left:6px;">Reparto<span style="color:#f5a623;">GO</span></span>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:20px 0 0;font-size:22px;font-weight:800;color:#eef0f8;letter-spacing:-.02em;">💬 Nuevo mensaje de contacto</p>
+                  <p style="margin:8px 0 0;font-size:13px;color:#8891b8;line-height:1.6;">Se recibió una nueva consulta a través del formulario del sitio web.</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px 40px;">
+            <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
+              <tr>
+                <td style="background:rgba(245,166,35,.14);border:1px solid rgba(245,166,35,.32);border-radius:999px;padding:6px 16px;">
+                  <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f5a623;">' . htmlspecialchars($asunto, ENT_QUOTES, 'UTF-8') . '</span>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#f5a623;border-bottom:1px solid #1e2235;padding-bottom:10px;">Datos del remitente</p>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
+              ' . emailRow('Nombre', $nombre) . emailRow('Email', $email) . emailRow('Teléfono', $telefonoLinea) . emailRow('Empresa', $empresaLinea) . '
+            </table>
+            <p style="margin:0 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#f5a623;border-bottom:1px solid #1e2235;padding-bottom:10px;">Mensaje</p>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
+              <tr>
+                <td style="background:#0d1020;border:1px solid #1e2235;border-left:3px solid #f5a623;border-radius:0 10px 10px 0;padding:18px 20px;">
+                  <p style="margin:0;font-size:14px;color:#c8ceea;line-height:1.75;">' . $mensajeHtml . '</p>
+                </td>
+              </tr>
+            </table>
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td align="center">
+                  <a href="mailto:' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '?subject=Re:%20' . rawurlencode($asunto) . '"
+                     style="display:inline-block;background:#f5a623;color:#0a0c12;font-size:14px;font-weight:700;text-decoration:none;padding:13px 32px;border-radius:10px;">
+                    ✉ Responder a ' . htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8') . '
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#0d1020;border-top:1px solid #1e2235;padding:20px 40px;">
+            <p style="margin:0;font-size:11px;color:#454b6b;text-align:center;line-height:1.6;">
+              Enviado el ' . $fechaEnvio . ' · RepartoGO — Sistema de logística · <a href="https://zatmeni.ar" style="color:#f5a623;text-decoration:none;">zatmeni.ar</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    ' . $baseWrapClose;
+
+    $headersInterno  = "From: RepartoGO <noreply@zatmeni.ar>\r\n";
+    $headersInterno .= "Reply-To: {$email}\r\n";
+    $headersInterno .= "MIME-Version: 1.0\r\n";
+    $headersInterno .= "Content-Type: text/html; charset=UTF-8\r\n";
+
+    $envioInterno = mail($destinatarioInterno, $asuntoInterno, $htmlInterno, $headersInterno);
+
+    // ── CORREO DE CONFIRMACIÓN AL USUARIO ────────────────────────
+    $asuntoConfirmacion = "Recibimos tu mensaje — RepartoGO";
+
+    $htmlConfirmacion = $baseWrap . '
+      <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#10131e;border-radius:16px;border:1px solid #1a1f35;overflow:hidden;">
+        <tr>
+          <td style="background:linear-gradient(135deg,rgba(45,212,191,.12) 0%,rgba(45,212,191,.03) 100%);padding:0;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr><td style="height:3px;background:linear-gradient(90deg,transparent,#2dd4bf,transparent);"></td></tr>
+              <tr>
+                <td style="padding:36px 40px 28px;">
+                  <table cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);border-radius:10px;padding:8px 14px;">
+                        <span style="font-size:18px;">🚚</span>
+                        <span style="font-size:16px;font-weight:800;color:#eef0f8;letter-spacing:-.02em;vertical-align:middle;margin-left:6px;">Reparto<span style="color:#f5a623;">GO</span></span>
+                      </td>
+                    </tr>
+                  </table>
+                  <table cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
+                    <tr>
+                      <td style="background:rgba(45,212,191,.14);border:1px solid rgba(45,212,191,.3);border-radius:50%;width:52px;height:52px;text-align:center;vertical-align:middle;">
+                        <span style="font-size:24px;line-height:52px;">✅</span>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:16px 0 0;font-size:22px;font-weight:800;color:#eef0f8;letter-spacing:-.02em;">¡Mensaje recibido, ' . htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8') . '!</p>
+                  <p style="margin:8px 0 0;font-size:13px;color:#8891b8;line-height:1.6;">Gracias por contactarnos. Te responderemos a la brevedad posible.</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px 40px;">
+            <p style="margin:0 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#2dd4bf;border-bottom:1px solid #1e2235;padding-bottom:10px;">Resumen de tu consulta</p>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
+              ' . emailRow('Nombre', $nombre) . emailRow('Email', $email) . emailRow('Teléfono', $telefonoLinea) . emailRow('Empresa', $empresaLinea) . emailRow('Asunto', $asunto) . '
+            </table>
+            <p style="margin:0 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#2dd4bf;border-bottom:1px solid #1e2235;padding-bottom:10px;">Tu mensaje</p>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:32px;">
+              <tr>
+                <td style="background:#0d1020;border:1px solid #1e2235;border-left:3px solid #2dd4bf;border-radius:0 10px 10px 0;padding:18px 20px;">
+                  <p style="margin:0;font-size:14px;color:#c8ceea;line-height:1.75;">' . $mensajeHtml . '</p>
+                </td>
+              </tr>
+            </table>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.2);border-radius:12px;padding:18px 22px;">
+                  <p style="margin:0;font-size:13px;color:#8891b8;line-height:1.7;">
+                    🕐 &nbsp;Nuestro equipo revisará tu mensaje y se pondrá en contacto a la brevedad.<br>
+                    Si tenés alguna consulta urgente, podés responder directamente este correo.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#0d1020;border-top:1px solid #1e2235;padding:20px 40px;">
+            <p style="margin:0;font-size:11px;color:#454b6b;text-align:center;line-height:1.6;">
+              Este correo fue generado automáticamente · ' . $fechaEnvio . '<br>
+              RepartoGO — Sistema de logística · <a href="https://zatmeni.ar" style="color:#f5a623;text-decoration:none;">zatmeni.ar</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    ' . $baseWrapClose;
+
+    $headersConfirmacion  = "From: RepartoGO <noreply@zatmeni.ar>\r\n";
+    $headersConfirmacion .= "MIME-Version: 1.0\r\n";
+    $headersConfirmacion .= "Content-Type: text/html; charset=UTF-8\r\n";
+
+    mail($email, $asuntoConfirmacion, $htmlConfirmacion, $headersConfirmacion);
+
+    if ($envioInterno) {
+        echo json_encode(['success' => true, 'mensaje' => 'Mensaje enviado correctamente.']);
+    } else {
+        echo json_encode(['success' => false, 'mensaje' => 'No se pudo enviar el mensaje. Intentá nuevamente.']);
+    }
+}
+
+// ==========================================
 function sendPasswordResetEmail($email, $token) {
     $resetLink = "https://zatmeni.ar/zple/restablecer.html?token=" . urlencode($token);
     $to = $email;
@@ -1094,15 +1313,14 @@ function eliminarUsuario($pdo) {
     }
 }
 
-
 // ==========================================
 // HISTORIAL COMPLETO DE PEDIDOS
 // ==========================================
+
 function obtenerHistorialPedidos($pdo) {
     validarRol(['recepcionista', 'admin', 'superadmin']);
 
     try {
-        // Todos los pedidos, todos los estados
         $stmt = $pdo->query("
             SELECT
                 p.ID_pedido,
@@ -1135,24 +1353,6 @@ function obtenerHistorialPedidos($pdo) {
         ");
         $pedidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Stats para el historial
-        $stats = [
-            'total'     => count($pedidos),
-            'pendiente' => 0,
-            'preparando'=> 0,
-            'en_camino' => 0,
-            'entregado' => 0,
-            'cancelado' => 0,
-        ];
-        foreach ($pedidos as $p) {
-            $e = strtolower(str_replace(' ', '_', $p['Estado']));
-            if (isset($stats[$e])) $stats[$e]++;
-        }
-        // Alias en camino
-        foreach ($pedidos as $p) {
-            if ($p['Estado'] === 'En camino') $stats['en_camino']++;
-        }
-        // Recalcular sin doble conteo
         $stats = ['total'=>0,'pendiente'=>0,'preparando'=>0,'en_camino'=>0,'entregado'=>0,'cancelado'=>0];
         foreach ($pedidos as $p) {
             $stats['total']++;
@@ -1175,37 +1375,33 @@ function obtenerHistorialPedidos($pdo) {
 // ==========================================
 // RESUMEN DEL DÍA (para sidebar)
 // ==========================================
+
 function obtenerResumenHoy($pdo) {
     if (!isset($_SESSION['user_id'])) {
         echo json_encode(['status' => 'error', 'message' => 'No autorizado']);
         return;
     }
     try {
-        // Entregados HOY
         $entregados_hoy = $pdo->query("
-            SELECT COUNT(*) FROM pedidos 
+            SELECT COUNT(*) FROM pedidos
             WHERE Estado = 'Entregado' AND DATE(fecha_creacion) = CURDATE()
         ")->fetchColumn();
 
-        // Facturado HOY
         $facturado_hoy = $pdo->query("
-            SELECT COALESCE(SUM(Total), 0) FROM pedidos 
+            SELECT COALESCE(SUM(Total), 0) FROM pedidos
             WHERE Estado = 'Entregado' AND DATE(fecha_creacion) = CURDATE()
         ")->fetchColumn();
 
-        // Entregados TOTAL (histórico)
         $entregados_total = $pdo->query("
             SELECT COUNT(*) FROM pedidos WHERE Estado = 'Entregado'
         ")->fetchColumn();
 
-        // Facturado TOTAL (histórico)
         $facturado_total = $pdo->query("
             SELECT COALESCE(SUM(Total), 0) FROM pedidos WHERE Estado = 'Entregado'
         ")->fetchColumn();
 
-        // Activos ahora (pendiente + preparando + en camino)
         $activos = $pdo->query("
-            SELECT COUNT(*) FROM pedidos 
+            SELECT COUNT(*) FROM pedidos
             WHERE Estado IN ('Pendiente', 'Preparando', 'En camino')
         ")->fetchColumn();
 
