@@ -13,8 +13,65 @@ const TOTAL_STEPS = 3;
 // ==========================================
 async function iniciarLogicaRecepcionista() {
     console.log("Cargando ecosistema de Recepción...");
+
+    // Activar sidebar y layout de 2 columnas
+    const sidebar = document.getElementById('app-sidebar');
+    const wrapper = document.querySelector('.app-wrapper');
+    if (sidebar) sidebar.classList.remove('hidden');
+    if (wrapper) wrapper.classList.remove('no-sidebar');
+
     await cargarTodoRecepcion();
     document.getElementById('buscador-pedidos-gral')?.addEventListener('input', filtrarPedidosLocal);
+    actualizarResumenSidebar();
+
+    // Auto-recarga silenciosa cada 30 segundos
+    setInterval(async () => {
+        await autoRecargarDatos();
+    }, 30000);
+}
+
+// Recarga silenciosa: actualiza datos sin parpadeo de UI
+async function autoRecargarDatos() {
+    try {
+        // 1. Recargar pedidos actuales
+        const res = await fetch('./backend/funciones.php?action=getPedidosActuales');
+        const result = await res.json();
+        if (result.status === 'success') {
+            DATA_RECEPCION.pedidos = result.data;
+            renderizarTablaPedidosRecepcion(result.data);
+            // Actualizar badge
+            const badge = document.getElementById('badge-actuales');
+            if (badge) badge.textContent = result.data.length;
+        }
+
+        // 2. Si el historial está visible y cargado, recargarlo también
+        const panelHist = document.getElementById('panel-historial-recepcionista');
+        const histVisible = panelHist && !panelHist.classList.contains('hidden');
+        if (histVisible && HISTORIAL_STATE.cargado) {
+            await recargarHistorialSilencioso();
+        }
+
+        // 3. Actualizar sidebar stats
+        actualizarResumenSidebar();
+
+        // 4. Marcar indicador visual
+        marcarUltimaActualizacion();
+
+    } catch(e) { /* fallo silencioso */ }
+}
+
+async function recargarHistorialSilencioso() {
+    try {
+        const res    = await fetch('./backend/funciones.php?action=getHistorialPedidos');
+        const result = await res.json();
+        if (result.status !== 'success') return;
+
+        HISTORIAL_STATE.todos = result.data.pedidos;
+        actualizarStatsHistorial(result.data.stats);
+
+        // Mantener posición, filtros y página — solo refrescar datos
+        historialFiltrar();
+    } catch(e) { /* fallo silencioso */ }
 }
 
 function filtrarPedidosLocal(e) {
@@ -32,11 +89,15 @@ async function cargarTodoRecepcion() {
         const res = await fetch('./backend/funciones.php?action=getInitialDataRecepcionista');
         const result = await res.json();
         if (result.status === 'success') {
-            DATA_RECEPCION.productos  = result.data.productos;
-            DATA_RECEPCION.pedidos    = result.data.pedidos;
-            DATA_RECEPCION.detalles   = result.data.detalles;
-            DATA_RECEPCION.restaurante= result.data.restaurante || null;
+            DATA_RECEPCION.productos   = result.data.productos;
+            DATA_RECEPCION.pedidos     = result.data.pedidos;
+            DATA_RECEPCION.detalles    = result.data.detalles;
+            DATA_RECEPCION.restaurante = result.data.restaurante || null;
             renderizarTablaPedidosRecepcion(DATA_RECEPCION.pedidos);
+
+            // Badge sidebar
+            const badge = document.getElementById('badge-actuales');
+            if (badge) badge.textContent = DATA_RECEPCION.pedidos.length;
         } else {
             mostrarMensaje('error', 'Error al cargar datos: ' + result.message);
         }
@@ -560,7 +621,7 @@ async function loginUsuario() {
         const result = await response.json();
 
         if (result.success) {
-            showInit(result.rol, result.nombre);
+            showInit(result.rol, result.nombre, result.email || '');
         } else {
             alert("Error: " + result.error);
         }
@@ -570,11 +631,98 @@ async function loginUsuario() {
     }
 }
 
-function showInit(rol, nombre) {
+function showInit(rol, nombre, email) {
     localStorage.setItem('user_nombre', nombre.trim());
-    localStorage.setItem('user_rol', rol.trim());
+    localStorage.setItem('user_rol',    rol.trim());
+    if (email) localStorage.setItem('user_email', email.trim());
     window.location.href = 'dashboard.html';
 }
+
+// ==========================================
+// USER DROPDOWN & PERFIL
+// ==========================================
+
+function toggleUserMenu() {
+    const dropdown = document.getElementById('user-dropdown');
+    const btn      = document.getElementById('user-badge-btn');
+    if (!dropdown) return;
+    const isOpen = dropdown.classList.contains('open');
+    if (isOpen) {
+        cerrarUserMenu();
+    } else {
+        dropdown.classList.add('open');
+        btn?.setAttribute('aria-expanded', 'true');
+    }
+}
+
+function cerrarUserMenu() {
+    const dropdown = document.getElementById('user-dropdown');
+    const btn      = document.getElementById('user-badge-btn');
+    dropdown?.classList.remove('open');
+    btn?.setAttribute('aria-expanded', 'false');
+}
+
+function abrirModalPerfil() {
+    cerrarUserMenu();
+
+    const nombre      = localStorage.getItem('user_nombre')             || '—';
+    const rol         = localStorage.getItem('user_rol')                || '—';
+    const email       = localStorage.getItem('user_email')              || '—';
+    const restaurante = localStorage.getItem('user_restaurante_nombre') || 'Sin asignar';
+    const inicial     = nombre.charAt(0).toUpperCase();
+
+    const rolFmt = rol.charAt(0).toUpperCase() + rol.slice(1).toLowerCase();
+
+    // Llenar hero
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('perfil-avatar-big',  inicial);
+    set('perfil-nombre-big',  nombre);
+    set('perfil-rol-pill',    rolFmt.toUpperCase());
+
+    // Llenar campos
+    set('pf-nombre',      nombre);
+    set('pf-email',       email);
+    set('pf-rol',         rolFmt);
+    set('pf-restaurante', restaurante);
+
+    // Abrir drawer
+    document.getElementById('perfil-drawer')?.classList.add('open');
+    document.getElementById('perfil-backdrop')?.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarModalPerfil() {
+    document.getElementById('perfil-drawer')?.classList.remove('open');
+    document.getElementById('perfil-backdrop')?.classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+// Poblar el dropdown con datos del usuario al cargar
+function poblarUserDropdown(nombre, rol, email) {
+    const inicial = (nombre || '?').charAt(0).toUpperCase();
+
+    // Header badge
+    const avatarEl = document.getElementById('avatar-inicial');
+    if (avatarEl) avatarEl.textContent = inicial;
+
+    // Dropdown
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('udrop-avatar',   inicial);
+    set('udrop-nombre',   nombre || '—');
+    set('udrop-email',    email  || '—');
+    set('udrop-rol',      (rol   || '—').toUpperCase());
+}
+
+// Cerrar dropdown al hacer click fuera
+document.addEventListener('click', (e) => {
+    const wrap = document.getElementById('user-menu-wrap');
+    if (wrap && !wrap.contains(e.target)) cerrarUserMenu();
+});
+
+// Cerrar modal perfil con Escape (complementa el listener global)
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') cerrarModalPerfil();
+});
 
 // ==========================================
 // 2. LÓGICA DE DASHBOARD
@@ -591,27 +739,34 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Por defecto el wrapper no tiene sidebar (1 columna)
+        const wrapper = document.querySelector('.app-wrapper');
+        if (wrapper) wrapper.classList.add('no-sidebar');
+
+        // Header
         const avatarInicial = document.getElementById('avatar-inicial');
         const headerRol     = document.getElementById('header-rol');
+        const userEmail = localStorage.getItem('user_email') || '';
 
         if (userNombre) {
             headerNombre.textContent = userNombre;
             if (avatarInicial) avatarInicial.textContent = userNombre.charAt(0).toUpperCase();
         }
+        if (userRol && headerRol) headerRol.textContent = userRol.toUpperCase();
 
-        if (userRol && headerRol) {
-            headerRol.textContent = userRol.toUpperCase();
-        }
+        // Poblar dropdown con datos completos del usuario
+        poblarUserDropdown(userNombre, userRol, userEmail);
 
         const rolNormalizado = userRol.trim().toLowerCase();
-        const panelActivo = document.getElementById(`panel-${rolNormalizado}`);
 
-        if (panelActivo) {
-            panelActivo.classList.remove('hidden');
-        } else {
-            console.error(`No se encontró el panel HTML para el rol: ${rolNormalizado}`);
-        }
+        // Mostrar panel principal del rol
+        // Para recepcionista el panel inicial es panel-recepcionista (pedidos actuales)
+        const panelId = `panel-${rolNormalizado}`;
+        const panelActivo = document.getElementById(panelId);
+        if (panelActivo) panelActivo.classList.remove('hidden');
+        else console.error(`No se encontró el panel: ${panelId}`);
 
+        // Iniciar lógica del rol
         switch (rolNormalizado) {
             case 'recepcionista':
                 iniciarLogicaRecepcionista();
@@ -632,14 +787,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn('Rol no reconocido:', rolNormalizado);
         }
 
-        const btnCerrarSesion = document.getElementById('btn-cerrar-sesion');
-        if (btnCerrarSesion) {
-            btnCerrarSesion.addEventListener('click', () => {
-                localStorage.clear();
-                window.location.href = './backend/funciones.php?action=logout';
-            });
-        }
+        // Logout
+        document.getElementById('btn-cerrar-sesion')?.addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = './backend/funciones.php?action=logout';
+        });
 
+        // Animación de pedido cards
         const observer = new MutationObserver(() => {
             document.querySelectorAll('.pedido-card').forEach((card, i) => {
                 card.style.animationDelay = `${i * 0.07}s`;
@@ -1089,4 +1243,417 @@ function mostrarMensaje(tipo, mensaje) {
         msgDiv.classList.remove('show');
         setTimeout(() => msgDiv.remove(), 300);
     }, 3500);
+}
+// ==========================================
+// SIDEBAR — CAMBIAR VISTA
+// ==========================================
+function cambiarVista(vista) {
+    const panelActuales  = document.getElementById('panel-recepcionista');
+    const panelHistorial = document.getElementById('panel-historial-recepcionista');
+    const navActuales    = document.getElementById('nav-pedidos-actuales');
+    const navHistorial   = document.getElementById('nav-historial');
+
+    if (vista === 'actuales') {
+        panelActuales?.classList.remove('hidden');
+        panelHistorial?.classList.add('hidden');
+        navActuales?.classList.add('active');
+        navHistorial?.classList.remove('active');
+    } else {
+        panelActuales?.classList.add('hidden');
+        panelHistorial?.classList.remove('hidden');
+        navActuales?.classList.remove('active');
+        navHistorial?.classList.add('active');
+        // Cargar historial la primera vez; recargar si pasaron 5+ min
+        if (!HISTORIAL_STATE.cargado) {
+            cargarHistorial();
+        }
+    }
+
+    // Actualizar badge con pedidos activos
+    const badge = document.getElementById('badge-actuales');
+    if (badge) {
+        const activos = DATA_RECEPCION.pedidos.filter(p =>
+            ['Pendiente','Preparando','En camino'].includes(p.Estado)
+        ).length;
+        badge.textContent = activos;
+    }
+}
+
+async function actualizarResumenSidebar() {
+    try {
+        const res = await fetch('./backend/funciones.php?action=getResumenHoy');
+        const r   = await res.json();
+        if (r.status !== 'success') return;
+
+        const d = r.data;
+        const el1 = document.getElementById('sb-entregados');
+        const el2 = document.getElementById('sb-facturado');
+        const el1label = document.getElementById('sb-entregados-label');
+        const el2label = document.getElementById('sb-facturado-label');
+
+        // Si hay entregados hoy, mostramos "hoy". Si no, mostramos el total histórico
+        // con una etiqueta que lo deja claro
+        const hayHoy = d.entregados_hoy > 0 || parseFloat(d.facturado_hoy) > 0;
+
+        if (el1) el1.textContent = hayHoy ? d.entregados_hoy : d.entregados_total;
+        if (el1label) el1label.textContent = hayHoy ? 'Hoy · Entregados' : 'Total · Entregados';
+
+        const facturado = hayHoy ? parseFloat(d.facturado_hoy) : parseFloat(d.facturado_total);
+        if (el2) {
+            const fmt = facturado.toLocaleString('es-AR', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+            el2.textContent = '$' + fmt;
+        }
+        if (el2label) el2label.textContent = hayHoy ? 'Hoy · Facturado' : 'Total · Facturado';
+
+        // Actualizar badge de pedidos activos
+        const badge = document.getElementById('badge-actuales');
+        if (badge && d.activos !== undefined) badge.textContent = d.activos;
+
+    } catch(e) { /* silencioso */ }
+}
+
+// ==========================================
+// HISTORIAL — ESTADO GLOBAL
+// ==========================================
+const HISTORIAL_STATE = {
+    cargado:       false,
+    todos:         [],      // todos los pedidos sin filtro
+    filtrados:     [],      // resultado de búsqueda + filtros
+    paginaActual:  1,
+    porPagina:     25,
+    sortCol:       'id',
+    sortDir:       'desc',
+    sortColActivo: false,   // true solo cuando el usuario clickea una cabecera
+};
+
+// ==========================================
+// HISTORIAL — CARGA DESDE BACKEND
+// ==========================================
+async function cargarHistorial() {
+    const tbody = document.getElementById('hist-tbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="hist-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando historial...</td></tr>';
+
+    try {
+        const res    = await fetch('./backend/funciones.php?action=getHistorialPedidos');
+        const result = await res.json();
+
+        if (result.status !== 'success') {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="8" class="hist-loading">Error: ${result.message}</td></tr>`;
+            return;
+        }
+
+        HISTORIAL_STATE.todos    = result.data.pedidos;
+        HISTORIAL_STATE.cargado  = true;
+
+        // Stats
+        actualizarStatsHistorial(result.data.stats);
+
+        // Aplicar filtros iniciales (ninguno) y renderizar
+        historialFiltrar();
+
+    } catch(e) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="hist-loading">Error de conexión al cargar historial.</td></tr>';
+    }
+}
+
+// ==========================================
+// HISTORIAL — RECARGA MANUAL
+// ==========================================
+async function historialRecargarManual() {
+    const btn = document.getElementById('hist-btn-refresh');
+    const ind = document.getElementById('auto-reload-ind');
+    const label = document.getElementById('hist-ultima-act');
+
+    // Animación del botón
+    if (btn) {
+        btn.style.pointerEvents = 'none';
+        btn.querySelector('i').classList.add('fa-spin');
+    }
+    if (ind) ind.classList.add('pulsing');
+
+    await recargarHistorialSilencioso();
+
+    // Actualizar timestamp
+    const ahora = new Date();
+    const hora = ahora.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+    if (label) label.textContent = `Act. ${hora}`;
+    if (ind) ind.classList.add('pulsing');
+
+    // Reset botón
+    setTimeout(() => {
+        if (btn) {
+            btn.style.pointerEvents = '';
+            btn.querySelector('i').classList.remove('fa-spin');
+        }
+    }, 600);
+}
+
+// Actualizar indicador visual después de cada auto-recarga
+function marcarUltimaActualizacion() {
+    const ahora = new Date();
+    const hora = ahora.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+    const label = document.getElementById('hist-ultima-act');
+    const ind   = document.getElementById('auto-reload-ind');
+    if (label) label.textContent = `Act. ${hora}`;
+    if (ind) {
+        ind.classList.add('pulsing');
+        setTimeout(() => ind.classList.remove('pulsing'), 2000);
+    }
+}
+
+// ==========================================
+// HISTORIAL — STATS HEADER
+// ==========================================
+function actualizarStatsHistorial(stats) {
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('hs-total',     stats.total     || 0);
+    set('hs-pendiente', stats.pendiente || 0);
+    set('hs-camino',    stats.en_camino || 0);
+    set('hs-entregado', stats.entregado || 0);
+    set('hs-cancelado', stats.cancelado || 0);
+
+    // Badge sidebar
+    const badge = document.getElementById('badge-actuales');
+    if (badge) badge.textContent = (stats.pendiente || 0) + (stats.en_camino || 0);
+}
+
+// ==========================================
+// HISTORIAL — BUSCAR (input live)
+// ==========================================
+function historialBuscar() {
+    const q = document.getElementById('hist-buscador')?.value.trim() || '';
+    const clearBtn = document.getElementById('hist-clear-btn');
+    if (clearBtn) clearBtn.classList.toggle('hidden', q.length === 0);
+    HISTORIAL_STATE.paginaActual = 1;
+    historialFiltrar();
+}
+
+function historialLimpiarBusqueda() {
+    const inp = document.getElementById('hist-buscador');
+    if (inp) inp.value = '';
+    document.getElementById('hist-clear-btn')?.classList.add('hidden');
+    HISTORIAL_STATE.paginaActual = 1;
+    historialFiltrar();
+}
+
+function historialReset() {
+    const inp = document.getElementById('hist-buscador');
+    const sel1 = document.getElementById('hist-filtro-estado');
+    const sel2 = document.getElementById('hist-filtro-orden');
+    if (inp)  inp.value  = '';
+    if (sel1) sel1.value = '';
+    if (sel2) sel2.value = 'desc';
+    document.getElementById('hist-clear-btn')?.classList.add('hidden');
+    HISTORIAL_STATE.paginaActual  = 1;
+    HISTORIAL_STATE.sortCol       = 'id';
+    HISTORIAL_STATE.sortDir       = 'desc';
+    HISTORIAL_STATE.sortColActivo = false; // vuelve a usar el select de orden
+    // Reset sort headers
+    document.querySelectorAll('.hist-table thead th').forEach(th => th.classList.remove('sort-active'));
+    historialFiltrar();
+}
+
+// ==========================================
+// HISTORIAL — FILTRAR + ORDENAR
+// ==========================================
+function historialFiltrar() {
+    const q      = (document.getElementById('hist-buscador')?.value || '').toLowerCase().trim();
+    const estado = document.getElementById('hist-filtro-estado')?.value || '';
+    const orden  = document.getElementById('hist-filtro-orden')?.value  || 'desc';
+
+    let lista = [...HISTORIAL_STATE.todos];
+
+    // 1. Filtrar por búsqueda
+    if (q) {
+        lista = lista.filter(p => {
+            const texto = [
+                '#' + p.ID_pedido,
+                p.c_nombre, p.c_apellido, p.c_telefono,
+                p.Calle, p.Numero, p.Localidad,
+                p.detalles_resumen
+            ].join(' ').toLowerCase();
+            return texto.includes(q);
+        });
+    }
+
+    // 2. Filtrar por estado
+    if (estado) {
+        lista = lista.filter(p => p.Estado === estado);
+    }
+
+    // 3. Ordenar: sortCol de cabecera tiene prioridad sobre el select.
+    //    sortColActivo se pone en true solo cuando el usuario clickea una cabecera.
+    if (HISTORIAL_STATE.sortColActivo) {
+        lista = historialOrdenarLista(lista);
+    } else {
+        switch (orden) {
+            case 'asc':        lista.sort((a,b) => a.ID_pedido - b.ID_pedido); break;
+            case 'total-desc': lista.sort((a,b) => parseFloat(b.Total) - parseFloat(a.Total)); break;
+            case 'total-asc':  lista.sort((a,b) => parseFloat(a.Total) - parseFloat(b.Total)); break;
+            default:           lista.sort((a,b) => b.ID_pedido - a.ID_pedido); break; // desc = más reciente primero
+        }
+    }
+
+    HISTORIAL_STATE.filtrados = lista;
+    historialRenderizarPagina();
+}
+
+function historialOrdenarLista(lista) {
+    const { sortCol, sortDir } = HISTORIAL_STATE;
+    return [...lista].sort((a, b) => {
+        let va, vb;
+        if (sortCol === 'id')    { va = a.ID_pedido;      vb = b.ID_pedido; }
+        if (sortCol === 'total') { va = parseFloat(a.Total); vb = parseFloat(b.Total); }
+        if (sortCol === 'fecha') { va = a.fecha_creacion; vb = b.fecha_creacion; }
+        if (va < vb) return sortDir === 'asc' ? -1 : 1;
+        if (va > vb) return sortDir === 'asc' ?  1 : -1;
+        return 0;
+    });
+}
+
+// ==========================================
+// HISTORIAL — SORT POR COLUMNA
+// ==========================================
+function historialSort(col) {
+    if (HISTORIAL_STATE.sortCol === col) {
+        HISTORIAL_STATE.sortDir = HISTORIAL_STATE.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+        HISTORIAL_STATE.sortCol = col;
+        HISTORIAL_STATE.sortDir = 'desc';
+    }
+    HISTORIAL_STATE.sortColActivo = true; // columna clickeada, tiene prioridad sobre el select
+    HISTORIAL_STATE.paginaActual  = 1;
+
+    // Actualizar clases visuales en headers
+    document.querySelectorAll('.hist-table thead th[data-col]').forEach(th => {
+        th.classList.toggle('sort-active', th.dataset.col === col);
+        const icon = th.querySelector('.sort-icon');
+        if (icon && th.dataset.col === col) {
+            icon.className = `fa-solid fa-sort-${HISTORIAL_STATE.sortDir === 'asc' ? 'up' : 'down'} sort-icon`;
+        } else if (icon) {
+            icon.className = 'fa-solid fa-sort sort-icon';
+        }
+    });
+
+    historialFiltrar();
+}
+
+// ==========================================
+// HISTORIAL — RENDERIZAR PÁGINA
+// ==========================================
+function historialRenderizarPagina() {
+    const { filtrados, paginaActual, porPagina } = HISTORIAL_STATE;
+    const total      = filtrados.length;
+    const totalPags  = Math.max(1, Math.ceil(total / porPagina));
+    const desde      = (paginaActual - 1) * porPagina;
+    const hasta      = Math.min(desde + porPagina, total);
+    const pagina     = filtrados.slice(desde, hasta);
+
+    // Info row
+    const countEl = document.getElementById('hist-count-label');
+    const pageEl  = document.getElementById('hist-page-info');
+    if (countEl) countEl.textContent = total === 0 ? 'Sin resultados' : `${total} pedido${total !== 1 ? 's' : ''} encontrado${total !== 1 ? 's' : ''}`;
+    if (pageEl)  pageEl.textContent  = total > 0 ? `Mostrando ${desde+1}–${hasta} de ${total}` : '';
+
+    // Renderizar filas
+    const tbody = document.getElementById('hist-tbody');
+    if (!tbody) return;
+
+    if (pagina.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="hist-loading"><i class="fa-regular fa-folder-open" style="margin-right:8px;"></i>No se encontraron pedidos con esos filtros.</td></tr>';
+        document.getElementById('hist-pagination').innerHTML = '';
+        return;
+    }
+
+    tbody.innerHTML = pagina.map(p => {
+        const estadoCls = (p.Estado || '').toLowerCase().replace(' ', '-');
+        const estadoEmoji = {
+            'pendiente': '⏳', 'preparando': '👨‍🍳',
+            'en-camino': '🛵', 'entregado': '✅', 'cancelado': '❌'
+        }[estadoCls] || '•';
+
+        const piso = p.piso_depto  ? ` <small>· ${p.piso_depto}</small>` : '';
+        const loc  = p.Localidad   ? `<br><small>${p.Localidad}</small>` : '';
+
+        return `<tr class="hist-row-clickable" onclick="verDetallePedido(${p.ID_pedido})" title="Ver detalle del pedido #${p.ID_pedido}">
+            <td><span class="hist-id">#${p.ID_pedido}</span></td>
+            <td>
+                <div class="hist-cliente-nombre">${p.c_nombre || ''} ${p.c_apellido || ''}</div>
+                <div class="hist-cliente-tel"><i class="fa-solid fa-phone" style="font-size:.65rem;margin-right:3px;"></i>${p.c_telefono || '—'}</div>
+            </td>
+            <td>
+                <div class="hist-dir">${p.Calle || ''} ${p.Numero || ''}${piso}${loc}</div>
+            </td>
+            <td>
+                <div class="hist-productos" title="${p.detalles_resumen || ''}">${p.detalles_resumen || '—'}</div>
+            </td>
+            <td><span class="hist-total">$${parseFloat(p.Total || 0).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2})}</span></td>
+            <td><span class="hist-fecha">${p.fecha_creacion || '—'}</span></td>
+            <td><span class="estado-pill ${estadoCls}">${estadoEmoji} ${p.Estado || ''}</span></td>
+            <td onclick="event.stopPropagation()">
+                <button class="hist-btn-ver" title="Ver detalle" onclick="verDetallePedido(${p.ID_pedido})">
+                    <i class="fa-solid fa-eye"></i>
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+
+    // Paginación
+    renderizarPaginacion(totalPags);
+}
+
+// ==========================================
+// HISTORIAL — PAGINACIÓN
+// ==========================================
+function renderizarPaginacion(totalPags) {
+    const cont = document.getElementById('hist-pagination');
+    if (!cont) return;
+    if (totalPags <= 1) { cont.innerHTML = ''; return; }
+
+    const p = HISTORIAL_STATE.paginaActual;
+    let html = '';
+
+    // Botón anterior
+    html += `<button class="pag-btn" onclick="historialIrPagina(${p-1})" ${p===1?'disabled':''}>
+        <i class="fa-solid fa-chevron-left"></i>
+    </button>`;
+
+    // Números de página con elipsis
+    const pages = calcularPaginas(p, totalPags);
+    pages.forEach(pg => {
+        if (pg === '...') {
+            html += `<span class="pag-ellipsis">···</span>`;
+        } else {
+            html += `<button class="pag-btn${pg===p?' active':''}" onclick="historialIrPagina(${pg})">${pg}</button>`;
+        }
+    });
+
+    // Botón siguiente
+    html += `<button class="pag-btn" onclick="historialIrPagina(${p+1})" ${p===totalPags?'disabled':''}>
+        <i class="fa-solid fa-chevron-right"></i>
+    </button>`;
+
+    cont.innerHTML = html;
+}
+
+function calcularPaginas(actual, total) {
+    if (total <= 7) return Array.from({length:total}, (_,i) => i+1);
+    const pages = [];
+    if (actual <= 4) {
+        pages.push(1,2,3,4,5,'...',total);
+    } else if (actual >= total - 3) {
+        pages.push(1,'...',total-4,total-3,total-2,total-1,total);
+    } else {
+        pages.push(1,'...',actual-1,actual,actual+1,'...',total);
+    }
+    return pages;
+}
+
+function historialIrPagina(n) {
+    const total = Math.ceil(HISTORIAL_STATE.filtrados.length / HISTORIAL_STATE.porPagina);
+    if (n < 1 || n > total) return;
+    HISTORIAL_STATE.paginaActual = n;
+    historialRenderizarPagina();
+    // Scroll suave al top de la tabla
+    document.getElementById('panel-historial-recepcionista')?.scrollIntoView({ behavior:'smooth', block:'start' });
 }

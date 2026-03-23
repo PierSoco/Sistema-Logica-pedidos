@@ -56,6 +56,12 @@ if (isset($_GET['action'])) {
         case 'getPedidosActuales':
             obtenerPedidosActuales($pdo);
             break;
+        case 'getHistorialPedidos':
+            obtenerHistorialPedidos($pdo);
+            break;
+        case 'getResumenHoy':
+            obtenerResumenHoy($pdo);
+            break;
         case 'getPedidosRecepcionista':
             obtenerPedidosRecepcionista($pdo);
             break;
@@ -1085,6 +1091,133 @@ function eliminarUsuario($pdo) {
         echo json_encode(['status' => 'success', 'message' => 'Usuario eliminado', 'data' => ['id' => $id]]);
     } catch (PDOException $e) {
         echo json_encode(['status' => 'error', 'message' => 'Error al eliminar', 'data' => ['error' => $e->getMessage()]]);
+    }
+}
+
+
+// ==========================================
+// HISTORIAL COMPLETO DE PEDIDOS
+// ==========================================
+function obtenerHistorialPedidos($pdo) {
+    validarRol(['recepcionista', 'admin', 'superadmin']);
+
+    try {
+        // Todos los pedidos, todos los estados
+        $stmt = $pdo->query("
+            SELECT
+                p.ID_pedido,
+                p.Estado,
+                p.Total,
+                DATE_FORMAT(p.fecha_creacion, '%d/%m/%Y %H:%i') AS fecha_creacion,
+                p.fecha_creacion AS fecha_raw,
+                c.Nombre    AS c_nombre,
+                c.Apellido  AS c_apellido,
+                c.Telefono  AS c_telefono,
+                d.calle     AS Calle,
+                d.altura    AS Numero,
+                d.piso_depto,
+                d.referencias,
+                d.Localidad,
+                (
+                    SELECT GROUP_CONCAT(
+                        CONCAT(dp2.Cantidad, 'x ', pr2.Nombre_producto)
+                        ORDER BY dp2.ID_detalle
+                        SEPARATOR ', '
+                    )
+                    FROM detalle_pedido dp2
+                    JOIN productos pr2 ON dp2.ID_producto = pr2.ID_producto
+                    WHERE dp2.ID_pedido = p.ID_pedido
+                ) AS detalles_resumen
+            FROM pedidos p
+            INNER JOIN clientes    c ON p.ID_cliente   = c.ID_cliente
+            INNER JOIN direcciones d ON p.ID_direccion = d.ID_direccion
+            ORDER BY p.ID_pedido DESC
+        ");
+        $pedidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Stats para el historial
+        $stats = [
+            'total'     => count($pedidos),
+            'pendiente' => 0,
+            'preparando'=> 0,
+            'en_camino' => 0,
+            'entregado' => 0,
+            'cancelado' => 0,
+        ];
+        foreach ($pedidos as $p) {
+            $e = strtolower(str_replace(' ', '_', $p['Estado']));
+            if (isset($stats[$e])) $stats[$e]++;
+        }
+        // Alias en camino
+        foreach ($pedidos as $p) {
+            if ($p['Estado'] === 'En camino') $stats['en_camino']++;
+        }
+        // Recalcular sin doble conteo
+        $stats = ['total'=>0,'pendiente'=>0,'preparando'=>0,'en_camino'=>0,'entregado'=>0,'cancelado'=>0];
+        foreach ($pedidos as $p) {
+            $stats['total']++;
+            switch($p['Estado']) {
+                case 'Pendiente':  $stats['pendiente']++; break;
+                case 'Preparando': $stats['preparando']++; break;
+                case 'En camino':  $stats['en_camino']++; break;
+                case 'Entregado':  $stats['entregado']++; break;
+                case 'Cancelado':  $stats['cancelado']++; break;
+            }
+        }
+
+        echo json_encode(['status' => 'success', 'data' => ['pedidos' => $pedidos, 'stats' => $stats]]);
+
+    } catch (PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+}
+
+// ==========================================
+// RESUMEN DEL DÍA (para sidebar)
+// ==========================================
+function obtenerResumenHoy($pdo) {
+    if (!isset($_SESSION['user_id'])) {
+        echo json_encode(['status' => 'error', 'message' => 'No autorizado']);
+        return;
+    }
+    try {
+        // Entregados HOY
+        $entregados_hoy = $pdo->query("
+            SELECT COUNT(*) FROM pedidos 
+            WHERE Estado = 'Entregado' AND DATE(fecha_creacion) = CURDATE()
+        ")->fetchColumn();
+
+        // Facturado HOY
+        $facturado_hoy = $pdo->query("
+            SELECT COALESCE(SUM(Total), 0) FROM pedidos 
+            WHERE Estado = 'Entregado' AND DATE(fecha_creacion) = CURDATE()
+        ")->fetchColumn();
+
+        // Entregados TOTAL (histórico)
+        $entregados_total = $pdo->query("
+            SELECT COUNT(*) FROM pedidos WHERE Estado = 'Entregado'
+        ")->fetchColumn();
+
+        // Facturado TOTAL (histórico)
+        $facturado_total = $pdo->query("
+            SELECT COALESCE(SUM(Total), 0) FROM pedidos WHERE Estado = 'Entregado'
+        ")->fetchColumn();
+
+        // Activos ahora (pendiente + preparando + en camino)
+        $activos = $pdo->query("
+            SELECT COUNT(*) FROM pedidos 
+            WHERE Estado IN ('Pendiente', 'Preparando', 'En camino')
+        ")->fetchColumn();
+
+        echo json_encode(['status' => 'success', 'data' => [
+            'entregados_hoy'   => (int)$entregados_hoy,
+            'facturado_hoy'    => number_format((float)$facturado_hoy, 2, '.', ''),
+            'entregados_total' => (int)$entregados_total,
+            'facturado_total'  => number_format((float)$facturado_total, 2, '.', ''),
+            'activos'          => (int)$activos,
+        ]]);
+    } catch (PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
     }
 }
 

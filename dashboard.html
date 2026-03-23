@@ -1426,6 +1426,433 @@
     .carrito-item { grid-template-columns:1fr auto auto; }
     .item-precio-unit { display:none; }
 }
+
+/* ==========================================
+   SIDEBAR LAYOUT
+   ========================================== */
+.app-wrapper { display:grid; grid-template-rows:64px 1fr; grid-template-columns:220px 1fr; min-height:100vh; }
+.app-header { grid-column:1/-1; }
+.app-sidebar { grid-row:2; grid-column:1; background:var(--bg2); border-right:1px solid var(--border); padding:16px 10px; display:flex; flex-direction:column; gap:2px; position:sticky; top:64px; height:calc(100vh - 64px); overflow-y:auto; }
+.app-sidebar.hidden { display:none !important; }
+.app-wrapper.no-sidebar .app-container { grid-column:1/-1; }
+.app-container { grid-row:2; grid-column:2; max-width:100%; padding:36px; overflow-x:hidden; }
+.sidebar-section-label { font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--text-3); padding:14px 10px 5px; }
+.nav-item { display:flex; align-items:center; gap:9px; padding:9px 12px; border-radius:var(--r-sm); cursor:pointer; font-size:.83rem; font-weight:500; color:var(--text-2); border:1px solid transparent; background:transparent; width:100%; text-align:left; transition:all .16s; font-family:var(--font-b); }
+.nav-item i { width:16px; text-align:center; font-size:.82rem; color:var(--text-3); transition:color .16s; }
+.nav-item:hover { background:rgba(255,255,255,.04); color:var(--text); }
+.nav-item:hover i { color:var(--text-2); }
+.nav-item.active { background:var(--amber-glow); color:var(--amber); border-color:var(--amber-border); font-weight:600; }
+.nav-item.active i { color:var(--amber); }
+.nav-badge { margin-left:auto; background:var(--amber); color:#0a0c12; font-size:.6rem; font-weight:800; padding:2px 7px; border-radius:999px; }
+.sidebar-stat { display:flex; justify-content:space-between; align-items:center; padding:7px 12px; border-radius:var(--r-sm); background:rgba(255,255,255,.02); border:1px solid var(--border); margin-top:3px; }
+.sidebar-stat-label { font-size:.7rem; color:var(--text-3); font-weight:500; }
+.sidebar-stat-val { font-family:var(--font-d); font-size:.9rem; font-weight:700; color:var(--amber); }
+
+/* HISTORIAL STATS */
+.hist-stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:24px; }
+.hist-stat-card { --accent:var(--teal); background:var(--bg2); border:1px solid var(--border); border-radius:var(--r-md); padding:16px 18px; display:flex; flex-direction:column; gap:4px; position:relative; overflow:hidden; transition:all .2s; }
+.hist-stat-card::after { content:""; position:absolute; bottom:0; left:0; right:0; height:2px; background:var(--accent); opacity:.6; }
+.hist-stat-card:hover { border-color:var(--border-hi); transform:translateY(-2px); }
+.hist-stat-num { font-family:var(--font-d); font-size:1.9rem; font-weight:800; color:var(--accent); letter-spacing:-.03em; line-height:1; }
+.hist-stat-label { font-size:.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--text-2); }
+
+/* HISTORIAL TOOLBAR */
+.hist-toolbar { display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+.hist-search-wrap { flex:1; min-width:220px; display:flex; align-items:center; gap:10px; background:var(--bg2); border:1px solid var(--border); border-radius:var(--r-sm); padding:0 14px; transition:border-color .2s, box-shadow .2s; }
+.hist-search-wrap:focus-within { border-color:var(--amber); box-shadow:0 0 0 3px var(--amber-glow); }
+.hist-search-wrap > i { color:var(--text-3); font-size:.82rem; flex-shrink:0; }
+.hist-search-wrap input { flex:1; background:transparent; border:none; outline:none; color:var(--text); font-family:var(--font-b); font-size:.88rem; padding:11px 0; }
+.hist-search-wrap input::placeholder { color:var(--text-3); }
+.hist-search-clear { background:none; border:none; color:var(--text-3); cursor:pointer; padding:4px; font-size:.8rem; transition:color .15s; }
+.hist-search-clear:hover { color:var(--red); }
+.hist-filters { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.hist-select { background:var(--bg2); border:1px solid var(--border); color:var(--text-2); border-radius:var(--r-sm); padding:9px 28px 9px 12px; font-size:.82rem; font-family:var(--font-b); cursor:pointer; transition:border-color .2s; outline:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238891b8'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
+.hist-select:hover, .hist-select:focus { border-color:var(--border-hi); }
+.hist-btn-reset { background:var(--bg2); border:1px solid var(--border); color:var(--text-3); border-radius:var(--r-sm); padding:9px 13px; cursor:pointer; transition:all .18s; }
+.hist-btn-reset:hover { border-color:var(--red); color:var(--red); background:var(--red-glow); }
+.hist-info-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:0 2px; }
+.hist-count-label { font-size:.78rem; color:var(--text-2); }
+.hist-page-info { font-size:.75rem; color:var(--text-3); font-weight:500; }
+
+/* HISTORIAL TABLE */
+.hist-table-wrap { background:var(--bg2); border:1px solid var(--border); border-radius:var(--r-lg); overflow:hidden; overflow-x:auto; }
+.hist-table { width:100%; border-collapse:collapse; font-family:var(--font-b); min-width:760px; }
+.hist-table thead tr { background:var(--bg3); border-bottom:1px solid var(--border-hi); }
+.hist-table thead th { padding:13px 16px; text-align:left; font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--text-2); white-space:nowrap; }
+.hist-table thead th.sortable { cursor:pointer; user-select:none; }
+.hist-table thead th.sortable:hover { color:var(--amber); }
+.hist-table thead th.sort-active { color:var(--amber); }
+.sort-icon { font-size:.6rem; opacity:.4; margin-left:3px; }
+th.sort-active .sort-icon { opacity:1; }
+.hist-table tbody tr { border-bottom:1px solid var(--border); transition:background .12s; }
+.hist-table tbody tr:last-child { border-bottom:none; }
+.hist-table tbody tr:hover { background:rgba(255,255,255,.025); }
+.hist-table tbody td { padding:13px 16px; font-size:.84rem; color:var(--text); vertical-align:middle; }
+.hist-id { font-family:var(--font-d); font-weight:800; color:var(--amber); font-size:.95rem; }
+.hist-cliente-nombre { font-weight:600; color:var(--text); font-size:.85rem; }
+.hist-cliente-tel { font-size:.75rem; color:var(--text-3); margin-top:1px; }
+.hist-dir { font-size:.82rem; color:var(--text-2); line-height:1.4; }
+.hist-productos { font-size:.78rem; color:var(--text-2); line-height:1.45; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hist-total { font-family:var(--font-d); font-weight:700; color:var(--teal); font-size:.9rem; }
+.hist-fecha { font-size:.78rem; color:var(--text-2); white-space:nowrap; }
+.estado-pill { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; white-space:nowrap; }
+.estado-pill.pendiente  { background:var(--amber-glow);  color:var(--amber); border:1px solid var(--amber-border); }
+.estado-pill.preparando { background:var(--blue-glow);   color:var(--blue);  border:1px solid rgba(96,165,250,.3); }
+.estado-pill.en-camino  { background:rgba(99,102,241,.12); color:#a5b4fc; border:1px solid rgba(99,102,241,.3); }
+.estado-pill.entregado  { background:var(--teal-glow);   color:var(--teal);  border:1px solid rgba(45,212,191,.3); }
+.estado-pill.cancelado  { background:var(--red-glow);    color:var(--red);   border:1px solid rgba(248,113,113,.3); }
+.hist-loading { text-align:center; padding:52px; color:var(--text-3); font-size:.88rem; }
+.hist-btn-ver { width:30px; height:30px; background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:var(--r-sm); color:var(--text-3); cursor:pointer; font-size:.78rem; display:flex; align-items:center; justify-content:center; transition:all .16s; }
+.hist-btn-ver:hover { border-color:var(--amber); color:var(--amber); background:var(--amber-glow); }
+
+/* Fila de tabla clickeable */
+.hist-row-clickable { cursor:pointer; transition:background .12s; }
+.hist-row-clickable:hover { background:rgba(245,166,35,.06) !important; }
+.hist-row-clickable:hover .hist-id { text-decoration:underline; text-underline-offset:3px; }
+.hist-row-clickable:active { background:rgba(245,166,35,.1) !important; }
+
+/* Indicador de recarga automática */
+.auto-reload-indicator {
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:.68rem; color:var(--text-3); font-weight:500;
+    padding:4px 10px; border-radius:999px;
+    border:1px solid var(--border);
+    background:rgba(255,255,255,.02);
+}
+.auto-reload-indicator.pulsing { color:var(--teal); border-color:rgba(45,212,191,.25); }
+.auto-reload-dot { width:5px; height:5px; border-radius:50%; background:var(--teal); }
+.auto-reload-indicator.pulsing .auto-reload-dot { animation:pulse-ring 1.5s ease infinite; }
+
+/* PAGINACION */
+.hist-pagination { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:20px; flex-wrap:wrap; }
+.pag-btn { min-width:36px; height:36px; background:var(--bg2); border:1px solid var(--border); border-radius:var(--r-sm); color:var(--text-2); font-size:.82rem; font-weight:600; cursor:pointer; transition:all .16s; display:flex; align-items:center; justify-content:center; padding:0 10px; font-family:var(--font-b); }
+.pag-btn:hover { border-color:var(--border-hi); color:var(--text); }
+.pag-btn.active { background:var(--amber); border-color:var(--amber); color:#0a0c12; }
+.pag-btn:disabled { opacity:.35; cursor:not-allowed; transform:none !important; }
+.pag-ellipsis { color:var(--text-3); font-size:.82rem; padding:0 4px; }
+
+/* DARK OVERRIDES tabla actuales */
+.crud-container { background:var(--bg2)!important; border:1px solid var(--border)!important; border-radius:var(--r-lg)!important; box-shadow:none!important; }
+.crud-header { border-bottom:1px solid var(--border)!important; }
+.crud-header h2 { color:var(--text)!important; }
+.crud-table thead tr { background:var(--bg3)!important; }
+.crud-table thead th { color:var(--text-2)!important; }
+.crud-table tbody tr { border-bottom-color:var(--border)!important; }
+.crud-table tbody tr:hover { background:rgba(255,255,255,.025)!important; }
+.crud-table tbody td { color:var(--text)!important; }
+.table-responsive { border-color:var(--border)!important; }
+.precio-tag { color:var(--teal)!important; }
+.select-estado { background:var(--bg3)!important; border-color:var(--border-hi)!important; color:var(--text)!important; }
+.btn-icon { background:rgba(255,255,255,.06)!important; color:var(--text-2)!important; }
+.btn-icon:hover { background:rgba(255,255,255,.1)!important; color:var(--text)!important; }
+.btn-icon.btn-danger { background:var(--red-glow)!important; color:var(--red)!important; }
+.search-bar-container input { background:var(--bg3)!important; border-color:var(--border-hi)!important; color:var(--text)!important; }
+.search-bar-container::before { color:var(--text-3)!important; }
+
+@media(max-width:900px){.app-wrapper{grid-template-columns:1fr}.app-sidebar{display:none!important}.app-container{grid-column:1/-1;padding:24px 16px}.hist-stats-row{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.hist-stats-row{grid-template-columns:1fr 1fr}.hist-toolbar{flex-direction:column;align-items:stretch}.hist-filters{flex-wrap:wrap}}
+
+/* ==========================================
+   USER DROPDOWN MENU
+   ========================================== */
+.user-menu-wrap {
+    position: relative;
+}
+
+/* El badge ahora es un botón */
+.user-badge {
+    cursor: pointer;
+    border: none;
+    background: var(--bg2);
+    font-family: var(--font-b);
+    transition: border-color .2s, background .2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 999px;
+    padding: 5px 12px 5px 5px;
+    border: 1px solid var(--border);
+}
+.user-badge:hover,
+.user-badge[aria-expanded="true"] {
+    border-color: var(--amber-border);
+    background: rgba(245,166,35,.04);
+}
+.user-badge-chevron {
+    font-size: .62rem;
+    color: var(--text-3);
+    transition: transform .22s var(--ease-out);
+    margin-left: 2px;
+    flex-shrink: 0;
+}
+.user-badge[aria-expanded="true"] .user-badge-chevron {
+    transform: rotate(180deg);
+}
+
+/* DROPDOWN */
+.user-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 280px;
+    background: var(--bg2);
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-lg);
+    box-shadow: 0 24px 60px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.04);
+    z-index: 200;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-8px) scale(.97);
+    pointer-events: none;
+    transition: opacity .2s var(--ease-out), transform .2s var(--ease-out);
+}
+.user-dropdown.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: all;
+}
+
+/* Perfil header del dropdown */
+.udrop-profile {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 18px 14px;
+}
+.udrop-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--amber), #e84393);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-d);
+    font-weight: 800; font-size: 1rem;
+    color: #fff; flex-shrink: 0;
+}
+.udrop-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.udrop-name  { font-weight: 700; font-size: .9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.udrop-email { font-size: .72rem; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.udrop-rol-pill {
+    display: inline-block;
+    font-size: .62rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .07em;
+    color: var(--amber);
+    background: var(--amber-glow);
+    border: 1px solid var(--amber-border);
+    border-radius: 999px;
+    padding: 2px 8px;
+    width: fit-content;
+    margin-top: 2px;
+}
+
+/* Divider */
+.udrop-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0;
+}
+
+/* Items */
+.udrop-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 11px 18px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background .15s;
+    text-align: left;
+    border-radius: 0;
+    font-family: var(--font-b);
+}
+.udrop-item:hover { background: rgba(255,255,255,.04); }
+.udrop-item-icon {
+    width: 32px; height: 32px;
+    border-radius: var(--r-sm);
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .82rem; color: var(--text-2);
+    flex-shrink: 0;
+    transition: all .15s;
+}
+.udrop-item:hover .udrop-item-icon { background: rgba(255,255,255,.1); color: var(--text); }
+.udrop-item-text { display: flex; flex-direction: column; gap: 1px; }
+.udrop-item-label { font-size: .84rem; font-weight: 600; color: var(--text); }
+.udrop-item-sub   { font-size: .71rem; color: var(--text-3); }
+
+/* Danger item (cerrar sesión) */
+.udrop-item-danger:hover { background: var(--red-glow); }
+.udrop-item-danger .udrop-item-icon { border-color: rgba(248,113,113,.2); }
+.udrop-item-danger:hover .udrop-item-icon { background: rgba(248,113,113,.15); border-color: rgba(248,113,113,.3); color: var(--red); }
+.udrop-item-danger:hover .udrop-item-label { color: var(--red); }
+.udrop-item-danger:hover .udrop-item-sub   { color: rgba(248,113,113,.7); }
+
+/* ==========================================
+   PANEL LATERAL — PERFIL (DRAWER)
+   ========================================== */
+
+/* Backdrop */
+.perfil-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 300;
+    opacity: 0; pointer-events: none;
+    transition: opacity .28s var(--ease-out);
+}
+.perfil-backdrop.open { opacity: 1; pointer-events: all; }
+
+/* Drawer panel */
+.perfil-drawer {
+    position: fixed;
+    top: 0; right: 0;
+    width: 360px; max-width: 95vw;
+    height: 100vh;
+    background: var(--bg2);
+    border-left: 1px solid var(--border-hi);
+    z-index: 301;
+    display: flex; flex-direction: column;
+    transform: translateX(100%);
+    transition: transform .3s var(--ease-out);
+    box-shadow: -20px 0 60px rgba(0,0,0,.4);
+    overflow: hidden;
+}
+.perfil-drawer.open { transform: translateX(0); }
+
+/* Header del drawer */
+.perfil-drawer-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.perfil-drawer-title {
+    font-family: var(--font-d);
+    font-size: .95rem; font-weight: 700;
+    color: var(--text); letter-spacing: -.01em;
+}
+.perfil-drawer-close {
+    width: 32px; height: 32px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text-3); cursor: pointer;
+    font-size: .85rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .16s;
+}
+.perfil-drawer-close:hover { background: var(--red-glow); border-color: rgba(248,113,113,.3); color: var(--red); }
+
+/* Hero */
+.perfil-hero {
+    display: flex; align-items: center; gap: 18px;
+    padding: 28px 22px 24px;
+    background: linear-gradient(160deg, rgba(245,166,35,.07) 0%, transparent 60%);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+.perfil-hero::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(245,166,35,.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+.perfil-hero-avatar {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--amber) 0%, #e84393 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-d); font-weight: 800; font-size: 1.8rem;
+    color: #fff; flex-shrink: 0;
+    box-shadow: 0 0 0 3px rgba(245,166,35,.25), 0 8px 28px rgba(245,166,35,.3);
+}
+.perfil-hero-info { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.perfil-hero-nombre {
+    font-family: var(--font-d); font-size: 1.1rem; font-weight: 800;
+    color: var(--text); letter-spacing: -.02em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.perfil-hero-rol {
+    display: inline-block;
+    font-size: .62rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .09em;
+    color: var(--amber);
+    background: var(--amber-glow);
+    border: 1px solid var(--amber-border);
+    border-radius: 999px; padding: 3px 11px;
+    width: fit-content;
+}
+
+/* Body scrollable */
+.perfil-body {
+    flex: 1; overflow-y: auto; padding: 22px;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.perfil-section-label {
+    font-size: .62rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .1em;
+    color: var(--text-3); margin: 0 0 12px;
+    display: flex; align-items: center; gap: 6px;
+}
+.perfil-section-label i { color: var(--amber); }
+
+/* Card de campos */
+.perfil-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+}
+.perfil-card-div { height: 1px; background: var(--border); }
+.perfil-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    transition: background .14s;
+}
+.perfil-row:hover { background: rgba(255,255,255,.025); }
+.perfil-row-icon {
+    width: 36px; height: 36px; border-radius: var(--r-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .82rem; flex-shrink: 0;
+}
+.perfil-row-content { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.perfil-row-label {
+    font-size: .68rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .07em;
+    color: var(--text-3);
+}
+.perfil-row-val {
+    font-size: .86rem; font-weight: 600; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Botón de logout en drawer */
+.perfil-logout-btn {
+    width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 9px;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid rgba(248,113,113,.25);
+    border-radius: var(--r-sm);
+    color: var(--red);
+    font-size: .86rem; font-weight: 600;
+    font-family: var(--font-b);
+    cursor: pointer;
+    transition: all .18s;
+}
+.perfil-logout-btn:hover {
+    background: var(--red-glow);
+    border-color: rgba(248,113,113,.5);
+    transform: translateY(-1px);
+}
     </style>
 </head>
 <body>
@@ -1438,21 +1865,87 @@
                 Reparto<em>GO</em>
             </a>
             <div class="header-right">
-                <div class="user-badge">
-                    <div class="avatar" id="avatar-inicial">?</div>
-                    <div class="user-info">
-                        <span class="user-name" id="header-nombre">Cargando...</span>
-                        <span class="user-rol" id="header-rol">—</span>
+                <!-- USER DROPDOWN TRIGGER -->
+                <div class="user-menu-wrap" id="user-menu-wrap">
+                    <button class="user-badge" id="user-badge-btn" onclick="toggleUserMenu()" aria-expanded="false" aria-haspopup="true">
+                        <div class="avatar" id="avatar-inicial">?</div>
+                        <div class="user-info">
+                            <span class="user-name" id="header-nombre">Cargando...</span>
+                            <span class="user-rol" id="header-rol">—</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down user-badge-chevron" id="user-badge-chevron"></i>
+                    </button>
+
+                    <!-- DROPDOWN PANEL -->
+                    <div class="user-dropdown" id="user-dropdown" role="menu">
+                        <!-- Perfil header -->
+                        <div class="udrop-profile">
+                            <div class="udrop-avatar" id="udrop-avatar">?</div>
+                            <div class="udrop-info">
+                                <span class="udrop-name"  id="udrop-nombre">—</span>
+                                <span class="udrop-email" id="udrop-email">—</span>
+                                <span class="udrop-rol-pill" id="udrop-rol">—</span>
+                            </div>
+                        </div>
+
+                        <div class="udrop-divider"></div>
+
+                        <!-- Items del menú -->
+                        <button class="udrop-item" onclick="abrirModalPerfil()">
+                            <span class="udrop-item-icon"><i class="fa-solid fa-user-circle"></i></span>
+                            <span class="udrop-item-text">
+                                <span class="udrop-item-label">Mi perfil</span>
+                                <span class="udrop-item-sub">Ver y editar tus datos</span>
+                            </span>
+                        </button>
+
+                        <div class="udrop-divider"></div>
+
+                        <!-- Cerrar sesión -->
+                        <button class="udrop-item udrop-item-danger" id="btn-cerrar-sesion">
+                            <span class="udrop-item-icon"><i class="fa-solid fa-right-from-bracket"></i></span>
+                            <span class="udrop-item-text">
+                                <span class="udrop-item-label">Cerrar sesión</span>
+                                <span class="udrop-item-sub">Salir de la cuenta</span>
+                            </span>
+                        </button>
                     </div>
                 </div>
-                <button id="btn-cerrar-sesion">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                    Salir
-                </button>
             </div>
+
         </header>
 
-        <main class="app-container">
+        <!-- SIDEBAR (visible solo para recepcionista) -->
+        <aside class="app-sidebar hidden" id="app-sidebar">
+            <span class="sidebar-section-label">Principal</span>
+            <button class="nav-item active" id="nav-pedidos-actuales" onclick="cambiarVista('actuales')">
+                <i class="fa-solid fa-circle-dot"></i>
+                Pedidos Actuales
+                <span class="nav-badge" id="badge-actuales">0</span>
+            </button>
+            <button class="nav-item" id="nav-historial" onclick="cambiarVista('historial')">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                Historial
+            </button>
+
+            <span class="sidebar-section-label">Acciones</span>
+            <button class="nav-item" onclick="abrirModalNuevoPedido()">
+                <i class="fa-solid fa-plus"></i>
+                Nuevo Pedido
+            </button>
+
+            <span class="sidebar-section-label">Resumen</span>
+            <div class="sidebar-stat">
+                <span class="sidebar-stat-label" id="sb-entregados-label">Hoy · Entregados</span>
+                <span class="sidebar-stat-val" id="sb-entregados">—</span>
+            </div>
+            <div class="sidebar-stat">
+                <span class="sidebar-stat-label" id="sb-facturado-label">Hoy · Facturado</span>
+                <span class="sidebar-stat-val" id="sb-facturado">—</span>
+            </div>
+        </aside>
+
+        <main class="app-container" id="app-main">
 
             <section id="panel-superadmin" class="panel-section hidden">
                 <p class="panel-title">Panel <em>Global</em></p>
@@ -1686,6 +2179,119 @@
                 </div>
             </section>
 
+            <!-- ==========================================
+                 PANEL RECEPCIONISTA: HISTORIAL COMPLETO
+                 ========================================== -->
+            <section id="panel-historial-recepcionista" class="panel-section hidden">
+                <p class="panel-title">Histo<em>rial</em></p>
+                <p class="panel-subtitle">Todos los pedidos · Pendiente → Cancelado</p>
+
+                <!-- STATS RÁPIDAS -->
+                <div class="hist-stats-row" id="hist-stats-row">
+                    <div class="hist-stat-card">
+                        <span class="hist-stat-num" id="hs-total">—</span>
+                        <span class="hist-stat-label">Total</span>
+                    </div>
+                    <div class="hist-stat-card" style="--accent:var(--amber);">
+                        <span class="hist-stat-num" id="hs-pendiente">—</span>
+                        <span class="hist-stat-label">Pendientes</span>
+                    </div>
+                    <div class="hist-stat-card" style="--accent:var(--blue);">
+                        <span class="hist-stat-num" id="hs-camino">—</span>
+                        <span class="hist-stat-label">En camino</span>
+                    </div>
+                    <div class="hist-stat-card" style="--accent:var(--teal);">
+                        <span class="hist-stat-num" id="hs-entregado">—</span>
+                        <span class="hist-stat-label">Entregados</span>
+                    </div>
+                    <div class="hist-stat-card" style="--accent:var(--red);">
+                        <span class="hist-stat-num" id="hs-cancelado">—</span>
+                        <span class="hist-stat-label">Cancelados</span>
+                    </div>
+                </div>
+
+                <!-- TOOLBAR: BÚSQUEDA + FILTROS -->
+                <div class="hist-toolbar">
+                    <!-- Buscador -->
+                    <div class="hist-search-wrap">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="hist-buscador"
+                               placeholder="Buscar por cliente, dirección, N° pedido..."
+                               oninput="historialBuscar()">
+                        <button class="hist-search-clear hidden" id="hist-clear-btn" onclick="historialLimpiarBusqueda()">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Filtros -->
+                    <div class="hist-filters">
+                        <select id="hist-filtro-estado" class="hist-select" onchange="historialFiltrar()">
+                            <option value="">Todos los estados</option>
+                            <option value="Pendiente">⏳ Pendiente</option>
+                            <option value="Preparando">👨‍🍳 Preparando</option>
+                            <option value="En camino">🛵 En camino</option>
+                            <option value="Entregado">✅ Entregado</option>
+                            <option value="Cancelado">❌ Cancelado</option>
+                        </select>
+                        <select id="hist-filtro-orden" class="hist-select" onchange="historialFiltrar()">
+                            <option value="desc">Más reciente</option>
+                            <option value="asc">Más antiguo</option>
+                            <option value="total-desc">Mayor total</option>
+                            <option value="total-asc">Menor total</option>
+                        </select>
+                        <button class="hist-btn-reset" onclick="historialReset()" title="Limpiar filtros">
+                            <i class="fa-solid fa-filter-circle-xmark"></i>
+                        </button>
+                        <button class="hist-btn-reset" onclick="historialRecargarManual()" title="Recargar datos" id="hist-btn-refresh">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                        <span class="auto-reload-indicator" id="auto-reload-ind" title="Actualización automática cada 30s">
+                            <span class="auto-reload-dot"></span>
+                            <span id="hist-ultima-act">En vivo</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- INFO ROW: conteo + paginación info -->
+                <div class="hist-info-row">
+                    <span class="hist-count-label" id="hist-count-label">Cargando...</span>
+                    <span class="hist-page-info" id="hist-page-info"></span>
+                </div>
+
+                <!-- TABLA -->
+                <div class="hist-table-wrap">
+                    <table class="hist-table" id="hist-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable" onclick="historialSort('id')" data-col="id">
+                                    N° <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th>Cliente</th>
+                                <th>Dirección</th>
+                                <th>Productos</th>
+                                <th class="sortable" onclick="historialSort('total')" data-col="total">
+                                    Total <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" onclick="historialSort('fecha')" data-col="fecha">
+                                    Fecha <i class="fa-solid fa-sort sort-icon"></i>
+                                </th>
+                                <th>Estado</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="hist-tbody">
+                            <tr><td colspan="8" class="hist-loading">
+                                <i class="fa-solid fa-spinner fa-spin"></i> Cargando historial...
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- PAGINACIÓN -->
+                <div class="hist-pagination" id="hist-pagination"></div>
+
+            </section>
+
             <section id="panel-chef" class="panel-section hidden">
                 <p class="panel-title">Co<em>cina</em></p>
                 <p class="panel-subtitle">Pedidos pendientes de preparación.</p>
@@ -1814,14 +2420,7 @@
                                         <label>Referencia</label>
                                     </div>
                                 </div>
-                                <div class="field-wrap has-badge">
-                                    <input type="text" id="dir-localidad" placeholder=" " readonly
-                                           style="background:#f8fafc; cursor:default; color:#0d9488; font-weight:600;">
-                                    <label>Localidad del restaurante</label>
-                                    <span class="field-localidad-badge">
-                                        <i class="fa-solid fa-store"></i> Auto
-                                    </span>
-                                </div>
+                               
                             </div>
 
                             <!-- STEP 3: PRODUCTOS -->
@@ -1911,6 +2510,84 @@
 
         </main>
     </div>
+
+    <!-- ==========================================
+         PANEL LATERAL — PERFIL DE USUARIO
+         ========================================== -->
+    <div class="perfil-backdrop" id="perfil-backdrop" onclick="cerrarModalPerfil()"></div>
+    <aside class="perfil-drawer" id="perfil-drawer" aria-label="Perfil de usuario">
+
+        <!-- Header del drawer -->
+        <div class="perfil-drawer-header">
+            <span class="perfil-drawer-title">Mi perfil</span>
+            <button class="perfil-drawer-close" onclick="cerrarModalPerfil()" title="Cerrar">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Hero del usuario -->
+        <div class="perfil-hero">
+            <div class="perfil-hero-avatar" id="perfil-avatar-big">?</div>
+            <div class="perfil-hero-info">
+                <div class="perfil-hero-nombre" id="perfil-nombre-big">—</div>
+                <div class="perfil-hero-rol" id="perfil-rol-pill">—</div>
+            </div>
+        </div>
+
+        <!-- Campos de datos -->
+        <div class="perfil-body">
+            <p class="perfil-section-label"><i class="fa-solid fa-id-card"></i> Información de cuenta</p>
+
+            <div class="perfil-card">
+                <div class="perfil-row">
+                    <div class="perfil-row-icon" style="background:rgba(245,166,35,.12);color:var(--amber);">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="perfil-row-content">
+                        <span class="perfil-row-label">Nombre completo</span>
+                        <span class="perfil-row-val" id="pf-nombre">—</span>
+                    </div>
+                </div>
+                <div class="perfil-card-div"></div>
+                <div class="perfil-row">
+                    <div class="perfil-row-icon" style="background:rgba(96,165,250,.12);color:var(--blue);">
+                        <i class="fa-solid fa-envelope"></i>
+                    </div>
+                    <div class="perfil-row-content">
+                        <span class="perfil-row-label">Email</span>
+                        <span class="perfil-row-val" id="pf-email">—</span>
+                    </div>
+                </div>
+                <div class="perfil-card-div"></div>
+                <div class="perfil-row">
+                    <div class="perfil-row-icon" style="background:rgba(45,212,191,.12);color:var(--teal);">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div class="perfil-row-content">
+                        <span class="perfil-row-label">Rol</span>
+                        <span class="perfil-row-val" id="pf-rol">—</span>
+                    </div>
+                </div>
+                <div class="perfil-card-div"></div>
+                <div class="perfil-row">
+                    <div class="perfil-row-icon" style="background:rgba(248,113,113,.12);color:var(--red);">
+                        <i class="fa-solid fa-store"></i>
+                    </div>
+                    <div class="perfil-row-content">
+                        <span class="perfil-row-label">Restaurante asignado</span>
+                        <span class="perfil-row-val" id="pf-restaurante">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sesión -->
+            <p class="perfil-section-label" style="margin-top:24px;"><i class="fa-solid fa-right-from-bracket"></i> Sesión</p>
+            <button class="perfil-logout-btn" onclick="document.getElementById('btn-cerrar-sesion').click()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                Cerrar sesión
+            </button>
+        </div>
+    </aside>
 
     <script src="js/script.js"></script>
 </body>
