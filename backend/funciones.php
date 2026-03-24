@@ -166,62 +166,104 @@ function obtenerDatosInicialesRecepcionista($pdo) {
         }
         $data['productos'] = $stmtProd->fetchAll(PDO::FETCH_ASSOC);
 
-        // 2. PEDIDOS ACTUALES: Estados activos con datos de cliente y dirección
-        $stmtPed = $pdo->query("
-            SELECT 
-                p.ID_pedido,
-                p.Estado,
-                p.Fecha_pedido,
-                p.Total,
-                p.fecha_creacion,
-                c.Nombre    AS c_nombre,
-                c.Apellido  AS c_apellido,
-                c.Telefono  AS c_telefono,
-                d.calle     AS Calle,
-                d.altura    AS Numero,
-                d.piso_depto,
-                d.referencias,
-                d.Localidad,
-                r.Nombre_local AS restaurante_nombre,
-                (
-                    SELECT GROUP_CONCAT(
-                        CONCAT(dp2.Cantidad, 'x ', pr2.Nombre_producto)
-                        ORDER BY dp2.ID_detalle
-                        SEPARATOR ', '
-                    )
-                    FROM detalle_pedido dp2
-                    JOIN productos pr2 ON dp2.ID_producto = pr2.ID_producto
-                    WHERE dp2.ID_pedido = p.ID_pedido
-                ) AS detalles_resumen
-            FROM pedidos p
-            INNER JOIN clientes c  ON p.ID_cliente     = c.ID_cliente
-            INNER JOIN direcciones d ON p.ID_direccion = d.ID_direccion
-            INNER JOIN restaurantes r ON p.ID_restaurante = r.ID_Restaurante
-            WHERE p.Estado IN ('Pendiente', 'Preparando', 'En camino')
-            ORDER BY p.ID_pedido DESC
-        ");
+        // 2. PEDIDOS ACTUALES: filtrados por restaurante del usuario (excepto superadmin)
+        $rol = strtolower(trim($_SESSION['user_rol'] ?? ''));
+        if ($id_restaurante && $rol !== 'superadmin') {
+            $stmtPed = $pdo->prepare("
+                SELECT 
+                    p.ID_pedido,
+                    p.Estado,
+                    p.Fecha_pedido,
+                    p.Total,
+                    p.fecha_creacion,
+                    c.Nombre    AS c_nombre,
+                    c.Apellido  AS c_apellido,
+                    c.Telefono  AS c_telefono,
+                    d.calle     AS Calle,
+                    d.altura    AS Numero,
+                    d.piso_depto,
+                    d.referencias,
+                    d.Localidad,
+                    r.Nombre_local AS restaurante_nombre,
+                    (
+                        SELECT GROUP_CONCAT(
+                            CONCAT(dp2.Cantidad, 'x ', pr2.Nombre_producto)
+                            ORDER BY dp2.ID_detalle
+                            SEPARATOR ', '
+                        )
+                        FROM detalle_pedido dp2
+                        JOIN productos pr2 ON dp2.ID_producto = pr2.ID_producto
+                        WHERE dp2.ID_pedido = p.ID_pedido
+                    ) AS detalles_resumen
+                FROM pedidos p
+                INNER JOIN clientes c       ON p.ID_cliente     = c.ID_cliente
+                INNER JOIN direcciones d    ON p.ID_direccion   = d.ID_direccion
+                INNER JOIN restaurantes r   ON p.ID_restaurante = r.ID_Restaurante
+                WHERE p.Estado IN ('Pendiente', 'Preparando', 'En camino')
+                  AND p.ID_restaurante = :rest
+                ORDER BY p.ID_pedido DESC
+            ");
+            $stmtPed->execute([':rest' => $id_restaurante]);
+        } else {
+            $stmtPed = $pdo->query("
+                SELECT 
+                    p.ID_pedido,
+                    p.Estado,
+                    p.Fecha_pedido,
+                    p.Total,
+                    p.fecha_creacion,
+                    c.Nombre    AS c_nombre,
+                    c.Apellido  AS c_apellido,
+                    c.Telefono  AS c_telefono,
+                    d.calle     AS Calle,
+                    d.altura    AS Numero,
+                    d.piso_depto,
+                    d.referencias,
+                    d.Localidad,
+                    r.Nombre_local AS restaurante_nombre,
+                    (
+                        SELECT GROUP_CONCAT(
+                            CONCAT(dp2.Cantidad, 'x ', pr2.Nombre_producto)
+                            ORDER BY dp2.ID_detalle
+                            SEPARATOR ', '
+                        )
+                        FROM detalle_pedido dp2
+                        JOIN productos pr2 ON dp2.ID_producto = pr2.ID_producto
+                        WHERE dp2.ID_pedido = p.ID_pedido
+                    ) AS detalles_resumen
+                FROM pedidos p
+                INNER JOIN clientes c       ON p.ID_cliente     = c.ID_cliente
+                INNER JOIN direcciones d    ON p.ID_direccion   = d.ID_direccion
+                INNER JOIN restaurantes r   ON p.ID_restaurante = r.ID_Restaurante
+                WHERE p.Estado IN ('Pendiente', 'Preparando', 'En camino')
+                ORDER BY p.ID_pedido DESC
+            ");
+        }
         $data['pedidos'] = $stmtPed->fetchAll(PDO::FETCH_ASSOC);
 
-        // 3. DETALLES completos para los pedidos cargados
-        $stmtDet = $pdo->query("
-            SELECT 
-                dp.ID_detalle,
-                dp.ID_pedido,
-                dp.ID_producto,
-                dp.Cantidad,
-                dp.Precio,
-                dp.Subtotal,
-                pr.Nombre_producto AS producto_nombre,
-                pr.Precio AS precio_unitario
-            FROM detalle_pedido dp
-            INNER JOIN productos pr ON dp.ID_producto = pr.ID_producto
-            WHERE dp.ID_pedido IN (
-                SELECT ID_pedido FROM pedidos 
-                WHERE Estado IN ('Pendiente', 'Preparando', 'En camino')
-            )
-            ORDER BY dp.ID_pedido DESC
-        ");
-        $data['detalles'] = $stmtDet->fetchAll(PDO::FETCH_ASSOC);
+        // 3. DETALLES: solo los de los pedidos ya cargados (filtrados por restaurante)
+        $idsPedidos = array_column($data['pedidos'], 'ID_pedido');
+        if (!empty($idsPedidos)) {
+            $placeholders = implode(',', array_map('intval', $idsPedidos));
+            $stmtDet = $pdo->query("
+                SELECT 
+                    dp.ID_detalle,
+                    dp.ID_pedido,
+                    dp.ID_producto,
+                    dp.Cantidad,
+                    dp.Precio,
+                    dp.Subtotal,
+                    pr.Nombre_producto AS producto_nombre,
+                    pr.Precio AS precio_unitario
+                FROM detalle_pedido dp
+                INNER JOIN productos pr ON dp.ID_producto = pr.ID_producto
+                WHERE dp.ID_pedido IN ($placeholders)
+                ORDER BY dp.ID_pedido DESC
+            ");
+            $data['detalles'] = $stmtDet->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            $data['detalles'] = [];
+        }
 
         // 4. DATOS DEL RESTAURANTE del usuario en sesión (para autocompletar localidad)
         $data['restaurante'] = null;
@@ -261,36 +303,75 @@ function obtenerPedidosActuales($pdo) {
     validarRol(['recepcionista', 'admin', 'superadmin']);
 
     try {
-        $stmt = $pdo->query("
-            SELECT 
-                p.ID_pedido,
-                p.Estado,
-                p.Total,
-                DATE_FORMAT(p.fecha_creacion, '%d/%m %H:%i') AS fecha_creacion,
-                c.Nombre    AS c_nombre,
-                c.Apellido  AS c_apellido,
-                c.Telefono  AS c_telefono,
-                d.calle     AS Calle,
-                d.altura    AS Numero,
-                d.piso_depto,
-                d.referencias,
-                d.Localidad,
-                (
-                    SELECT GROUP_CONCAT(
-                        CONCAT(dp2.Cantidad, 'x ', pr2.Nombre_producto)
-                        ORDER BY dp2.ID_detalle
-                        SEPARATOR ', '
-                    )
-                    FROM detalle_pedido dp2
-                    JOIN productos pr2 ON dp2.ID_producto = pr2.ID_producto
-                    WHERE dp2.ID_pedido = p.ID_pedido
-                ) AS detalles_resumen
-            FROM pedidos p
-            INNER JOIN clientes c    ON p.ID_cliente     = c.ID_cliente
-            INNER JOIN direcciones d ON p.ID_direccion   = d.ID_direccion
-            WHERE p.Estado IN ('Pendiente', 'Preparando', 'En camino')
-            ORDER BY p.ID_pedido DESC
-        ");
+        $id_restaurante = $_SESSION['user_restaurante'] ?? null;
+        $rol = strtolower(trim($_SESSION['user_rol'] ?? ''));
+
+        // Superadmin ve todos; los demás solo los de su restaurante
+        if ($id_restaurante && $rol !== 'superadmin') {
+            $stmt = $pdo->prepare("
+                SELECT 
+                    p.ID_pedido,
+                    p.Estado,
+                    p.Total,
+                    DATE_FORMAT(p.fecha_creacion, '%d/%m %H:%i') AS fecha_creacion,
+                    c.Nombre    AS c_nombre,
+                    c.Apellido  AS c_apellido,
+                    c.Telefono  AS c_telefono,
+                    d.calle     AS Calle,
+                    d.altura    AS Numero,
+                    d.piso_depto,
+                    d.referencias,
+                    d.Localidad,
+                    (
+                        SELECT GROUP_CONCAT(
+                            CONCAT(dp2.Cantidad, 'x ', pr2.Nombre_producto)
+                            ORDER BY dp2.ID_detalle
+                            SEPARATOR ', '
+                        )
+                        FROM detalle_pedido dp2
+                        JOIN productos pr2 ON dp2.ID_producto = pr2.ID_producto
+                        WHERE dp2.ID_pedido = p.ID_pedido
+                    ) AS detalles_resumen
+                FROM pedidos p
+                INNER JOIN clientes c    ON p.ID_cliente     = c.ID_cliente
+                INNER JOIN direcciones d ON p.ID_direccion   = d.ID_direccion
+                WHERE p.Estado IN ('Pendiente', 'Preparando', 'En camino')
+                  AND p.ID_restaurante = :rest
+                ORDER BY p.ID_pedido DESC
+            ");
+            $stmt->execute([':rest' => $id_restaurante]);
+        } else {
+            $stmt = $pdo->query("
+                SELECT 
+                    p.ID_pedido,
+                    p.Estado,
+                    p.Total,
+                    DATE_FORMAT(p.fecha_creacion, '%d/%m %H:%i') AS fecha_creacion,
+                    c.Nombre    AS c_nombre,
+                    c.Apellido  AS c_apellido,
+                    c.Telefono  AS c_telefono,
+                    d.calle     AS Calle,
+                    d.altura    AS Numero,
+                    d.piso_depto,
+                    d.referencias,
+                    d.Localidad,
+                    (
+                        SELECT GROUP_CONCAT(
+                            CONCAT(dp2.Cantidad, 'x ', pr2.Nombre_producto)
+                            ORDER BY dp2.ID_detalle
+                            SEPARATOR ', '
+                        )
+                        FROM detalle_pedido dp2
+                        JOIN productos pr2 ON dp2.ID_producto = pr2.ID_producto
+                        WHERE dp2.ID_pedido = p.ID_pedido
+                    ) AS detalles_resumen
+                FROM pedidos p
+                INNER JOIN clientes c    ON p.ID_cliente     = c.ID_cliente
+                INNER JOIN direcciones d ON p.ID_direccion   = d.ID_direccion
+                WHERE p.Estado IN ('Pendiente', 'Preparando', 'En camino')
+                ORDER BY p.ID_pedido DESC
+            ");
+        }
         $pedidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode(['status' => 'success', 'data' => $pedidos]);
 
@@ -1321,6 +1402,13 @@ function obtenerHistorialPedidos($pdo) {
     validarRol(['recepcionista', 'admin', 'superadmin']);
 
     try {
+        $id_restaurante = $_SESSION['user_restaurante'] ?? null;
+        $rol = strtolower(trim($_SESSION['user_rol'] ?? ''));
+
+        $filtroRest = ($id_restaurante && $rol !== 'superadmin')
+            ? "AND p.ID_restaurante = " . intval($id_restaurante)
+            : "";
+
         $stmt = $pdo->query("
             SELECT
                 p.ID_pedido,
@@ -1349,6 +1437,7 @@ function obtenerHistorialPedidos($pdo) {
             FROM pedidos p
             INNER JOIN clientes    c ON p.ID_cliente   = c.ID_cliente
             INNER JOIN direcciones d ON p.ID_direccion = d.ID_direccion
+            WHERE 1=1 $filtroRest
             ORDER BY p.ID_pedido DESC
         ");
         $pedidos = $stmt->fetchAll(PDO::FETCH_ASSOC);

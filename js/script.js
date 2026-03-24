@@ -8,6 +8,35 @@ let productoSeleccionadoTemporal = null;
 let stepActual = 1;
 const TOTAL_STEPS = 3;
 
+// ── AUTO-RECARGA: setTimeout encadenado (nunca se solapa) ──
+// Una sola ejecución a la vez: la próxima recarga sólo se agenda
+// cuando la anterior termina completamente.
+let _autoReloadTimer  = null;   // handle del setTimeout activo
+let _autoReloadBusy   = false;  // true mientras hay una fetch en curso
+const AUTO_RELOAD_MS  = 7000;
+
+function reiniciarTimer() {
+    // Cancela cualquier recarga pendiente y programa una nueva
+    if (_autoReloadTimer) clearTimeout(_autoReloadTimer);
+    _autoReloadTimer = setTimeout(_cicloRecarga, AUTO_RELOAD_MS);
+}
+
+async function _cicloRecarga() {
+    // Si ya hay una petición en vuelo, reagendar y salir
+    if (_autoReloadBusy) {
+        _autoReloadTimer = setTimeout(_cicloRecarga, AUTO_RELOAD_MS);
+        return;
+    }
+    _autoReloadBusy = true;
+    try {
+        await autoRecargarDatos();
+    } finally {
+        _autoReloadBusy = false;
+        // Agendar el siguiente ciclo sólo después de terminar éste
+        _autoReloadTimer = setTimeout(_cicloRecarga, AUTO_RELOAD_MS);
+    }
+}
+
 // ==========================================
 // INICIO DE LÓGICA RECEPCIONISTA
 // ==========================================
@@ -24,10 +53,8 @@ async function iniciarLogicaRecepcionista() {
     document.getElementById('buscador-pedidos-gral')?.addEventListener('input', filtrarPedidosLocal);
     actualizarResumenSidebar();
 
-    // Auto-recarga silenciosa cada 30 segundos
-    setInterval(async () => {
-        await autoRecargarDatos();
-    }, 30000);
+    // Auto-recarga silenciosa cada 7 segundos (timer reiniciable)
+    reiniciarTimer();
 }
 
 // Recarga silenciosa: actualiza datos sin parpadeo de UI
@@ -76,8 +103,35 @@ async function recargarHistorialSilencioso() {
 
 function filtrarPedidosLocal(e) {
     const busqueda = e.target.value.toLowerCase().trim();
+
+    // Vista tabla — filtrar filas
     document.querySelectorAll('.pedido-fila').forEach(fila => {
         fila.style.display = fila.innerText.toLowerCase().includes(busqueda) ? '' : 'none';
+    });
+
+    // Vista tarjetas (kanban) — filtrar cards por data-busqueda
+    document.querySelectorAll('#contenedor-vista-tarjetas .pedido-card-item').forEach(card => {
+        const texto = card.dataset.busqueda || card.innerText.toLowerCase();
+        card.style.display = (!busqueda || texto.includes(busqueda)) ? '' : 'none';
+    });
+
+    // Actualizar estado "vacío" de cada columna kanban
+    ['pendiente', 'preparando', 'encamino'].forEach(col => {
+        const body = document.getElementById(`kanban-body-${col}`);
+        if (!body) return;
+        const cards = body.querySelectorAll('.pedido-card-item');
+        const hayVisibles = Array.from(cards).some(c => c.style.display !== 'none');
+        let empty = body.querySelector('.kanban-col-empty');
+        if (!hayVisibles) {
+            if (!empty) {
+                empty = document.createElement('div');
+                empty.className = 'kanban-col-empty kanban-search-empty';
+                empty.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>Sin resultados';
+                body.appendChild(empty);
+            }
+        } else {
+            if (empty && empty.classList.contains('kanban-search-empty')) empty.remove();
+        }
     });
 }
 
@@ -120,55 +174,241 @@ async function recargarPedidosActuales() {
 // ==========================================
 // RENDERIZAR TABLA
 // ==========================================
+// Vista activa: 'tabla' | 'tarjetas'
+let VISTA_ACTUAL = 'tabla';
+// Controla si las tarjetas deben animarse (solo al cambiar de vista, no en auto-recarga)
+let ANIMAR_TARJETAS = false;
+
+// ── TOGGLE ──────────────────────────────
+function cambiarVistaTabla(vista) {
+    VISTA_ACTUAL = vista;
+    // Solo animar cuando el usuario cambia explícitamente a la vista tarjetas
+    ANIMAR_TARJETAS = (vista === 'tarjetas');
+
+    const contTabla    = document.getElementById('contenedor-vista-tabla');
+    const contTarjetas = document.getElementById('contenedor-vista-tarjetas');
+    const btnTabla     = document.getElementById('btn-vista-tabla');
+    const btnTarjetas  = document.getElementById('btn-vista-tarjetas');
+
+    if (vista === 'tabla') {
+        if (contTabla)    contTabla.style.display    = '';
+        if (contTarjetas) contTarjetas.style.display = 'none';
+        btnTabla?.classList.add('active');
+        btnTarjetas?.classList.remove('active');
+    } else {
+        if (contTabla)    contTabla.style.display    = 'none';
+        if (contTarjetas) contTarjetas.style.display = '';
+        btnTabla?.classList.remove('active');
+        btnTarjetas?.classList.add('active');
+    }
+
+    // Re-renderizar con los datos actuales en la vista nueva
+    renderizarTablaPedidosRecepcion(DATA_RECEPCION.pedidos);
+    // Después del primer render al cambiar vista, desactivar animaciones para recargas
+    ANIMAR_TARJETAS = false;
+}
+
+// ── DISPATCHER ──────────────────────────
 function renderizarTablaPedidosRecepcion(pedidos) {
+    if (VISTA_ACTUAL === 'tarjetas') {
+        renderizarTarjetas(pedidos);
+    } else {
+        renderizarTabla(pedidos);
+    }
+}
+
+// ── VISTA TABLA ──────────────────────────
+function renderizarTabla(pedidos) {
     const tbody = document.querySelector('#tabla-pedidos-recepcion tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
 
     if (!pedidos || pedidos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;">
-            <i class="fa-solid fa-inbox" style="font-size:2rem;display:block;margin-bottom:10px;color:#cbd5e1;"></i>
-            No hay pedidos activos en este momento</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:48px;color:var(--text-3);">
+            <i class="fa-solid fa-inbox" style="font-size:2rem;display:block;margin-bottom:10px;opacity:.4;"></i>
+            No hay pedidos activos</td></tr>`;
         return;
     }
 
     pedidos.forEach(p => {
-        const piso = p.piso_depto  ? ` · <em>${p.piso_depto}</em>` : '';
-        const ref  = p.referencias ? `<br><small style="color:#94a3b8;">📌 ${p.referencias}</small>` : '';
-        tbody.innerHTML += `
-            <tr class="pedido-fila">
-                <td><strong style="color:#6366f1;">#${p.ID_pedido}</strong></td>
-                <td>
-                    <div style="font-weight:600;color:#1e293b;">${p.c_nombre} ${p.c_apellido}</div>
-                    <div style="font-size:12px;color:#64748b;margin-top:2px;"><i class="fa-solid fa-phone" style="font-size:10px;"></i> ${p.c_telefono || '—'}</div>
-                </td>
-                <td>
-                    <div style="color:#334155;">${p.Calle} ${p.Numero}${piso}</div>
-                    <div style="font-size:12px;color:#64748b;">${p.Localidad || ''}${ref}</div>
-                </td>
-                <td style="max-width:180px;"><small style="color:#475569;line-height:1.5;">${p.detalles_resumen || '—'}</small></td>
-                <td><span class="precio-tag">$${parseFloat(p.Total).toFixed(2)}</span></td>
-                <td>
-                    <select class="select-estado"
+        const piso = p.piso_depto  ? ` · <em style="color:var(--text-3)">${p.piso_depto}</em>` : '';
+        const ref  = p.referencias ? `<br><small style="color:var(--text-3)">📌 ${p.referencias}</small>` : '';
+
+        const tr = document.createElement('tr');
+        tr.className = 'pedido-fila';
+        tr.title = `Ver detalle del pedido #${p.ID_pedido}`;
+
+        // Click en la fila abre el detalle
+        tr.addEventListener('click', () => verDetallePedido(p.ID_pedido));
+
+        tr.innerHTML = `
+            <td>
+                <strong class="hist-id">#${p.ID_pedido}</strong>
+            </td>
+            <td>
+                <div class="hist-cliente-nombre">${p.c_nombre} ${p.c_apellido}</div>
+                <div class="hist-cliente-tel">
+                    <i class="fa-solid fa-phone" style="font-size:.62rem;margin-right:3px;"></i>
+                    ${p.c_telefono || '—'}
+                </div>
+            </td>
+            <td>
+                <div class="hist-dir">${p.Calle} ${p.Numero}${piso}</div>
+                <div class="hist-dir"><small>${p.Localidad || ''}${ref}</small></div>
+            </td>
+            <td>
+                <div class="hist-productos" title="${p.detalles_resumen || ''}">${p.detalles_resumen || '—'}</div>
+            </td>
+            <td>
+                <span class="hist-total">$${parseFloat(p.Total).toFixed(2)}</span>
+            </td>
+            <td onclick="event.stopPropagation()">
+                <select class="select-estado"
+                        onchange="cambiarEstadoPedido(${p.ID_pedido}, this.value, this)"
+                        data-estado-original="${p.Estado}">
+                    <option value="Pendiente"  ${p.Estado==='Pendiente'  ?'selected':''}>⏳ Pendiente</option>
+                    <option value="Preparando" ${p.Estado==='Preparando' ?'selected':''}>👨‍🍳 Preparando</option>
+                    <option value="En camino"  ${p.Estado==='En camino'  ?'selected':''}>🛵 En camino</option>
+                    <option value="Entregado"  ${p.Estado==='Entregado'  ?'selected':''}>✅ Entregado</option>
+                    <option value="Cancelado"  ${p.Estado==='Cancelado'  ?'selected':''}>❌ Cancelado</option>
+                </select>
+            </td>
+            <td onclick="event.stopPropagation()">
+                <button class="btn-icon" title="Ver detalle" onclick="verDetallePedido(${p.ID_pedido})">
+                    <i class="fa-solid fa-eye"></i>
+                </button>
+                <button class="btn-icon btn-danger" title="Cancelar" onclick="confirmarCancelarPedido(${p.ID_pedido})">
+                    <i class="fa-solid fa-ban"></i>
+                </button>
+            </td>`;
+
+        tbody.appendChild(tr);
+    });
+}
+
+// ── VISTA TARJETAS — KANBAN ──────────────
+function renderizarTarjetas(pedidos) {
+    const bodyPendiente  = document.getElementById('kanban-body-pendiente');
+    const bodyPreparando = document.getElementById('kanban-body-preparando');
+    const bodyEncamino   = document.getElementById('kanban-body-encamino');
+    if (!bodyPendiente) return;
+
+    // Limpiar columnas
+    bodyPendiente.innerHTML  = '';
+    bodyPreparando.innerHTML = '';
+    bodyEncamino.innerHTML   = '';
+
+    const EMPTY_HTML = `<div class="kanban-col-empty"><i class="fa-solid fa-inbox"></i>Sin pedidos</div>`;
+
+    if (!pedidos || pedidos.length === 0) {
+        bodyPendiente.innerHTML  = EMPTY_HTML;
+        bodyPreparando.innerHTML = EMPTY_HTML;
+        bodyEncamino.innerHTML   = EMPTY_HTML;
+        document.getElementById('kanban-badge-pendiente').textContent  = '0';
+        document.getElementById('kanban-badge-preparando').textContent = '0';
+        document.getElementById('kanban-badge-encamino').textContent   = '0';
+        return;
+    }
+
+    const emoji = { Pendiente:'⏳', Preparando:'👨‍🍳', 'En camino':'🛵', Entregado:'✅', Cancelado:'❌' };
+
+    const cols = { Pendiente: [], Preparando: [], 'En camino': [] };
+
+    pedidos.forEach(p => {
+        if (cols[p.Estado] !== undefined) cols[p.Estado].push(p);
+        // Entregado/Cancelado no se muestran en tarjetas activas
+    });
+
+    // Actualizar badges
+    document.getElementById('kanban-badge-pendiente').textContent  = cols['Pendiente'].length;
+    document.getElementById('kanban-badge-preparando').textContent = cols['Preparando'].length;
+    document.getElementById('kanban-badge-encamino').textContent   = cols['En camino'].length;
+
+    // Renderizar cada columna
+    const renderCol = (lista, container, animOffset) => {
+        if (lista.length === 0) { container.innerHTML = EMPTY_HTML; return; }
+        lista.forEach((p, idx) => {
+            const estadoCls = (p.Estado || '').toLowerCase().replace(' ', '-');
+            const piso      = p.piso_depto  ? ` · ${p.piso_depto}`  : '';
+            const ref       = p.referencias ? `<br><small>📌 ${p.referencias}</small>` : '';
+            const total     = parseFloat(p.Total).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+            // Texto buscable como atributo data para filtrado
+            const textoBusqueda = [
+                '#' + p.ID_pedido,
+                p.c_nombre, p.c_apellido, p.c_telefono,
+                p.Calle, p.Numero, p.Localidad,
+                p.detalles_resumen
+            ].join(' ').toLowerCase();
+
+            const card = document.createElement('div');
+            card.className      = 'pedido-card-item' + (ANIMAR_TARJETAS ? '' : ' no-anim');
+            card.dataset.estado = p.Estado;
+            card.dataset.busqueda = textoBusqueda;
+            card.title = `Ver detalle del pedido #${p.ID_pedido}`;
+            if (ANIMAR_TARJETAS) {
+                card.style.animationDelay = `${(animOffset + idx) * 0.04}s`;
+            }
+
+            card.innerHTML = `
+                <div class="pc-header">
+                    <span class="pc-id">#${p.ID_pedido}</span>
+                    <span class="pc-estado ${estadoCls}">${emoji[p.Estado] || '•'} ${p.Estado}</span>
+                </div>
+                <div class="pc-body pc-body-grow">
+                    <div class="pc-row">
+                        <span class="pc-row-icon"><i class="fa-solid fa-user"></i></span>
+                        <div class="pc-row-text">
+                            <strong>${p.c_nombre} ${p.c_apellido}</strong>
+                            <br><small><i class="fa-solid fa-phone" style="font-size:.58rem;"></i> ${p.c_telefono || '—'}</small>
+                        </div>
+                    </div>
+                    <div class="pc-row">
+                        <span class="pc-row-icon"><i class="fa-solid fa-location-dot"></i></span>
+                        <div class="pc-row-text">
+                            <strong>${p.Calle} ${p.Numero}${piso}</strong>
+                            ${p.Localidad ? `<br><small>${p.Localidad}</small>` : ''}${ref}
+                        </div>
+                    </div>
+                    ${p.detalles_resumen ? `
+                    <div class="pc-row">
+                        <span class="pc-row-icon"><i class="fa-solid fa-utensils"></i></span>
+                        <div class="pc-row-text" style="font-size:.76rem;">${p.detalles_resumen}</div>
+                    </div>` : ''}
+                </div>
+                <div class="pc-footer pc-footer-sticky">
+                    <select class="pc-select-estado"
+                            data-estado-original="${p.Estado}"
                             onchange="cambiarEstadoPedido(${p.ID_pedido}, this.value, this)"
-                            data-estado-original="${p.Estado}">
+                            onclick="event.stopPropagation()">
                         <option value="Pendiente"  ${p.Estado==='Pendiente'  ?'selected':''}>⏳ Pendiente</option>
                         <option value="Preparando" ${p.Estado==='Preparando' ?'selected':''}>👨‍🍳 Preparando</option>
                         <option value="En camino"  ${p.Estado==='En camino'  ?'selected':''}>🛵 En camino</option>
                         <option value="Entregado"  ${p.Estado==='Entregado'  ?'selected':''}>✅ Entregado</option>
                         <option value="Cancelado"  ${p.Estado==='Cancelado'  ?'selected':''}>❌ Cancelado</option>
                     </select>
-                </td>
-                <td>
-                    <button class="btn-icon" title="Ver detalle" onclick="verDetallePedido(${p.ID_pedido})">
-                        <i class="fa-solid fa-eye"></i>
-                    </button>
-                    <button class="btn-icon btn-danger" title="Cancelar" onclick="confirmarCancelarPedido(${p.ID_pedido})">
-                        <i class="fa-solid fa-ban"></i>
-                    </button>
-                </td>
-            </tr>`;
-    });
+                    <span class="pc-total">$${total}</span>
+                    <div class="pc-actions" onclick="event.stopPropagation()">
+                        <button class="pc-btn danger" title="Cancelar"
+                                onclick="confirmarCancelarPedido(${p.ID_pedido})">
+                            <i class="fa-solid fa-ban"></i>
+                        </button>
+                    </div>
+                </div>`;
+
+            card.addEventListener('click', () => verDetallePedido(p.ID_pedido));
+            // Activar drag & drop en la tarjeta
+            activarDragCard(card, p.ID_pedido, p.Estado);
+            container.appendChild(card);
+        });
+    };
+
+    renderCol(cols['Pendiente'],  bodyPendiente,  0);
+    renderCol(cols['Preparando'], bodyPreparando, cols['Pendiente'].length);
+    renderCol(cols['En camino'],  bodyEncamino,   cols['Pendiente'].length + cols['Preparando'].length);
+
+    // Activar zonas de drop en las columnas kanban
+    activarDropZones();
 }
 
 // ==========================================
@@ -190,8 +430,9 @@ async function cambiarEstadoPedido(idPedido, nuevoEstado, selectEl) {
         if (result.status === 'success') {
             mostrarMensaje('success', result.message);
             selectEl.dataset.estadoOriginal = nuevoEstado;
-            if (nuevoEstado === 'Entregado' || nuevoEstado === 'Cancelado')
-                setTimeout(() => recargarPedidosActuales(), 900);
+            // Recarga inmediata y reinicio del timer
+            await recargarPedidosActuales();
+            reiniciarTimer();
         } else {
             mostrarMensaje('error', result.message);
             selectEl.value = estadoOriginal;
@@ -268,7 +509,11 @@ async function cancelarPedidoDirecto(idPedido) {
             body:JSON.stringify({id:idPedido})
         });
         const result = await res.json();
-        if (result.status==='success') { mostrarMensaje('success',result.message); setTimeout(recargarPedidosActuales,800); }
+        if (result.status==='success') {
+            mostrarMensaje('success',result.message);
+            await recargarPedidosActuales();
+            reiniciarTimer();
+        }
         else mostrarMensaje('error',result.message);
     } catch { mostrarMensaje('error','Error de conexión'); }
 }
@@ -569,7 +814,8 @@ async function guardarNuevoPedido() {
         if (result.status === 'success') {
             mostrarMensaje('success', result.message);
             cerrarModalNuevoPedido();
-            recargarPedidosActuales();
+            await recargarPedidosActuales();
+            reiniciarTimer();
         } else {
             mostrarMensaje('error', result.message || 'Error al crear pedido');
         }
@@ -1656,4 +1902,106 @@ function historialIrPagina(n) {
     historialRenderizarPagina();
     // Scroll suave al top de la tabla
     document.getElementById('panel-historial-recepcionista')?.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+// ==========================================
+// DRAG & DROP — KANBAN
+// ==========================================
+let _dragCardId   = null;   // ID del pedido que se está arrastrando
+let _dragEstado   = null;   // Estado original de la tarjeta
+let _dragEl       = null;   // Referencia al elemento DOM
+
+const ESTADO_POR_COL = {
+    'kanban-body-pendiente':  'Pendiente',
+    'kanban-body-preparando': 'Preparando',
+    'kanban-body-encamino':   'En camino',
+};
+
+// Llamado desde renderCol en renderizarTarjetas — activa drag en cada card
+function activarDragCard(card, idPedido, estado) {
+    card.setAttribute('draggable', 'true');
+
+    card.addEventListener('dragstart', e => {
+        _dragCardId = idPedido;
+        _dragEstado = estado;
+        _dragEl     = card;
+        card.classList.add('card-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', idPedido);
+    });
+
+    card.addEventListener('dragend', () => {
+        card.classList.remove('card-dragging');
+        document.querySelectorAll('.kanban-col-body').forEach(col => {
+            col.classList.remove('col-drag-over');
+        });
+        _dragCardId = null;
+        _dragEstado = null;
+        _dragEl     = null;
+    });
+}
+
+// Activa las zonas de drop en las 3 columnas del kanban
+function activarDropZones() {
+    document.querySelectorAll('.kanban-col-body').forEach(col => {
+        col.addEventListener('dragover', e => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            col.classList.add('col-drag-over');
+        });
+
+        col.addEventListener('dragleave', e => {
+            // Solo remover si salimos de la columna realmente (no de un hijo)
+            if (!col.contains(e.relatedTarget)) {
+                col.classList.remove('col-drag-over');
+            }
+        });
+
+        col.addEventListener('drop', async e => {
+            e.preventDefault();
+            col.classList.remove('col-drag-over');
+
+            const nuevoEstado = ESTADO_POR_COL[col.id];
+            if (!nuevoEstado || !_dragCardId) return;
+            if (nuevoEstado === _dragEstado) return; // misma columna, no hacer nada
+
+            // Optimistic UI: mover la tarjeta visualmente al instante
+            if (_dragEl) {
+                _dragEl.classList.add('card-dropping');
+                col.appendChild(_dragEl);
+                // Actualizar data-estado y badge visual
+                _dragEl.dataset.estado = nuevoEstado;
+                const estadoCls = nuevoEstado.toLowerCase().replace(' ', '-');
+                const badgeEl   = _dragEl.querySelector('.pc-estado');
+                const emoji = { Pendiente:'⏳', Preparando:'👨‍🍳', 'En camino':'🛵' };
+                if (badgeEl) {
+                    badgeEl.className = `pc-estado ${estadoCls}`;
+                    badgeEl.textContent = `${emoji[nuevoEstado] || '•'} ${nuevoEstado}`;
+                }
+                // Actualizar el select dentro de la tarjeta
+                const sel = _dragEl.querySelector('.pc-select-estado');
+                if (sel) { sel.value = nuevoEstado; sel.dataset.estadoOriginal = nuevoEstado; }
+                setTimeout(() => _dragEl?.classList.remove('card-dropping'), 350);
+            }
+
+            // Llamar al backend (reutiliza cambiarEstadoPedido pero sin un selectEl real)
+            try {
+                const res = await fetch('./backend/funciones.php?action=actualizarPedido', {
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({id:_dragCardId, estado:nuevoEstado})
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    mostrarMensaje('success', `Pedido #${_dragCardId} → ${nuevoEstado}`);
+                    await recargarPedidosActuales();
+                    reiniciarTimer();
+                } else {
+                    mostrarMensaje('error', result.message);
+                    await recargarPedidosActuales(); // revert
+                }
+            } catch {
+                mostrarMensaje('error', 'Error de conexión al mover pedido');
+                await recargarPedidosActuales();
+            }
+        });
+    });
 }
