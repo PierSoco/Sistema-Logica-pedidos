@@ -20,11 +20,10 @@
     --red-glow:     rgba(248,113,113,0.14);
 
     --text:         #eef0f8;
-    --text-2:       #8891b8;
+    --text-2:       #d0d6f0;
     --text-3:       #454b6b;
 
     --font-d: 'Syne', sans-serif;
-    --font-b: 'Boska', serif;
 
     --r-sm: 8px;
     --r-md: 12px;
@@ -70,7 +69,6 @@ input:-webkit-autofill {
 }
 
 body {
-    font-family: var(--font-b);
     background: var(--bg);
     color: var(--text);
     line-height: 1.55;
@@ -249,7 +247,6 @@ body::before {
     padding: 8px 16px;
     font-size: 0.78rem;
     font-weight: 600;
-    font-family: var(--font-b);
     border-radius: var(--r-sm);
     cursor: pointer;
     transition: all 0.2s;
@@ -331,7 +328,6 @@ body::before {
 
 /* ── BUTTONS ─────────────────────────── */
 button {
-    font-family: var(--font-b);
     font-weight: 600;
     font-size: 0.88rem;
     border: none;
@@ -494,7 +490,6 @@ button:focus-visible {
     transition: all 0.2s;
     flex: 1;
     text-align: center;
-    font-family: var(--font-b);
 }
 
 .link-mapa:hover {
@@ -694,7 +689,6 @@ body.login-body {
     border: 1px solid var(--border);
     border-radius: var(--r-sm);
     color: var(--text);
-    font-family: var(--font-b);
     font-size: 0.95rem;
     transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
     outline: none;
@@ -882,6 +876,7 @@ body.home-body { overflow-x: hidden; }
     max-width: 500px;
     margin: 0 auto var(--sp-xl);
     line-height: 1.75;
+    font-family: var(--font-d);
     animation: fadeUp 0.55s 0.24s var(--ease-out) both;
 }
 
@@ -946,7 +941,6 @@ body.home-body { overflow-x: hidden; }
 .stat-card:hover::after { opacity: 0.8; }
 
 .stat-val {
-    font-family: var(--font-d);
     font-size: 2.4rem;
     font-weight: 800;
     color: var(--amber);
