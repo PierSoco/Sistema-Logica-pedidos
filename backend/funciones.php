@@ -14,6 +14,9 @@ if (isset($_GET['action'])) {
         case 'logout':
             procesarLogout();
             break;
+        case 'getSessionData':
+            obtenerDatosSesion($pdo);
+            break;
         case 'getInitialDataRecepcionista':
             obtenerDatosInicialesRecepcionista($pdo);
             break;
@@ -53,6 +56,9 @@ if (isset($_GET['action'])) {
             obtenerTodosPedidos($pdo);
             break;
         // === RECEPCIONISTA ===
+        case 'getRefreshData':
+            obtenerRefreshData($pdo);
+            break;
         case 'getPedidosActuales':
             obtenerPedidosActuales($pdo);
             break;
@@ -132,6 +138,69 @@ function validarSesionSuperadmin() {
 
 function sanitizarInput($data) {
     return htmlspecialchars(strip_tags(trim($data)), ENT_QUOTES, 'UTF-8');
+}
+
+// ==========================================
+// DATOS DE SESIÓN — endpoint seguro para el frontend
+// ==========================================
+// Devuelve los datos del usuario autenticado junto con el nombre del restaurante.
+// El frontend usa esto al cargar el dashboard para poblar el perfil y validar
+// que la sesión sigue activa sin exponer datos sensibles en localStorage.
+// ==========================================
+
+function obtenerDatosSesion($pdo) {
+    validarSesion();
+
+    try {
+        $userId = $_SESSION['user_id'];
+
+        // Traer datos completos del usuario + nombre de su restaurante
+        $stmt = $pdo->prepare("
+            SELECT
+                u.ID_usuario,
+                u.Nombre,
+                u.Apellido,
+                u.Email,
+                u.Rol,
+                u.ID_restaurante,
+                r.Nombre_local AS restaurante_nombre
+            FROM usuarios u
+            LEFT JOIN restaurantes r ON u.ID_restaurante = r.ID_Restaurante
+            WHERE u.ID_usuario = :id AND u.activo = 1
+            LIMIT 1
+        ");
+        $stmt->execute([':id' => $userId]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            // El usuario fue desactivado mientras tenía sesión abierta
+            session_destroy();
+            echo json_encode(['status' => 'error', 'message' => 'Sesión inválida', 'redirect' => '../login.html']);
+            return;
+        }
+
+        // Actualizar SESSION con datos frescos (por si el admin cambió algo)
+        $_SESSION['user_restaurante']       = $user['ID_restaurante'];
+        $_SESSION['user_restaurante_nombre']= $user['restaurante_nombre'] ?? null;
+        $_SESSION['user_nombre']            = $user['Nombre'] . ' ' . $user['Apellido'];
+        $_SESSION['user_rol']               = strtolower($user['Rol']);
+        $_SESSION['user_email']             = $user['Email'];
+
+        echo json_encode([
+            'status' => 'success',
+            'data'   => [
+                'id'                  => (int)$user['ID_usuario'],
+                'nombre'              => $user['Nombre'] . ' ' . $user['Apellido'],
+                'email'               => $user['Email'],
+                'rol'                 => strtolower($user['Rol']),
+                'id_restaurante'      => $user['ID_restaurante'] ? (int)$user['ID_restaurante'] : null,
+                'restaurante_nombre'  => $user['restaurante_nombre'] ?? null,
+            ]
+        ]);
+
+    } catch (PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => 'Error al obtener sesión']);
+    }
 }
 
 // ==========================================
@@ -296,6 +365,184 @@ function obtenerDatosInicialesRecepcionista($pdo) {
 }
 
 // ==========================================
+// REFRESH UNIFICADO — UNA SOLA PETICIÓN POR CICLO
+// ==========================================
+// Devuelve pedidos actuales + resumen del día + (opcionalmente) historial.
+// Incluye un hash MD5 para detección de cambios:
+//   si hash cliente == hash servidor → { changed: false } — sin datos extra.
+// GET params:
+//   hash      — hash anterior del cliente (vacío en el primer ciclo)
+//   historial — '1' si el panel historial está visible en el cliente
+// ==========================================
+
+function obtenerRefreshData($pdo) {
+    validarRol(['recepcionista', 'admin', 'superadmin']);
+
+    try {
+        $id_restaurante = $_SESSION['user_restaurante'] ?? null;
+        $rol            = strtolower(trim($_SESSION['user_rol'] ?? ''));
+        $clientHash     = trim($_GET['hash']     ?? '');
+        $pedirHistorial = ($_GET['historial']    ?? '0') === '1';
+
+        // Filtro de restaurante (reutilizado en varias queries)
+        $filtroRest = ($id_restaurante && $rol !== 'superadmin')
+            ? "AND p.ID_restaurante = " . intval($id_restaurante)
+            : "";
+        $filtroRestPlain = ($id_restaurante && $rol !== 'superadmin')
+            ? "AND ID_restaurante = " . intval($id_restaurante)
+            : "";
+
+        // ── 1. PEDIDOS ACTUALES ──────────────────────────────────────────
+        $stmt = $pdo->query("
+            SELECT
+                p.ID_pedido,
+                p.Estado,
+                p.Total,
+                DATE_FORMAT(p.fecha_creacion, '%d/%m %H:%i') AS fecha_creacion,
+                c.Nombre    AS c_nombre,
+                c.Apellido  AS c_apellido,
+                c.Telefono  AS c_telefono,
+                d.calle     AS Calle,
+                d.altura    AS Numero,
+                d.piso_depto,
+                d.referencias,
+                d.Localidad,
+                (
+                    SELECT GROUP_CONCAT(
+                        CONCAT(dp2.Cantidad, 'x ', pr2.Nombre_producto)
+                        ORDER BY dp2.ID_detalle
+                        SEPARATOR ', '
+                    )
+                    FROM detalle_pedido dp2
+                    JOIN productos pr2 ON dp2.ID_producto = pr2.ID_producto
+                    WHERE dp2.ID_pedido = p.ID_pedido
+                ) AS detalles_resumen
+            FROM pedidos p
+            INNER JOIN clientes    c ON p.ID_cliente   = c.ID_cliente
+            INNER JOIN direcciones d ON p.ID_direccion = d.ID_direccion
+            WHERE p.Estado IN ('Pendiente', 'Preparando', 'En camino')
+            $filtroRest
+            ORDER BY p.ID_pedido DESC
+        ");
+        $pedidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // ── 2. RESUMEN DEL DÍA (sidebar) ────────────────────────────────
+        $entregados_hoy = $pdo->query("
+            SELECT COUNT(*) FROM pedidos
+            WHERE Estado = 'Entregado' AND DATE(fecha_creacion) = CURDATE()
+            $filtroRestPlain
+        ")->fetchColumn();
+
+        $facturado_hoy = $pdo->query("
+            SELECT COALESCE(SUM(Total), 0) FROM pedidos
+            WHERE Estado = 'Entregado' AND DATE(fecha_creacion) = CURDATE()
+            $filtroRestPlain
+        ")->fetchColumn();
+
+        $entregados_total = $pdo->query("
+            SELECT COUNT(*) FROM pedidos WHERE Estado = 'Entregado' $filtroRestPlain
+        ")->fetchColumn();
+
+        $facturado_total = $pdo->query("
+            SELECT COALESCE(SUM(Total), 0) FROM pedidos WHERE Estado = 'Entregado' $filtroRestPlain
+        ")->fetchColumn();
+
+        $activos_cnt = $pdo->query("
+            SELECT COUNT(*) FROM pedidos
+            WHERE Estado IN ('Pendiente','Preparando','En camino') $filtroRestPlain
+        ")->fetchColumn();
+
+        $resumen = [
+            'entregados_hoy'   => (int)$entregados_hoy,
+            'facturado_hoy'    => number_format((float)$facturado_hoy,   2, '.', ''),
+            'entregados_total' => (int)$entregados_total,
+            'facturado_total'  => number_format((float)$facturado_total, 2, '.', ''),
+            'activos'          => (int)$activos_cnt,
+        ];
+
+        // ── 3. HASH DE CAMBIOS ───────────────────────────────────────────
+        // Hash basado en IDs+Estados de pedidos activos y resumen del día.
+        // Si no cambió nada, respuesta mínima sin arrays de datos.
+        $hashInput  = json_encode([
+            array_map(function($p){ return $p['ID_pedido'] . ':' . $p['Estado']; }, $pedidos),
+            $resumen,
+        ]);
+        $serverHash = md5($hashInput);
+
+        if ($clientHash === $serverHash) {
+            echo json_encode(['status' => 'success', 'data' => ['changed' => false]]);
+            return;
+        }
+
+        // ── 4. HISTORIAL (solo si lo solicita el cliente) ────────────────
+        $historialData = null;
+        if ($pedirHistorial) {
+            $stmtH = $pdo->query("
+                SELECT
+                    p.ID_pedido,
+                    p.Estado,
+                    p.Total,
+                    DATE_FORMAT(p.fecha_creacion, '%d/%m/%Y %H:%i') AS fecha_creacion,
+                    p.fecha_creacion AS fecha_raw,
+                    c.Nombre    AS c_nombre,
+                    c.Apellido  AS c_apellido,
+                    c.Telefono  AS c_telefono,
+                    d.calle     AS Calle,
+                    d.altura    AS Numero,
+                    d.piso_depto,
+                    d.referencias,
+                    d.Localidad,
+                    (
+                        SELECT GROUP_CONCAT(
+                            CONCAT(dp2.Cantidad, 'x ', pr2.Nombre_producto)
+                            ORDER BY dp2.ID_detalle
+                            SEPARATOR ', '
+                        )
+                        FROM detalle_pedido dp2
+                        JOIN productos pr2 ON dp2.ID_producto = pr2.ID_producto
+                        WHERE dp2.ID_pedido = p.ID_pedido
+                    ) AS detalles_resumen
+                FROM pedidos p
+                INNER JOIN clientes    c ON p.ID_cliente   = c.ID_cliente
+                INNER JOIN direcciones d ON p.ID_direccion = d.ID_direccion
+                WHERE 1=1 $filtroRest
+                ORDER BY p.ID_pedido DESC
+            ");
+            $hPedidos = $stmtH->fetchAll(PDO::FETCH_ASSOC);
+
+            $stats = ['total'=>0,'pendiente'=>0,'preparando'=>0,'en_camino'=>0,'entregado'=>0,'cancelado'=>0];
+            foreach ($hPedidos as $hp) {
+                $stats['total']++;
+                switch($hp['Estado']) {
+                    case 'Pendiente':  $stats['pendiente']++; break;
+                    case 'Preparando': $stats['preparando']++; break;
+                    case 'En camino':  $stats['en_camino']++; break;
+                    case 'Entregado':  $stats['entregado']++; break;
+                    case 'Cancelado':  $stats['cancelado']++; break;
+                }
+            }
+            $historialData = ['pedidos' => $hPedidos, 'stats' => $stats];
+        }
+
+        // ── 5. RESPUESTA CON CAMBIOS ─────────────────────────────────────
+        $responseData = [
+            'changed' => true,
+            'hash'    => $serverHash,
+            'pedidos' => $pedidos,
+            'resumen' => $resumen,
+        ];
+        if ($historialData !== null) {
+            $responseData['historial'] = $historialData;
+        }
+
+        echo json_encode(['status' => 'success', 'data' => $responseData]);
+
+    } catch (PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+}
+
+// ==========================================
 // OBTENER PEDIDOS ACTUALES (GET)
 // ==========================================
 
@@ -441,6 +688,19 @@ function obtenerPedidoPorId($pdo) {
     }
 
     try {
+        // SEGURIDAD: verificar que el pedido pertenece al restaurante del usuario
+        $rolAct  = strtolower(trim($_SESSION['user_rol'] ?? ''));
+        $restAct = $_SESSION['user_restaurante'] ?? null;
+        if ($rolAct !== 'superadmin' && $restAct) {
+            $chk = $pdo->prepare("SELECT ID_restaurante FROM pedidos WHERE ID_pedido = :id LIMIT 1");
+            $chk->execute([':id' => $id]);
+            $pedidoRest = $chk->fetchColumn();
+            if (!$pedidoRest || (int)$pedidoRest !== (int)$restAct) {
+                echo json_encode(['status' => 'error', 'message' => 'Acceso denegado']);
+                return;
+            }
+        }
+
         // Datos del pedido
         $stmtP = $pdo->prepare("
             SELECT 
@@ -561,7 +821,20 @@ function crearPedidoRecepcion($pdo) {
     $carrito   = $data['carrito'];
 
     // Obtener el ID de restaurante del usuario en sesión
-    $id_restaurante = $_SESSION['user_restaurante'] ?? 1;
+    // SEGURIDAD: si el usuario no tiene restaurante asignado y no es superadmin, rechazar
+    $id_restaurante = $_SESSION['user_restaurante'] ?? null;
+    $rolSesion      = strtolower(trim($_SESSION['user_rol'] ?? ''));
+    if (!$id_restaurante && $rolSesion !== 'superadmin') {
+        echo json_encode(['status' => 'error', 'message' => 'Usuario sin restaurante asignado. Contactá al administrador.']);
+        return;
+    }
+    // Superadmin puede pasar ID de restaurante en el payload; si no, usa el primero
+    if (!$id_restaurante && $rolSesion === 'superadmin') {
+        $id_restaurante = intval($data['id_restaurante'] ?? 0) ?: null;
+        if (!$id_restaurante) {
+            $id_restaurante = $pdo->query("SELECT ID_Restaurante FROM restaurantes LIMIT 1")->fetchColumn();
+        }
+    }
 
     try {
         $pdo->beginTransaction();
@@ -698,6 +971,19 @@ function actualizarPedido($pdo) {
     $estadosValidos = ['Pendiente', 'Preparando', 'En camino', 'Entregado', 'Cancelado'];
 
     try {
+        // SEGURIDAD: verificar que el pedido pertenece al restaurante del usuario
+        $rolAct = strtolower(trim($_SESSION['user_rol'] ?? ''));
+        $restAct = $_SESSION['user_restaurante'] ?? null;
+        if ($rolAct !== 'superadmin' && $restAct) {
+            $chkStmt = $pdo->prepare("SELECT ID_restaurante FROM pedidos WHERE ID_pedido = :id LIMIT 1");
+            $chkStmt->execute([':id' => $id]);
+            $pedidoRest = $chkStmt->fetchColumn();
+            if (!$pedidoRest || (int)$pedidoRest !== (int)$restAct) {
+                echo json_encode(['status' => 'error', 'message' => 'Acceso denegado: pedido de otro restaurante']);
+                return;
+            }
+        }
+
         // Si solo se actualiza el estado
         if (isset($data['estado'])) {
             $nuevoEstado = $data['estado'];
@@ -752,6 +1038,19 @@ function cancelarPedido($pdo) {
     }
 
     try {
+        // SEGURIDAD: verificar que el pedido pertenece al restaurante del usuario
+        $rolAct  = strtolower(trim($_SESSION['user_rol'] ?? ''));
+        $restAct = $_SESSION['user_restaurante'] ?? null;
+        if ($rolAct !== 'superadmin' && $restAct) {
+            $chk = $pdo->prepare("SELECT ID_restaurante FROM pedidos WHERE ID_pedido = :id LIMIT 1");
+            $chk->execute([':id' => $id]);
+            $pedidoRest = $chk->fetchColumn();
+            if (!$pedidoRest || (int)$pedidoRest !== (int)$restAct) {
+                echo json_encode(['status' => 'error', 'message' => 'Acceso denegado: pedido de otro restaurante']);
+                return;
+            }
+        }
+
         $pdo->beginTransaction();
 
         // Devolver stock
