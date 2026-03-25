@@ -1853,6 +1853,285 @@ th.sort-active .sort-icon { opacity:1; }
     border-color: rgba(248,113,113,.5);
     transform: translateY(-1px);
 }
+
+/* ── VIEW TOGGLE ──────────────────────── */
+.view-toggle {
+    display:flex;
+    border:1px solid var(--border-hi);
+    border-radius:var(--r-sm);
+    overflow:hidden;
+    flex-shrink:0;
+}
+.view-toggle-btn {
+    padding:8px 12px;
+    background:transparent;
+    border:none;
+    border-right:1px solid var(--border-hi);
+    color:var(--text-3);
+    font-size:.82rem;
+    cursor:pointer;
+    transition:all .15s;
+    line-height:1;
+}
+.view-toggle-btn:last-child { border-right:none; }
+.view-toggle-btn:hover { background:rgba(255,255,255,.05); color:var(--text-2); }
+.view-toggle-btn.active { background:var(--amber-glow); color:var(--amber); }
+
+/* ── TABLA — FILAS CLICKEABLES ──────────── */
+tr.pedido-fila { cursor:pointer; }
+tr.pedido-fila:hover { background:rgba(245,166,35,.05) !important; }
+tr.pedido-fila:hover .hist-id { text-decoration:underline; text-underline-offset:3px; }
+
+/* ── TARJETAS ─────────────────────────── */
+.pedidos-cards-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
+    gap:14px;
+    padding:4px 0 8px;
+}
+.pedido-card-item {
+    background:var(--bg3);
+    border:1px solid var(--border);
+    border-left:3px solid var(--estado-color,var(--amber));
+    border-radius:var(--r-md);
+    padding:0;
+    cursor:pointer;
+    display:flex; flex-direction:column;
+    transition:transform .2s var(--ease-out), border-color .2s, box-shadow .2s;
+    animation:card-enter .25s var(--ease-out) both;
+    position:relative; overflow:hidden;
+    min-height:220px;
+}
+.pedido-card-item::before {
+    content:'';
+    position:absolute; inset:0;
+    background:radial-gradient(ellipse at top left, rgba(245,166,35,.04), transparent 60%);
+    pointer-events:none;
+}
+.pedido-card-item:hover { transform:translateY(-3px); border-color:var(--border-hi); box-shadow:0 12px 36px rgba(0,0,0,.3); }
+.pedido-card-item[data-estado="Pendiente"]  { --estado-color:var(--amber); }
+.pedido-card-item[data-estado="Preparando"] { --estado-color:var(--blue); }
+.pedido-card-item[data-estado="En camino"]  { --estado-color:#a5b4fc; }
+.pedido-card-item[data-estado="Entregado"]  { --estado-color:var(--teal); }
+.pedido-card-item[data-estado="Cancelado"]  { --estado-color:var(--red); }
+
+/* Header tarjeta */
+.pc-header { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; padding:16px 18px 12px; border-bottom:1px solid var(--border); flex-shrink:0; }
+.pc-id { font-family:var(--font-d); font-size:1.25rem; font-weight:800; color:var(--amber); letter-spacing:-.02em; line-height:1; }
+.pc-estado {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:4px 10px; border-radius:999px;
+    font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em;
+    border:1px solid transparent; flex-shrink:0; white-space:nowrap;
+}
+.pc-estado.pendiente  { background:var(--amber-glow); color:var(--amber);  border-color:var(--amber-border); }
+.pc-estado.preparando { background:var(--blue-glow);  color:var(--blue);   border-color:rgba(96,165,250,.3); }
+.pc-estado.en-camino  { background:rgba(99,102,241,.12); color:#a5b4fc;    border-color:rgba(99,102,241,.3); }
+.pc-estado.entregado  { background:var(--teal-glow);  color:var(--teal);   border-color:rgba(45,212,191,.3); }
+.pc-estado.cancelado  { background:var(--red-glow);   color:var(--red);    border-color:rgba(248,113,113,.3); }
+
+/* Cuerpo tarjeta — ocupa el espacio disponible */
+.pc-body { display:flex; flex-direction:column; gap:7px; padding:12px 18px; }
+.pc-body-grow { flex:1; }
+.pc-row { display:flex; align-items:flex-start; gap:9px; font-size:.81rem; color:var(--text-2); }
+.pc-row-icon { width:18px; text-align:center; color:var(--text-3); font-size:.73rem; flex-shrink:0; margin-top:2px; }
+.pc-row-text { flex:1; line-height:1.45; }
+.pc-row-text strong { color:var(--text); font-weight:600; }
+.pc-row-text small { font-size:.71rem; color:var(--text-3); }
+.pc-divider { height:1px; background:var(--border); }
+
+/* Footer tarjeta — siempre al fondo */
+.pc-footer { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 18px 14px; border-top:1px solid var(--border); margin-top:auto; flex-shrink:0; }
+.pc-footer-sticky { margin-top:auto; }
+.pc-total { font-family:var(--font-d); font-size:1.05rem; font-weight:800; color:var(--teal); letter-spacing:-.02em; flex-shrink:0; }
+.pc-actions { display:flex; gap:6px; }
+.pc-btn {
+    width:28px; height:28px; border-radius:var(--r-sm);
+    border:1px solid var(--border); background:rgba(255,255,255,.04);
+    color:var(--text-3); font-size:.72rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; transition:all .15s;
+}
+.pc-btn:hover { border-color:var(--amber); color:var(--amber); background:var(--amber-glow); }
+.pc-btn.danger:hover { border-color:rgba(248,113,113,.4); color:var(--red); background:var(--red-glow); }
+.pc-select-estado {
+    flex:1; min-width:0; padding:5px 22px 5px 8px;
+    background:var(--bg2); border:1px solid var(--border);
+    border-radius:var(--r-sm); color:var(--text-2);
+    font-size:.73rem; font-weight:600; font-family:var(--font-b);
+    cursor:pointer; outline:none; appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238891b8'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 6px center; background-size:8px;
+    transition:border-color .15s;
+}
+.pc-select-estado:focus { border-color:var(--amber); }
+
+/* Sin animación para recargas automáticas */
+.pedido-card-item.no-anim { animation:none !important; }
+
+/* Animación en cascada — solo cuando se aplica la clase .pedido-card-item (sin .no-anim) */
+.pedido-card-item:not(.no-anim):nth-child(1){animation-delay:.03s}
+.pedido-card-item:not(.no-anim):nth-child(2){animation-delay:.06s}
+.pedido-card-item:not(.no-anim):nth-child(3){animation-delay:.09s}
+.pedido-card-item:not(.no-anim):nth-child(4){animation-delay:.12s}
+.pedido-card-item:not(.no-anim):nth-child(5){animation-delay:.15s}
+.pedido-card-item:not(.no-anim):nth-child(6){animation-delay:.18s}
+
+@media(max-width:640px){
+    .pedidos-cards-grid{grid-template-columns:1fr}
+}
+
+/* ── KANBAN 3 COLUMNAS ──────────────────── */
+.pedidos-kanban {
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+    align-items:stretch;   /* columnas misma altura */
+    padding:4px 0 8px;
+}
+.kanban-col {
+    background:var(--bg3);
+    border:1px solid var(--border);
+    border-radius:var(--r-lg);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    min-height:240px;      /* mínimo visible incluso vacía */
+}
+.kanban-col-header {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:12px 16px;
+    font-size:.72rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    flex-shrink:0;
+    border-bottom:1px solid var(--border);
+}
+.kanban-col-icon { font-size:1rem; line-height:1; }
+.kanban-col-title { flex:1; }
+.kanban-col-badge {
+    background:rgba(255,255,255,.1);
+    border-radius:999px;
+    padding:2px 8px;
+    font-size:.68rem;
+    font-weight:800;
+    min-width:22px;
+    text-align:center;
+}
+.kanban-pendiente  { background:var(--amber-glow);          color:var(--amber);  border-bottom-color:var(--amber-border); }
+.kanban-pendiente  .kanban-col-badge { background:var(--amber); color:#0a0c12; }
+.kanban-preparando { background:var(--blue-glow);           color:var(--blue);   border-bottom-color:rgba(96,165,250,.3); }
+.kanban-preparando .kanban-col-badge { background:var(--blue);  color:#0a0c12; }
+.kanban-encamino   { background:rgba(99,102,241,.1);        color:#a5b4fc;       border-bottom-color:rgba(99,102,241,.3); }
+.kanban-encamino   .kanban-col-badge { background:#a5b4fc;  color:#0a0c12; }
+
+.kanban-col-body {
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    padding:12px;
+    flex:1;                /* ocupa todo el alto restante de la columna */
+    min-height:0;          /* permite que flex shrink funcione correctamente */
+}
+.kanban-col-empty {
+    text-align:center;
+    padding:32px 12px;
+    color:var(--text-3);
+    font-size:.78rem;
+    opacity:.6;
+}
+.kanban-col-empty i { display:block; font-size:1.4rem; margin-bottom:8px; opacity:.4; }
+
+/* Tarjeta dentro del kanban — sin padding propio, ya heredado */
+.kanban-col-body .pedido-card-item {
+    width:100%;
+    box-sizing:border-box;
+}
+
+/* Separación visual entre tarjetas de una misma columna */
+.kanban-col-body .pedido-card-item + .pedido-card-item {
+    border-top:2px solid rgba(255,255,255,.06);
+}
+.kanban-col-body .pedido-card-item:not(:last-child)::after {
+    content:'';
+    display:block;
+    height:1px;
+    background:linear-gradient(90deg, transparent, var(--border-hi), transparent);
+    margin:0 12px;
+    opacity:.5;
+}
+
+/* ── DRAG & DROP ──────────────────────── */
+/* Indicador de arrastrable en la tarjeta */
+.pedido-card-item[draggable="true"] .pc-header::before {
+    content:'\f58e';   /* grip-dots — Font Awesome */
+    font-family:'Font Awesome 6 Free';
+    font-weight:900;
+    font-size:.65rem;
+    color:var(--text-3);
+    margin-right:6px;
+    opacity:.5;
+    transition:opacity .15s;
+    cursor:grab;
+}
+.pedido-card-item[draggable="true"]:hover .pc-header::before {
+    opacity:1;
+    color:var(--amber);
+}
+/* Indicador handle — puntero grab en la cabecera */
+.pedido-card-item[draggable="true"] .pc-header {
+    cursor:grab;
+}
+.pedido-card-item[draggable="true"] .pc-header:active {
+    cursor:grabbing;
+}
+
+/* Tarjeta siendo arrastrada */
+.pedido-card-item.card-dragging {
+    opacity:.45;
+    transform:scale(.97) rotate(-1deg);
+    box-shadow:0 20px 50px rgba(0,0,0,.5);
+    border-color:var(--amber) !important;
+    z-index:999;
+}
+
+/* Tarjeta al soltar (feedback) */
+@keyframes card-drop-bounce {
+    0%   { transform:scale(1.03); }
+    60%  { transform:scale(.99); }
+    100% { transform:scale(1); }
+}
+.pedido-card-item.card-dropping {
+    animation:card-drop-bounce .35s var(--ease-out);
+}
+
+/* Columna receptora activa */
+.kanban-col-body.col-drag-over {
+    background:rgba(245,166,35,.06);
+    border-radius:var(--r-md);
+    outline:2px dashed var(--amber-border);
+    outline-offset:-2px;
+    transition:background .15s, outline .15s;
+}
+/* Pulse sutil en la columna receptora */
+@keyframes col-pulse {
+    0%, 100% { background:rgba(245,166,35,.06); }
+    50%       { background:rgba(245,166,35,.12); }
+}
+.kanban-col-body.col-drag-over {
+    animation:col-pulse 1s ease infinite;
+}
+
+@media(max-width:860px){
+    .pedidos-kanban{ grid-template-columns:1fr 1fr; }
+    #kanban-col-encamino{ grid-column:1/-1; }
+}
+@media(max-width:560px){
+    .pedidos-kanban{ grid-template-columns:1fr; }
+    #kanban-col-encamino{ grid-column:auto; }
+}
     </style>
 </head>
 <body>
@@ -1885,6 +2164,7 @@ th.sort-active .sort-icon { opacity:1; }
                                 <span class="udrop-name"  id="udrop-nombre">—</span>
                                 <span class="udrop-email" id="udrop-email">—</span>
                                 <span class="udrop-rol-pill" id="udrop-rol">—</span>
+                                <span class="udrop-restaurante" id="udrop-restaurante" style="font-size:.68rem;color:var(--amber);font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;"></span>
                             </div>
                         </div>
 
@@ -2144,13 +2424,24 @@ th.sort-active .sort-icon { opacity:1; }
                 <div class="crud-container">
                     <div class="crud-header">
                         <h2><i class="fa-solid fa-list-check"></i> Pedidos Actuales</h2>
-                        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                             <div class="search-bar-container">
                                 <input type="text" id="buscador-pedidos-gral"
                                        placeholder="🔍 Buscar por N°, cliente, dirección..."
-                                       style="width:260px;">
+                                       style="width:240px;">
                             </div>
-                            <button class="btn-primary" onclick="recargarPedidosActuales()" title="Actualizar lista">
+                            <!-- TOGGLE VISTA -->
+                            <div class="view-toggle" role="group">
+                                <button class="view-toggle-btn active" id="btn-vista-tabla"
+                                        onclick="cambiarVistaTabla('tabla')" title="Vista tabla">
+                                    <i class="fa-solid fa-table-list"></i>
+                                </button>
+                                <button class="view-toggle-btn" id="btn-vista-tarjetas"
+                                        onclick="cambiarVistaTabla('tarjetas')" title="Vista tarjetas">
+                                    <i class="fa-solid fa-grip"></i>
+                                </button>
+                            </div>
+                            <button class="btn-primary" style="padding:10px 13px;" onclick="recargarPedidosActuales()" title="Actualizar">
                                 <i class="fa-solid fa-rotate-right"></i>
                             </button>
                             <button class="btn-primary" onclick="abrirModalNuevoPedido()">
@@ -2158,24 +2449,55 @@ th.sort-active .sort-icon { opacity:1; }
                             </button>
                         </div>
                     </div>
-                    <div class="table-responsive">
+
+                    <!-- VISTA TABLA -->
+                    <div class="table-responsive" id="contenedor-vista-tabla">
                         <table class="crud-table" id="tabla-pedidos-recepcion">
                             <thead>
                                 <tr>
                                     <th>N° Pedido</th>
                                     <th>Cliente</th>
-                                    <th>Direcci&#xF3;n</th>
+                                    <th>Dirección</th>
                                     <th>Detalle</th>
                                     <th>Total</th>
                                     <th>Estado</th>
-                                    <th>Acciones</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr><td colspan="7" style="text-align:center;padding:24px;color:#888;">Cargando pedidos...</td></tr>
+                                <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-3);">Cargando pedidos...</td></tr>
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- VISTA TARJETAS — KANBAN 3 COLUMNAS -->
+                    <div id="contenedor-vista-tarjetas" class="pedidos-kanban" style="display:none;">
+                        <div class="kanban-col" id="kanban-col-pendiente">
+                            <div class="kanban-col-header kanban-pendiente">
+                                <span class="kanban-col-icon">⏳</span>
+                                <span class="kanban-col-title">Pendiente</span>
+                                <span class="kanban-col-badge" id="kanban-badge-pendiente">0</span>
+                            </div>
+                            <div class="kanban-col-body" id="kanban-body-pendiente"></div>
+                        </div>
+                        <div class="kanban-col" id="kanban-col-preparando">
+                            <div class="kanban-col-header kanban-preparando">
+                                <span class="kanban-col-icon">👨‍🍳</span>
+                                <span class="kanban-col-title">Preparando</span>
+                                <span class="kanban-col-badge" id="kanban-badge-preparando">0</span>
+                            </div>
+                            <div class="kanban-col-body" id="kanban-body-preparando"></div>
+                        </div>
+                        <div class="kanban-col" id="kanban-col-encamino">
+                            <div class="kanban-col-header kanban-encamino">
+                                <span class="kanban-col-icon">🛵</span>
+                                <span class="kanban-col-title">En camino</span>
+                                <span class="kanban-col-badge" id="kanban-badge-encamino">0</span>
+                            </div>
+                            <div class="kanban-col-body" id="kanban-body-encamino"></div>
+                        </div>
+                    </div>
+
                 </div>
             </section>
 

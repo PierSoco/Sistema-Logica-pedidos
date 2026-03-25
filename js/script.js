@@ -8,10 +8,61 @@ let productoSeleccionadoTemporal = null;
 let stepActual = 1;
 const TOTAL_STEPS = 3;
 
+// ── AUTO-RECARGA: setTimeout encadenado — UNA sola instancia activa ──
+// _cicloActivo garantiza que nunca haya dos ciclos corriendo en paralelo.
+// _autoReloadTimer guarda el único handle vigente; reiniciarTimer() lo
+// cancela antes de crear uno nuevo, evitando acumulación de timers.
+let _autoReloadTimer  = null;   // handle del único setTimeout activo
+let _autoReloadBusy   = false;  // true mientras hay una fetch en vuelo
+let _cicloActivo      = false;  // true desde que el ciclo arranca hasta que termina
+const AUTO_RELOAD_MS  = 7000;
+
+function reiniciarTimer() {
+    // Cancela el timer pendiente (si existe) y programa uno nuevo.
+    // NO inicia un ciclo nuevo si ya hay uno corriendo.
+    if (_autoReloadTimer) { clearTimeout(_autoReloadTimer); _autoReloadTimer = null; }
+    if (_cicloActivo) return; // el ciclo en curso ya agendará el siguiente al terminar
+    _autoReloadTimer = setTimeout(_cicloRecarga, AUTO_RELOAD_MS);
+}
+
+function _detenerCiclo() {
+    // Detiene completamente el ciclo (útil al cambiar de vista/rol)
+    if (_autoReloadTimer) { clearTimeout(_autoReloadTimer); _autoReloadTimer = null; }
+    _cicloActivo = false;
+    _autoReloadBusy = false;
+}
+
+async function _cicloRecarga() {
+    // Doble guarda: si el timer fue cancelado entre que se agendó y ejecuta, salir
+    _autoReloadTimer = null;
+    if (_cicloActivo) return;       // ya hay un ciclo corriendo, ignorar
+    if (_autoReloadBusy) {          // fetch en vuelo (no debería pasar, pero por seguridad)
+        _autoReloadTimer = setTimeout(_cicloRecarga, AUTO_RELOAD_MS);
+        return;
+    }
+
+    _cicloActivo    = true;
+    _autoReloadBusy = true;
+    try {
+        await autoRecargarDatos();
+    } finally {
+        _autoReloadBusy = false;
+        _cicloActivo    = false;
+        // Agendar el SIGUIENTE ciclo solo después de que éste termine
+        if (!_autoReloadTimer) {  // no agendar si reiniciarTimer() ya lo hizo
+            _autoReloadTimer = setTimeout(_cicloRecarga, AUTO_RELOAD_MS);
+        }
+    }
+}
+
 // ==========================================
 // INICIO DE LÓGICA RECEPCIONISTA
 // ==========================================
+let _recepcionistaIniciado = false; // guarda contra doble-init
+
 async function iniciarLogicaRecepcionista() {
+    if (_recepcionistaIniciado) return; // nunca iniciar dos veces
+    _recepcionistaIniciado = true;
     console.log("Cargando ecosistema de Recepción...");
 
     // Activar sidebar y layout de 2 columnas
@@ -22,62 +73,140 @@ async function iniciarLogicaRecepcionista() {
 
     await cargarTodoRecepcion();
     document.getElementById('buscador-pedidos-gral')?.addEventListener('input', filtrarPedidosLocal);
-    actualizarResumenSidebar();
 
-    // Auto-recarga silenciosa cada 30 segundos
-    setInterval(async () => {
-        await autoRecargarDatos();
-    }, 30000);
+    // Activar drop zones UNA SOLA VEZ — no dentro de renderizarTarjetas
+    activarDropZones();
+
+    // Botón de refrescar manual — registrar UNA sola vez aquí
+    document.getElementById('btn-actualizar-pedidos')?.addEventListener('click', async () => {
+        _detenerCiclo();                 // parar el ciclo en curso
+        _lastRefreshHash = null;         // forzar recarga completa
+        await recargarPedidosActuales(); // traer datos frescos
+        await actualizarResumenSidebar(); // refrescar sidebar manualmente
+        reiniciarTimer();                // reiniciar ciclo limpio
+    });
+
+    // Sidebar con datos iniciales
+    await actualizarResumenSidebar();
+
+    // Auto-recarga silenciosa (un solo ciclo encadenado)
+    _detenerCiclo(); // limpiar cualquier estado remanente antes de arrancar
+    _autoReloadTimer = setTimeout(_cicloRecarga, AUTO_RELOAD_MS);
 }
 
-// Recarga silenciosa: actualiza datos sin parpadeo de UI
+// Hash local de la última snapshot para detectar cambios
+let _lastRefreshHash = null;
+
+// Recarga silenciosa: UNA sola fetch a getRefreshData.
+// Si el hash del servidor coincide con el local → sin cambios → no renderiza nada.
 async function autoRecargarDatos() {
     try {
-        // 1. Recargar pedidos actuales
-        const res = await fetch('./backend/funciones.php?action=getPedidosActuales');
+        const panelHist  = document.getElementById('panel-historial-recepcionista');
+        const histVisible = panelHist && !panelHist.classList.contains('hidden') && HISTORIAL_STATE.cargado;
+        const url = './backend/funciones.php?action=getRefreshData'
+            + '&hash=' + encodeURIComponent(_lastRefreshHash || '')
+            + '&historial=' + (histVisible ? '1' : '0');
+
+        const res    = await fetch(url);
         const result = await res.json();
-        if (result.status === 'success') {
-            DATA_RECEPCION.pedidos = result.data;
-            renderizarTablaPedidosRecepcion(result.data);
-            // Actualizar badge
+        if (result.status !== 'success') return;
+
+        // Sin cambios: el backend devuelve changed:false → no hacer nada
+        if (!result.data.changed) return;
+
+        // Guardar nuevo hash
+        _lastRefreshHash = result.data.hash;
+
+        // 1. Pedidos actuales
+        if (result.data.pedidos !== undefined) {
+            DATA_RECEPCION.pedidos = result.data.pedidos;
+            renderizarTablaPedidosRecepcion(result.data.pedidos);
             const badge = document.getElementById('badge-actuales');
-            if (badge) badge.textContent = result.data.length;
+            if (badge) badge.textContent = result.data.pedidos.length;
         }
 
-        // 2. Si el historial está visible y cargado, recargarlo también
-        const panelHist = document.getElementById('panel-historial-recepcionista');
-        const histVisible = panelHist && !panelHist.classList.contains('hidden');
-        if (histVisible && HISTORIAL_STATE.cargado) {
-            await recargarHistorialSilencioso();
+        // 2. Historial (solo si fue solicitado y está visible)
+        if (result.data.historial !== undefined) {
+            HISTORIAL_STATE.todos = result.data.historial.pedidos;
+            actualizarStatsHistorial(result.data.historial.stats);
+            historialFiltrar();
         }
 
-        // 3. Actualizar sidebar stats
-        actualizarResumenSidebar();
+        // 3. Sidebar
+        if (result.data.resumen !== undefined) {
+            _actualizarSidebarConDatos(result.data.resumen);
+        }
 
-        // 4. Marcar indicador visual
+        // 4. Indicador visual
         marcarUltimaActualizacion();
 
     } catch(e) { /* fallo silencioso */ }
 }
 
+// Aplica datos de resumen al sidebar sin fetch adicional
+function _actualizarSidebarConDatos(d) {
+    const el1      = document.getElementById('sb-entregados');
+    const el2      = document.getElementById('sb-facturado');
+    const el1label = document.getElementById('sb-entregados-label');
+    const el2label = document.getElementById('sb-facturado-label');
+    const hayHoy   = d.entregados_hoy > 0 || parseFloat(d.facturado_hoy) > 0;
+
+    if (el1) el1.textContent = hayHoy ? d.entregados_hoy : d.entregados_total;
+    if (el1label) el1label.textContent = hayHoy ? 'Hoy · Entregados' : 'Total · Entregados';
+
+    const facturado = hayHoy ? parseFloat(d.facturado_hoy) : parseFloat(d.facturado_total);
+    if (el2) {
+        el2.textContent = '$' + facturado.toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:0});
+    }
+    if (el2label) el2label.textContent = hayHoy ? 'Hoy · Facturado' : 'Total · Facturado';
+
+    const badge = document.getElementById('badge-actuales');
+    if (badge && d.activos !== undefined) badge.textContent = d.activos;
+}
+
+// Recarga silenciosa del historial (usada por recarga manual del historial)
 async function recargarHistorialSilencioso() {
     try {
         const res    = await fetch('./backend/funciones.php?action=getHistorialPedidos');
         const result = await res.json();
         if (result.status !== 'success') return;
-
         HISTORIAL_STATE.todos = result.data.pedidos;
         actualizarStatsHistorial(result.data.stats);
-
-        // Mantener posición, filtros y página — solo refrescar datos
         historialFiltrar();
     } catch(e) { /* fallo silencioso */ }
 }
 
 function filtrarPedidosLocal(e) {
     const busqueda = e.target.value.toLowerCase().trim();
+
+    // Vista tabla — filtrar filas
     document.querySelectorAll('.pedido-fila').forEach(fila => {
         fila.style.display = fila.innerText.toLowerCase().includes(busqueda) ? '' : 'none';
+    });
+
+    // Vista tarjetas (kanban) — filtrar cards por data-busqueda
+    document.querySelectorAll('#contenedor-vista-tarjetas .pedido-card-item').forEach(card => {
+        const texto = card.dataset.busqueda || card.innerText.toLowerCase();
+        card.style.display = (!busqueda || texto.includes(busqueda)) ? '' : 'none';
+    });
+
+    // Actualizar estado "vacío" de cada columna kanban
+    ['pendiente', 'preparando', 'encamino'].forEach(col => {
+        const body = document.getElementById(`kanban-body-${col}`);
+        if (!body) return;
+        const cards = body.querySelectorAll('.pedido-card-item');
+        const hayVisibles = Array.from(cards).some(c => c.style.display !== 'none');
+        let empty = body.querySelector('.kanban-col-empty');
+        if (!hayVisibles) {
+            if (!empty) {
+                empty = document.createElement('div');
+                empty.className = 'kanban-col-empty kanban-search-empty';
+                empty.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>Sin resultados';
+                body.appendChild(empty);
+            }
+        } else {
+            if (empty && empty.classList.contains('kanban-search-empty')) empty.remove();
+        }
     });
 }
 
@@ -113,6 +242,10 @@ async function recargarPedidosActuales() {
         if (result.status === 'success') {
             DATA_RECEPCION.pedidos = result.data;
             renderizarTablaPedidosRecepcion(result.data);
+            const badge = document.getElementById('badge-actuales');
+            if (badge) badge.textContent = result.data.length;
+            // Invalidar hash para que el próximo ciclo auto traiga datos frescos del servidor
+            _lastRefreshHash = null;
         }
     } catch (err) { console.error("Error recargando pedidos:", err); }
 }
@@ -120,55 +253,240 @@ async function recargarPedidosActuales() {
 // ==========================================
 // RENDERIZAR TABLA
 // ==========================================
+// Vista activa: 'tabla' | 'tarjetas'
+let VISTA_ACTUAL = 'tabla';
+// Controla si las tarjetas deben animarse (solo al cambiar de vista, no en auto-recarga)
+let ANIMAR_TARJETAS = false;
+
+// ── TOGGLE ──────────────────────────────
+function cambiarVistaTabla(vista) {
+    VISTA_ACTUAL = vista;
+    // Solo animar cuando el usuario cambia explícitamente a la vista tarjetas
+    ANIMAR_TARJETAS = (vista === 'tarjetas');
+
+    const contTabla    = document.getElementById('contenedor-vista-tabla');
+    const contTarjetas = document.getElementById('contenedor-vista-tarjetas');
+    const btnTabla     = document.getElementById('btn-vista-tabla');
+    const btnTarjetas  = document.getElementById('btn-vista-tarjetas');
+
+    if (vista === 'tabla') {
+        if (contTabla)    contTabla.style.display    = '';
+        if (contTarjetas) contTarjetas.style.display = 'none';
+        btnTabla?.classList.add('active');
+        btnTarjetas?.classList.remove('active');
+    } else {
+        if (contTabla)    contTabla.style.display    = 'none';
+        if (contTarjetas) contTarjetas.style.display = '';
+        btnTabla?.classList.remove('active');
+        btnTarjetas?.classList.add('active');
+    }
+
+    // Re-renderizar con los datos actuales en la vista nueva
+    renderizarTablaPedidosRecepcion(DATA_RECEPCION.pedidos);
+    // Después del primer render al cambiar vista, desactivar animaciones para recargas
+    ANIMAR_TARJETAS = false;
+}
+
+// ── DISPATCHER ──────────────────────────
 function renderizarTablaPedidosRecepcion(pedidos) {
+    if (VISTA_ACTUAL === 'tarjetas') {
+        renderizarTarjetas(pedidos);
+    } else {
+        renderizarTabla(pedidos);
+    }
+}
+
+// ── VISTA TABLA ──────────────────────────
+function renderizarTabla(pedidos) {
     const tbody = document.querySelector('#tabla-pedidos-recepcion tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
 
     if (!pedidos || pedidos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;">
-            <i class="fa-solid fa-inbox" style="font-size:2rem;display:block;margin-bottom:10px;color:#cbd5e1;"></i>
-            No hay pedidos activos en este momento</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:48px;color:var(--text-3);">
+            <i class="fa-solid fa-inbox" style="font-size:2rem;display:block;margin-bottom:10px;opacity:.4;"></i>
+            No hay pedidos activos</td></tr>`;
         return;
     }
 
     pedidos.forEach(p => {
-        const piso = p.piso_depto  ? ` · <em>${p.piso_depto}</em>` : '';
-        const ref  = p.referencias ? `<br><small style="color:#94a3b8;">📌 ${p.referencias}</small>` : '';
-        tbody.innerHTML += `
-            <tr class="pedido-fila">
-                <td><strong style="color:#6366f1;">#${p.ID_pedido}</strong></td>
-                <td>
-                    <div style="font-weight:600;color:#1e293b;">${p.c_nombre} ${p.c_apellido}</div>
-                    <div style="font-size:12px;color:#64748b;margin-top:2px;"><i class="fa-solid fa-phone" style="font-size:10px;"></i> ${p.c_telefono || '—'}</div>
-                </td>
-                <td>
-                    <div style="color:#334155;">${p.Calle} ${p.Numero}${piso}</div>
-                    <div style="font-size:12px;color:#64748b;">${p.Localidad || ''}${ref}</div>
-                </td>
-                <td style="max-width:180px;"><small style="color:#475569;line-height:1.5;">${p.detalles_resumen || '—'}</small></td>
-                <td><span class="precio-tag">$${parseFloat(p.Total).toFixed(2)}</span></td>
-                <td>
-                    <select class="select-estado"
+        const piso = p.piso_depto  ? ` · <em style="color:var(--text-3)">${p.piso_depto}</em>` : '';
+        const ref  = p.referencias ? `<br><small style="color:var(--text-3)">📌 ${p.referencias}</small>` : '';
+
+        const tr = document.createElement('tr');
+        tr.className = 'pedido-fila';
+        tr.title = `Ver detalle del pedido #${p.ID_pedido}`;
+
+        // Click en la fila abre el detalle
+        tr.addEventListener('click', () => verDetallePedido(p.ID_pedido));
+
+        tr.innerHTML = `
+            <td>
+                <strong class="hist-id">#${p.ID_pedido}</strong>
+            </td>
+            <td>
+                <div class="hist-cliente-nombre">${p.c_nombre} ${p.c_apellido}</div>
+                <div class="hist-cliente-tel">
+                    <i class="fa-solid fa-phone" style="font-size:.62rem;margin-right:3px;"></i>
+                    ${p.c_telefono || '—'}
+                </div>
+            </td>
+            <td>
+                <div class="hist-dir">${p.Calle} ${p.Numero}${piso}</div>
+                <div class="hist-dir"><small>${p.Localidad || ''}${ref}</small></div>
+            </td>
+            <td>
+                <div class="hist-productos" title="${p.detalles_resumen || ''}">${p.detalles_resumen || '—'}</div>
+            </td>
+            <td>
+                <span class="hist-total">$${parseFloat(p.Total).toFixed(2)}</span>
+            </td>
+            <td onclick="event.stopPropagation()">
+                <select class="select-estado"
+                        onchange="cambiarEstadoPedido(${p.ID_pedido}, this.value, this)"
+                        data-estado-original="${p.Estado}">
+                    <option value="Pendiente"  ${p.Estado==='Pendiente'  ?'selected':''}>⏳ Pendiente</option>
+                    <option value="Preparando" ${p.Estado==='Preparando' ?'selected':''}>👨‍🍳 Preparando</option>
+                    <option value="En camino"  ${p.Estado==='En camino'  ?'selected':''}>🛵 En camino</option>
+                    <option value="Entregado"  ${p.Estado==='Entregado'  ?'selected':''}>✅ Entregado</option>
+                    <option value="Cancelado"  ${p.Estado==='Cancelado'  ?'selected':''}>❌ Cancelado</option>
+                </select>
+            </td>
+            <td onclick="event.stopPropagation()">
+                <button class="btn-icon" title="Ver detalle" onclick="verDetallePedido(${p.ID_pedido})">
+                    <i class="fa-solid fa-eye"></i>
+                </button>
+                <button class="btn-icon btn-danger" title="Cancelar" onclick="confirmarCancelarPedido(${p.ID_pedido})">
+                    <i class="fa-solid fa-ban"></i>
+                </button>
+            </td>`;
+
+        tbody.appendChild(tr);
+    });
+}
+
+// ── VISTA TARJETAS — KANBAN ──────────────
+function renderizarTarjetas(pedidos) {
+    const bodyPendiente  = document.getElementById('kanban-body-pendiente');
+    const bodyPreparando = document.getElementById('kanban-body-preparando');
+    const bodyEncamino   = document.getElementById('kanban-body-encamino');
+    if (!bodyPendiente) return;
+
+    // Limpiar columnas
+    bodyPendiente.innerHTML  = '';
+    bodyPreparando.innerHTML = '';
+    bodyEncamino.innerHTML   = '';
+
+    const EMPTY_HTML = `<div class="kanban-col-empty"><i class="fa-solid fa-inbox"></i>Sin pedidos</div>`;
+
+    if (!pedidos || pedidos.length === 0) {
+        bodyPendiente.innerHTML  = EMPTY_HTML;
+        bodyPreparando.innerHTML = EMPTY_HTML;
+        bodyEncamino.innerHTML   = EMPTY_HTML;
+        document.getElementById('kanban-badge-pendiente').textContent  = '0';
+        document.getElementById('kanban-badge-preparando').textContent = '0';
+        document.getElementById('kanban-badge-encamino').textContent   = '0';
+        return;
+    }
+
+    const emoji = { Pendiente:'⏳', Preparando:'👨‍🍳', 'En camino':'🛵', Entregado:'✅', Cancelado:'❌' };
+
+    const cols = { Pendiente: [], Preparando: [], 'En camino': [] };
+
+    pedidos.forEach(p => {
+        if (cols[p.Estado] !== undefined) cols[p.Estado].push(p);
+        // Entregado/Cancelado no se muestran en tarjetas activas
+    });
+
+    // Actualizar badges
+    document.getElementById('kanban-badge-pendiente').textContent  = cols['Pendiente'].length;
+    document.getElementById('kanban-badge-preparando').textContent = cols['Preparando'].length;
+    document.getElementById('kanban-badge-encamino').textContent   = cols['En camino'].length;
+
+    // Renderizar cada columna
+    const renderCol = (lista, container, animOffset) => {
+        if (lista.length === 0) { container.innerHTML = EMPTY_HTML; return; }
+        lista.forEach((p, idx) => {
+            const estadoCls = (p.Estado || '').toLowerCase().replace(' ', '-');
+            const piso      = p.piso_depto  ? ` · ${p.piso_depto}`  : '';
+            const ref       = p.referencias ? `<br><small>📌 ${p.referencias}</small>` : '';
+            const total     = parseFloat(p.Total).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+            // Texto buscable como atributo data para filtrado
+            const textoBusqueda = [
+                '#' + p.ID_pedido,
+                p.c_nombre, p.c_apellido, p.c_telefono,
+                p.Calle, p.Numero, p.Localidad,
+                p.detalles_resumen
+            ].join(' ').toLowerCase();
+
+            const card = document.createElement('div');
+            card.className      = 'pedido-card-item' + (ANIMAR_TARJETAS ? '' : ' no-anim');
+            card.dataset.estado = p.Estado;
+            card.dataset.busqueda = textoBusqueda;
+            card.title = `Ver detalle del pedido #${p.ID_pedido}`;
+            if (ANIMAR_TARJETAS) {
+                card.style.animationDelay = `${(animOffset + idx) * 0.04}s`;
+            }
+
+            card.innerHTML = `
+                <div class="pc-header">
+                    <span class="pc-id">#${p.ID_pedido}</span>
+                    <span class="pc-estado ${estadoCls}">${emoji[p.Estado] || '•'} ${p.Estado}</span>
+                </div>
+                <div class="pc-body pc-body-grow">
+                    <div class="pc-row">
+                        <span class="pc-row-icon"><i class="fa-solid fa-user"></i></span>
+                        <div class="pc-row-text">
+                            <strong>${p.c_nombre} ${p.c_apellido}</strong>
+                            <br><small><i class="fa-solid fa-phone" style="font-size:.58rem;"></i> ${p.c_telefono || '—'}</small>
+                        </div>
+                    </div>
+                    <div class="pc-row">
+                        <span class="pc-row-icon"><i class="fa-solid fa-location-dot"></i></span>
+                        <div class="pc-row-text">
+                            <strong>${p.Calle} ${p.Numero}${piso}</strong>
+                            ${p.Localidad ? `<br><small>${p.Localidad}</small>` : ''}${ref}
+                        </div>
+                    </div>
+                    ${p.detalles_resumen ? `
+                    <div class="pc-row">
+                        <span class="pc-row-icon"><i class="fa-solid fa-utensils"></i></span>
+                        <div class="pc-row-text" style="font-size:.76rem;">${p.detalles_resumen}</div>
+                    </div>` : ''}
+                </div>
+                <div class="pc-footer pc-footer-sticky">
+                    <select class="pc-select-estado"
+                            data-estado-original="${p.Estado}"
                             onchange="cambiarEstadoPedido(${p.ID_pedido}, this.value, this)"
-                            data-estado-original="${p.Estado}">
+                            onclick="event.stopPropagation()">
                         <option value="Pendiente"  ${p.Estado==='Pendiente'  ?'selected':''}>⏳ Pendiente</option>
                         <option value="Preparando" ${p.Estado==='Preparando' ?'selected':''}>👨‍🍳 Preparando</option>
                         <option value="En camino"  ${p.Estado==='En camino'  ?'selected':''}>🛵 En camino</option>
                         <option value="Entregado"  ${p.Estado==='Entregado'  ?'selected':''}>✅ Entregado</option>
                         <option value="Cancelado"  ${p.Estado==='Cancelado'  ?'selected':''}>❌ Cancelado</option>
                     </select>
-                </td>
-                <td>
-                    <button class="btn-icon" title="Ver detalle" onclick="verDetallePedido(${p.ID_pedido})">
-                        <i class="fa-solid fa-eye"></i>
-                    </button>
-                    <button class="btn-icon btn-danger" title="Cancelar" onclick="confirmarCancelarPedido(${p.ID_pedido})">
-                        <i class="fa-solid fa-ban"></i>
-                    </button>
-                </td>
-            </tr>`;
-    });
+                    <span class="pc-total">$${total}</span>
+                    <div class="pc-actions" onclick="event.stopPropagation()">
+                        <button class="pc-btn danger" title="Cancelar"
+                                onclick="confirmarCancelarPedido(${p.ID_pedido})">
+                            <i class="fa-solid fa-ban"></i>
+                        </button>
+                    </div>
+                </div>`;
+
+            card.addEventListener('click', () => verDetallePedido(p.ID_pedido));
+            // Activar drag & drop en la tarjeta
+            activarDragCard(card, p.ID_pedido, p.Estado);
+            container.appendChild(card);
+        });
+    };
+
+    renderCol(cols['Pendiente'],  bodyPendiente,  0);
+    renderCol(cols['Preparando'], bodyPreparando, cols['Pendiente'].length);
+    renderCol(cols['En camino'],  bodyEncamino,   cols['Pendiente'].length + cols['Preparando'].length);
+    // Las drop zones se activan UNA SOLA VEZ desde iniciarLogicaRecepcionista()
+    // NO llamar activarDropZones() aquí para evitar listener duplicados.
 }
 
 // ==========================================
@@ -190,8 +508,9 @@ async function cambiarEstadoPedido(idPedido, nuevoEstado, selectEl) {
         if (result.status === 'success') {
             mostrarMensaje('success', result.message);
             selectEl.dataset.estadoOriginal = nuevoEstado;
-            if (nuevoEstado === 'Entregado' || nuevoEstado === 'Cancelado')
-                setTimeout(() => recargarPedidosActuales(), 900);
+            _lastRefreshHash = null; // forzar recarga completa en próximo ciclo
+            await recargarPedidosActuales();
+            reiniciarTimer();
         } else {
             mostrarMensaje('error', result.message);
             selectEl.value = estadoOriginal;
@@ -268,7 +587,12 @@ async function cancelarPedidoDirecto(idPedido) {
             body:JSON.stringify({id:idPedido})
         });
         const result = await res.json();
-        if (result.status==='success') { mostrarMensaje('success',result.message); setTimeout(recargarPedidosActuales,800); }
+        if (result.status==='success') {
+            mostrarMensaje('success',result.message);
+            _lastRefreshHash = null;
+            await recargarPedidosActuales();
+            reiniciarTimer();
+        }
         else mostrarMensaje('error',result.message);
     } catch { mostrarMensaje('error','Error de conexión'); }
 }
@@ -569,7 +893,9 @@ async function guardarNuevoPedido() {
         if (result.status === 'success') {
             mostrarMensaje('success', result.message);
             cerrarModalNuevoPedido();
-            recargarPedidosActuales();
+            _lastRefreshHash = null;
+            await recargarPedidosActuales();
+            reiniciarTimer();
         } else {
             mostrarMensaje('error', result.message || 'Error al crear pedido');
         }
@@ -621,7 +947,10 @@ async function loginUsuario() {
         const result = await response.json();
 
         if (result.success) {
-            showInit(result.rol, result.nombre, result.email || '');
+            // El backend/login.php ya guardó todo en $_SESSION.
+            // Solo guardamos en localStorage lo mínimo para la UI
+            // (sin id_restaurante en claro — lo obtenemos del servidor en cada carga).
+            showInit(result.rol, result.nombre, result.email || '', result.restaurante_nombre || null);
         } else {
             alert("Error: " + result.error);
         }
@@ -631,10 +960,12 @@ async function loginUsuario() {
     }
 }
 
-function showInit(rol, nombre, email) {
+function showInit(rol, nombre, email, restaurante_nombre) {
     localStorage.setItem('user_nombre', nombre.trim());
     localStorage.setItem('user_rol',    rol.trim());
-    if (email) localStorage.setItem('user_email', email.trim());
+    if (email)              localStorage.setItem('user_email',            email.trim());
+    if (restaurante_nombre) localStorage.setItem('user_restaurante_nombre', restaurante_nombre.trim());
+    else                    localStorage.removeItem('user_restaurante_nombre');
     window.location.href = 'dashboard.html';
 }
 
@@ -679,11 +1010,14 @@ function abrirModalPerfil() {
     set('perfil-nombre-big',  nombre);
     set('perfil-rol-pill',    rolFmt.toUpperCase());
 
-    // Llenar campos
+    // Llenar campos del drawer
     set('pf-nombre',      nombre);
     set('pf-email',       email);
     set('pf-rol',         rolFmt);
     set('pf-restaurante', restaurante);
+
+    // También actualizar el dropdown por si se abrió antes de que cargara
+    poblarUserDropdown(nombre, rol, email, restaurante !== 'Sin asignar' ? restaurante : null);
 
     // Abrir drawer
     document.getElementById('perfil-drawer')?.classList.add('open');
@@ -697,8 +1031,8 @@ function cerrarModalPerfil() {
     document.body.style.overflow = '';
 }
 
-// Poblar el dropdown con datos del usuario al cargar
-function poblarUserDropdown(nombre, rol, email) {
+// Poblar el dropdown y drawer de perfil con datos del usuario
+function poblarUserDropdown(nombre, rol, email, restaurante_nombre) {
     const inicial = (nombre || '?').charAt(0).toUpperCase();
 
     // Header badge
@@ -711,6 +1045,10 @@ function poblarUserDropdown(nombre, rol, email) {
     set('udrop-nombre',   nombre || '—');
     set('udrop-email',    email  || '—');
     set('udrop-rol',      (rol   || '—').toUpperCase());
+
+    // Sub-label de restaurante en el dropdown (si existe el elemento)
+    const subRestEl = document.getElementById('udrop-restaurante');
+    if (subRestEl) subRestEl.textContent = restaurante_nombre || 'Sin restaurante';
 }
 
 // Cerrar dropdown al hacer click fuera
@@ -727,81 +1065,100 @@ document.addEventListener('keydown', (e) => {
 // ==========================================
 // 2. LÓGICA DE DASHBOARD
 // ==========================================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const headerNombre = document.getElementById('header-nombre');
+    if (!headerNombre) return;
 
-    if (headerNombre) {
-        const userRol    = localStorage.getItem('user_rol');
-        const userNombre = localStorage.getItem('user_nombre');
+    // Por defecto el wrapper no tiene sidebar (1 columna)
+    const wrapper = document.querySelector('.app-wrapper');
+    if (wrapper) wrapper.classList.add('no-sidebar');
 
-        if (!userRol) {
+    // ── Validar sesión contra el servidor ────────────────────────────────
+    // getSessionData verifica la cookie de sesión PHP, devuelve datos frescos
+    // del usuario (incluido restaurante_nombre) y redirige si la sesión expiró.
+    let sesion = null;
+    try {
+        const res    = await fetch('./backend/funciones.php?action=getSessionData');
+        const result = await res.json();
+        if (result.status !== 'success') {
+            // Sesión inválida o expirada → volver al login
+            localStorage.clear();
             window.location.href = 'login.html';
             return;
         }
-
-        // Por defecto el wrapper no tiene sidebar (1 columna)
-        const wrapper = document.querySelector('.app-wrapper');
-        if (wrapper) wrapper.classList.add('no-sidebar');
-
-        // Header
-        const avatarInicial = document.getElementById('avatar-inicial');
-        const headerRol     = document.getElementById('header-rol');
-        const userEmail = localStorage.getItem('user_email') || '';
-
-        if (userNombre) {
-            headerNombre.textContent = userNombre;
-            if (avatarInicial) avatarInicial.textContent = userNombre.charAt(0).toUpperCase();
-        }
-        if (userRol && headerRol) headerRol.textContent = userRol.toUpperCase();
-
-        // Poblar dropdown con datos completos del usuario
-        poblarUserDropdown(userNombre, userRol, userEmail);
-
-        const rolNormalizado = userRol.trim().toLowerCase();
-
-        // Mostrar panel principal del rol
-        // Para recepcionista el panel inicial es panel-recepcionista (pedidos actuales)
-        const panelId = `panel-${rolNormalizado}`;
-        const panelActivo = document.getElementById(panelId);
-        if (panelActivo) panelActivo.classList.remove('hidden');
-        else console.error(`No se encontró el panel: ${panelId}`);
-
-        // Iniciar lógica del rol
-        switch (rolNormalizado) {
-            case 'recepcionista':
-                iniciarLogicaRecepcionista();
-                break;
-            case 'repartidor':
-                if (typeof iniciarLogicaRepartidor === 'function') iniciarLogicaRepartidor();
-                break;
-            case 'chef':
-                if (typeof iniciarLogicaChef === 'function') iniciarLogicaChef();
-                break;
-            case 'admin':
-                if (typeof iniciarLogicaAdmin === 'function') iniciarLogicaAdmin();
-                break;
-            case 'superadmin':
-                if (typeof iniciarLogicaSuperAdmin === 'function') iniciarLogicaSuperAdmin();
-                break;
-            default:
-                console.warn('Rol no reconocido:', rolNormalizado);
-        }
-
-        // Logout
-        document.getElementById('btn-cerrar-sesion')?.addEventListener('click', () => {
-            localStorage.clear();
-            window.location.href = './backend/funciones.php?action=logout';
-        });
-
-        // Animación de pedido cards
-        const observer = new MutationObserver(() => {
-            document.querySelectorAll('.pedido-card').forEach((card, i) => {
-                card.style.animationDelay = `${i * 0.07}s`;
-            });
-        });
-        const contenedor = document.getElementById('contenedor-pedidos');
-        if (contenedor) observer.observe(contenedor, { childList: true });
+        sesion = result.data;
+    } catch (e) {
+        // Sin red — intentar con localStorage como fallback visual
+        const rolLS = localStorage.getItem('user_rol');
+        if (!rolLS) { window.location.href = 'login.html'; return; }
+        sesion = {
+            rol:                rolLS,
+            nombre:             localStorage.getItem('user_nombre') || '—',
+            email:              localStorage.getItem('user_email')  || '',
+            restaurante_nombre: localStorage.getItem('user_restaurante_nombre') || null,
+            id_restaurante:     null,
+        };
     }
+
+    // ── Sincronizar localStorage con datos frescos del servidor ──────────
+    localStorage.setItem('user_nombre', sesion.nombre);
+    localStorage.setItem('user_rol',    sesion.rol);
+    if (sesion.email)              localStorage.setItem('user_email',             sesion.email);
+    if (sesion.restaurante_nombre) localStorage.setItem('user_restaurante_nombre', sesion.restaurante_nombre);
+    else                           localStorage.removeItem('user_restaurante_nombre');
+
+    // ── Poblar UI de header y dropdown ──────────────────────────────────
+    const avatarInicial = document.getElementById('avatar-inicial');
+    const headerRol     = document.getElementById('header-rol');
+
+    headerNombre.textContent = sesion.nombre;
+    if (avatarInicial) avatarInicial.textContent = sesion.nombre.charAt(0).toUpperCase();
+    if (headerRol)     headerRol.textContent     = sesion.rol.toUpperCase();
+
+    poblarUserDropdown(sesion.nombre, sesion.rol, sesion.email, sesion.restaurante_nombre);
+
+    // ── Mostrar panel del rol ────────────────────────────────────────────
+    const rolNormalizado = sesion.rol.trim().toLowerCase();
+    const panelId        = `panel-${rolNormalizado}`;
+    const panelActivo    = document.getElementById(panelId);
+    if (panelActivo) panelActivo.classList.remove('hidden');
+    else console.error(`No se encontró el panel: ${panelId}`);
+
+    // ── Iniciar lógica del rol ───────────────────────────────────────────
+    switch (rolNormalizado) {
+        case 'recepcionista':
+            iniciarLogicaRecepcionista();
+            break;
+        case 'repartidor':
+            if (typeof iniciarLogicaRepartidor === 'function') iniciarLogicaRepartidor();
+            break;
+        case 'chef':
+            if (typeof iniciarLogicaChef === 'function') iniciarLogicaChef();
+            break;
+        case 'admin':
+            if (typeof iniciarLogicaAdmin === 'function') iniciarLogicaAdmin();
+            break;
+        case 'superadmin':
+            if (typeof iniciarLogicaSuperAdmin === 'function') iniciarLogicaSuperAdmin();
+            break;
+        default:
+            console.warn('Rol no reconocido:', rolNormalizado);
+    }
+
+    // ── Logout ───────────────────────────────────────────────────────────
+    document.getElementById('btn-cerrar-sesion')?.addEventListener('click', () => {
+        localStorage.clear();
+        window.location.href = './backend/funciones.php?action=logout';
+    });
+
+    // ── Animación de cards (observer de repartidor/chef) ─────────────────
+    const observer = new MutationObserver(() => {
+        document.querySelectorAll('.pedido-card').forEach((card, i) => {
+            card.style.animationDelay = `${i * 0.07}s`;
+        });
+    });
+    const contenedor = document.getElementById('contenedor-pedidos');
+    if (contenedor) observer.observe(contenedor, { childList: true });
 });
 
 // ==========================================
@@ -1656,4 +2013,121 @@ function historialIrPagina(n) {
     historialRenderizarPagina();
     // Scroll suave al top de la tabla
     document.getElementById('panel-historial-recepcionista')?.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+// ==========================================
+// DRAG & DROP — KANBAN
+// ==========================================
+let _dragCardId   = null;   // ID del pedido que se está arrastrando
+let _dragEstado   = null;   // Estado original de la tarjeta
+let _dragEl       = null;   // Referencia al elemento DOM
+
+const ESTADO_POR_COL = {
+    'kanban-body-pendiente':  'Pendiente',
+    'kanban-body-preparando': 'Preparando',
+    'kanban-body-encamino':   'En camino',
+};
+
+// Llamado desde renderCol en renderizarTarjetas — activa drag en cada card
+function activarDragCard(card, idPedido, estado) {
+    card.setAttribute('draggable', 'true');
+
+    card.addEventListener('dragstart', e => {
+        _dragCardId = idPedido;
+        _dragEstado = estado;
+        _dragEl     = card;
+        card.classList.add('card-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', idPedido);
+    });
+
+    card.addEventListener('dragend', () => {
+        card.classList.remove('card-dragging');
+        document.querySelectorAll('.kanban-col-body').forEach(col => {
+            col.classList.remove('col-drag-over');
+        });
+        _dragCardId = null;
+        _dragEstado = null;
+        _dragEl     = null;
+    });
+}
+
+// Activa las zonas de drop en las 3 columnas del kanban.
+// IMPORTANTE: debe llamarse UNA SOLA VEZ (desde iniciarLogicaRecepcionista).
+// Usa delegación en el contenedor kanban para no depender del DOM de las columnas.
+let _dropZonasActivadas = false;
+
+function activarDropZones() {
+    if (_dropZonasActivadas) return;  // guarda absoluta contra registros duplicados
+    _dropZonasActivadas = true;
+
+    // Delegamos en el contenedor padre del kanban para que los listeners
+    // sobrevivan a cualquier re-render de las columnas.
+    const kanbanRoot = document.getElementById('contenedor-vista-tarjetas');
+    if (!kanbanRoot) return;
+
+    kanbanRoot.addEventListener('dragover', e => {
+        const col = e.target.closest('.kanban-col-body');
+        if (!col) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        col.classList.add('col-drag-over');
+    });
+
+    kanbanRoot.addEventListener('dragleave', e => {
+        const col = e.target.closest('.kanban-col-body');
+        if (!col) return;
+        if (!col.contains(e.relatedTarget)) col.classList.remove('col-drag-over');
+    });
+
+    kanbanRoot.addEventListener('drop', async e => {
+        const col = e.target.closest('.kanban-col-body');
+        if (!col) return;
+        e.preventDefault();
+        col.classList.remove('col-drag-over');
+
+        const nuevoEstado = ESTADO_POR_COL[col.id];
+        if (!nuevoEstado || !_dragCardId) return;
+        if (nuevoEstado === _dragEstado) return; // misma columna → nada
+
+        // Optimistic UI: mover la tarjeta visualmente al instante
+        if (_dragEl) {
+            _dragEl.classList.add('card-dropping');
+            col.appendChild(_dragEl);
+            _dragEl.dataset.estado = nuevoEstado;
+            const estadoCls = nuevoEstado.toLowerCase().replace(' ', '-');
+            const badgeEl   = _dragEl.querySelector('.pc-estado');
+            const emoji = { Pendiente:'⏳', Preparando:'👨‍🍳', 'En camino':'🛵' };
+            if (badgeEl) {
+                badgeEl.className = `pc-estado ${estadoCls}`;
+                badgeEl.textContent = `${emoji[nuevoEstado] || '•'} ${nuevoEstado}`;
+            }
+            const sel = _dragEl.querySelector('.pc-select-estado');
+            if (sel) { sel.value = nuevoEstado; sel.dataset.estadoOriginal = nuevoEstado; }
+            setTimeout(() => _dragEl?.classList.remove('card-dropping'), 350);
+        }
+
+        // Guardar referencias antes de que el render las limpie
+        const idParaEnviar    = _dragCardId;
+        const estadoParaEnviar = nuevoEstado;
+
+        try {
+            const res = await fetch('./backend/funciones.php?action=actualizarPedido', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({id:idParaEnviar, estado:estadoParaEnviar})
+            });
+            const result = await res.json();
+            if (result.status === 'success') {
+                mostrarMensaje('success', `Pedido #${idParaEnviar} → ${estadoParaEnviar}`);
+                _lastRefreshHash = null; // forzar recarga completa en el próximo ciclo
+                await recargarPedidosActuales();
+                reiniciarTimer();
+            } else {
+                mostrarMensaje('error', result.message);
+                await recargarPedidosActuales(); // revertir
+            }
+        } catch {
+            mostrarMensaje('error', 'Error de conexión al mover pedido');
+            await recargarPedidosActuales();
+        }
+    });
 }
