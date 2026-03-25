@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: localhost:3306
--- Tiempo de generación: 20-03-2026 a las 22:22:48
+-- Tiempo de generación: 24-03-2026 a las 21:58:38
 -- Versión del servidor: 10.6.22-MariaDB
 -- Versión de PHP: 8.4.18
 
@@ -24,31 +24,43 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `Clientes`
+-- Estructura de tabla para la tabla `clientes`
 --
 
-CREATE TABLE `Clientes` (
+CREATE TABLE `clientes` (
   `ID_cliente` int(11) NOT NULL,
-  `Nombre` varchar(100) NOT NULL,
-  `Apellido` varchar(100) NOT NULL,
-  `Telefono` varchar(20) NOT NULL
+  `Nombre` varchar(100) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `Apellido` varchar(100) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `Telefono` varchar(20) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL
 ) ;
 
 --
--- Volcado de datos para la tabla `Clientes`
+-- Volcado de datos para la tabla `clientes`
 --
 
-INSERT INTO `Clientes` (`ID_cliente`, `Nombre`, `Apellido`, `Telefono`) VALUES
+INSERT INTO `clientes` (`ID_cliente`, `Nombre`, `Apellido`, `Telefono`) VALUES
 (1, 'Juan', 'Perez', '1122334455'),
-(2, 'Maria', 'Gomez', '1199887766');
+(2, 'Maria', 'Gomez', '1199887766'),
+(3, 'pierre', 'dipolto', '02245508162'),
+(4, 'roberto', 'toto', '2241367748'),
+(5, 'matias', 'figueroa', '224138494892'),
+(6, 'esteban', 'quito', '22416637738'),
+(7, 'Pedro', 'Meme', '212455454'),
+(8, 'we', 'wer', '112'),
+(9, 'Stuart', 'Litle', '224156948486'),
+(10, 'Juancito', 'Lito', '224187905'),
+(11, 'jose', 'diaz', '22141525652'),
+(12, 'lolo', 'kkk', '7373737'),
+(13, 'dai', 'jooo', '292992'),
+(14, 'tero', 'jijo', '224156363');
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `Detalle_pedido`
+-- Estructura de tabla para la tabla `detalle_pedido`
 --
 
-CREATE TABLE `Detalle_pedido` (
+CREATE TABLE `detalle_pedido` (
   `ID_detalle` int(11) NOT NULL,
   `ID_pedido` int(11) NOT NULL,
   `ID_producto` int(11) NOT NULL,
@@ -58,22 +70,53 @@ CREATE TABLE `Detalle_pedido` (
 ) ;
 
 --
--- Volcado de datos para la tabla `Detalle_pedido`
+-- Volcado de datos para la tabla `detalle_pedido`
 --
 
-INSERT INTO `Detalle_pedido` (`ID_detalle`, `ID_pedido`, `ID_producto`, `Cantidad`, `Precio`, `Subtotal`) VALUES
+INSERT INTO `detalle_pedido` (`ID_detalle`, `ID_pedido`, `ID_producto`, `Cantidad`, `Precio`, `Subtotal`) VALUES
 (1, 1, 1, 1, 5500.00, 5500.00),
 (2, 1, 2, 1, 2500.00, 2500.00),
 (3, 2, 3, 1, 8000.00, 8000.00),
-(4, 2, 4, 2, 1000.00, 2000.00);
+(4, 2, 4, 2, 1000.00, 2000.00),
+(5, 3, 3, 2, 8000.00, 16000.00),
+(6, 4, 1, 2, 5500.00, 11000.00),
+(7, 4, 2, 1, 2500.00, 2500.00),
+(8, 5, 3, 3, 8000.00, 24000.00),
+(9, 6, 2, 1, 2500.00, 2500.00),
+(10, 7, 4, 8, 1000.00, 8000.00),
+(11, 7, 2, 3, 2500.00, 7500.00),
+(12, 8, 3, 1, 8000.00, 8000.00),
+(13, 9, 3, 1, 8000.00, 8000.00),
+(14, 10, 1, 2, 5500.00, 11000.00),
+(15, 11, 4, 1, 1000.00, 1000.00),
+(16, 12, 1, 1, 5500.00, 5500.00),
+(17, 13, 1, 3, 5500.00, 16500.00),
+(18, 14, 1, 1, 5500.00, 5500.00),
+(19, 15, 1, 1, 5500.00, 5500.00),
+(20, 16, 1, 1, 5500.00, 5500.00),
+(21, 17, 1, 1, 5500.00, 5500.00),
+(22, 18, 1, 1, 5500.00, 5500.00),
+(23, 19, 1, 1, 5500.00, 5500.00),
+(24, 20, 1, 1, 5500.00, 5500.00),
+(25, 21, 1, 1, 5500.00, 5500.00),
+(26, 22, 1, 1, 5500.00, 5500.00),
+(27, 22, 4, 1, 1000.00, 1000.00),
+(28, 23, 1, 1, 5500.00, 5500.00),
+(29, 24, 1, 1, 5500.00, 5500.00),
+(30, 25, 1, 1, 5500.00, 5500.00),
+(31, 26, 2, 1, 2500.00, 2500.00),
+(32, 27, 3, 2, 8000.00, 16000.00),
+(33, 28, 1, 3, 5500.00, 16500.00),
+(34, 29, 4, 3, 1000.00, 3000.00),
+(35, 30, 1, 6, 5500.00, 33000.00);
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `Direcciones`
+-- Estructura de tabla para la tabla `direcciones`
 --
 
-CREATE TABLE `Direcciones` (
+CREATE TABLE `direcciones` (
   `ID_direccion` int(11) NOT NULL,
   `calle` varchar(255) NOT NULL,
   `altura` varchar(20) NOT NULL,
@@ -83,14 +126,42 @@ CREATE TABLE `Direcciones` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
--- Volcado de datos para la tabla `Direcciones`
+-- Volcado de datos para la tabla `direcciones`
 --
 
-INSERT INTO `Direcciones` (`ID_direccion`, `calle`, `altura`, `piso_depto`, `referencias`, `Localidad`) VALUES
+INSERT INTO `direcciones` (`ID_direccion`, `calle`, `altura`, `piso_depto`, `referencias`, `Localidad`) VALUES
 (1, 'Avenida Principal', '1234', NULL, 'Local a la calle', 'Ciudad Central'),
 (2, 'Calle de los Olmos', '567', '1A', 'Puerta verde', 'Ciudad Central'),
 (3, 'Ruta Nacional 9', 'S/N', 'Local 5', 'Plaza comercial', 'Zona Norte'),
-(4, 'Pasaje San Martin', '45', 'Piso 2, Depto 4', 'Tocar timbre 2 veces', 'Ciudad Central');
+(4, 'Pasaje San Martin', '45', 'Piso 2, Depto 4', 'Tocar timbre 2 veces', 'Ciudad Central'),
+(5, '1', '20466293699', '', '', 'Pila'),
+(6, '32', '267', '', '', ''),
+(7, '36', '655', '7', 'nose', ''),
+(8, '9', '799', '4', 'plaza', ''),
+(9, '123', '123', '', '', ''),
+(10, '234', '234', '', '', ''),
+(11, '123', '234', '', '', ''),
+(12, '234', '234', '', '', ''),
+(13, '234', '234', '', '', ''),
+(14, '234', '234', '', '', ''),
+(15, '55', '62626', '', '', ''),
+(16, 'wwer', 'wer', '', '', ''),
+(17, '123', '123', '', '', ''),
+(18, '2134', '234', '', '', ''),
+(19, '234', '234', '', '', ''),
+(20, '3245', '345', '', '', ''),
+(21, '54', '454', '', '', ''),
+(22, '234', '234', '', '', ''),
+(23, '345', '345', '', '', ''),
+(24, '795', '6', '77', 'Banco', ''),
+(25, '345', '345', '', '', ''),
+(26, '345', '345', '', '', ''),
+(27, '345', '345', '', '', ''),
+(28, '654', '2', '6y', 'Tt', ''),
+(29, '2', '445', '', '', ''),
+(30, '5', '445', '', '', ''),
+(31, '6', '554', '2', 'parque', ''),
+(32, '8', '678', '', '', '');
 
 -- --------------------------------------------------------
 
@@ -124,10 +195,10 @@ INSERT INTO `password_resets` (`id`, `user_id`, `token_hash`, `expires_at`, `use
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `Pedidos`
+-- Estructura de tabla para la tabla `pedidos`
 --
 
-CREATE TABLE `Pedidos` (
+CREATE TABLE `pedidos` (
   `ID_pedido` int(11) NOT NULL,
   `ID_cliente` int(11) NOT NULL,
   `ID_restaurante` int(11) NOT NULL,
@@ -140,37 +211,66 @@ CREATE TABLE `Pedidos` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
--- Volcado de datos para la tabla `Pedidos`
+-- Volcado de datos para la tabla `pedidos`
 --
 
-INSERT INTO `Pedidos` (`ID_pedido`, `ID_cliente`, `ID_restaurante`, `ID_direccion`, `Estado`, `Fecha_pedido`, `Total`, `detalle`, `fecha_creacion`) VALUES
-(1, 1, 1, 2, 'Pendiente', '2026-03-14 01:13:24', 8000.00, NULL, '2026-03-18 01:19:04'),
-(2, 2, 2, 4, 'Preparando', '2026-03-14 01:13:24', 10000.00, NULL, '2026-03-18 01:19:04');
+INSERT INTO `pedidos` (`ID_pedido`, `ID_cliente`, `ID_restaurante`, `ID_direccion`, `Estado`, `Fecha_pedido`, `Total`, `detalle`, `fecha_creacion`) VALUES
+(1, 1, 1, 2, 'Entregado', '2026-03-14 01:13:24', 8000.00, NULL, '2026-03-18 01:19:04'),
+(2, 2, 2, 4, 'Cancelado', '2026-03-14 01:13:24', 10000.00, NULL, '2026-03-18 01:19:04'),
+(3, 3, 1, 5, 'Cancelado', '2026-03-21 17:14:07', 16000.00, NULL, '2026-03-21 17:14:07'),
+(4, 4, 1, 6, 'Entregado', '2026-03-21 17:51:14', 13500.00, NULL, '2026-03-21 17:51:14'),
+(5, 5, 1, 7, 'Entregado', '2026-03-22 22:43:34', 24000.00, NULL, '2026-03-22 22:43:34'),
+(6, 6, 1, 8, 'Entregado', '2026-03-22 23:05:00', 2500.00, NULL, '2026-03-22 23:05:00'),
+(7, 3, 1, 9, 'Cancelado', '2026-03-23 01:52:22', 15500.00, NULL, '2026-03-23 01:52:22'),
+(8, 3, 1, 10, 'Entregado', '2026-03-23 01:54:24', 8000.00, NULL, '2026-03-23 01:54:24'),
+(9, 3, 1, 11, 'Entregado', '2026-03-23 01:54:40', 8000.00, NULL, '2026-03-23 01:54:40'),
+(10, 3, 1, 12, 'Entregado', '2026-03-23 01:54:57', 11000.00, NULL, '2026-03-23 01:54:57'),
+(11, 3, 1, 13, 'Entregado', '2026-03-23 01:55:15', 1000.00, NULL, '2026-03-23 01:55:15'),
+(12, 3, 1, 14, 'Entregado', '2026-03-23 01:55:44', 5500.00, NULL, '2026-03-23 01:55:44'),
+(13, 7, 1, 15, 'Entregado', '2026-03-23 01:56:07', 16500.00, NULL, '2026-03-23 01:56:07'),
+(14, 8, 1, 16, 'Entregado', '2026-03-23 01:56:09', 5500.00, NULL, '2026-03-23 01:56:09'),
+(15, 3, 1, 17, 'Entregado', '2026-03-23 01:56:25', 5500.00, NULL, '2026-03-23 01:56:25'),
+(16, 3, 1, 18, 'Entregado', '2026-03-23 01:56:37', 5500.00, NULL, '2026-03-23 01:56:37'),
+(17, 3, 1, 19, 'Entregado', '2026-03-23 01:56:46', 5500.00, NULL, '2026-03-23 01:56:46'),
+(18, 3, 1, 20, 'Entregado', '2026-03-23 01:57:01', 5500.00, NULL, '2026-03-23 01:57:01'),
+(19, 3, 1, 21, 'Entregado', '2026-03-23 01:57:11', 5500.00, NULL, '2026-03-23 01:57:11'),
+(20, 3, 1, 22, 'Entregado', '2026-03-23 01:57:21', 5500.00, NULL, '2026-03-23 01:57:21'),
+(21, 3, 1, 23, 'Entregado', '2026-03-23 01:57:36', 5500.00, NULL, '2026-03-23 01:57:36'),
+(22, 9, 1, 24, 'Entregado', '2026-03-23 01:57:36', 6500.00, NULL, '2026-03-23 01:57:36'),
+(23, 3, 1, 25, 'Entregado', '2026-03-23 01:57:56', 5500.00, NULL, '2026-03-23 01:57:56'),
+(24, 3, 1, 26, 'Cancelado', '2026-03-23 01:58:08', 5500.00, NULL, '2026-03-23 01:58:08'),
+(25, 3, 1, 27, 'Entregado', '2026-03-23 01:58:17', 5500.00, NULL, '2026-03-23 01:58:17'),
+(26, 10, 1, 28, 'Entregado', '2026-03-23 01:58:44', 2500.00, NULL, '2026-03-23 01:58:44'),
+(27, 11, 1, 29, 'Preparando', '2026-03-23 21:45:01', 16000.00, NULL, '2026-03-23 21:45:01'),
+(28, 12, 1, 30, 'Pendiente', '2026-03-23 22:31:11', 16500.00, NULL, '2026-03-23 22:31:11'),
+(29, 13, 1, 31, 'En camino', '2026-03-23 22:35:15', 3000.00, NULL, '2026-03-23 22:35:15'),
+(30, 14, 1, 32, 'Preparando', '2026-03-23 23:36:05', 33000.00, NULL, '2026-03-23 23:36:05');
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `Productos`
+-- Estructura de tabla para la tabla `productos`
 --
 
-CREATE TABLE `Productos` (
+CREATE TABLE `productos` (
   `ID_producto` int(11) NOT NULL,
   `ID_restaurante` int(11) NOT NULL,
   `Nombre_producto` varchar(150) NOT NULL,
   `Descripcion` text DEFAULT NULL,
   `Precio` decimal(10,2) NOT NULL,
-  `Activo` tinyint(1) DEFAULT 1
+  `Activo` tinyint(1) DEFAULT 1,
+  `Stock` int(11) DEFAULT NULL COMMENT 'Stock disponible (NULL = sin límite)'
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
--- Volcado de datos para la tabla `Productos`
+-- Volcado de datos para la tabla `productos`
 --
 
-INSERT INTO `Productos` (`ID_producto`, `ID_restaurante`, `Nombre_producto`, `Descripcion`, `Precio`, `Activo`) VALUES
-(1, 1, 'Hamburguesa Clasica', 'Medallon de carne, queso, lechuga y tomate', 5500.00, 1),
-(2, 1, 'Papas Fritas', 'Porcion grande de papas fritas', 2500.00, 1),
-(3, 2, 'Pizza Muzarella', 'Pizza grande con salsa de tomate y queso muzarella', 8000.00, 1),
-(4, 2, 'Empanada de Carne', 'Empanada frita de carne cortada a cuchillo', 1000.00, 1);
+INSERT INTO `productos` (`ID_producto`, `ID_restaurante`, `Nombre_producto`, `Descripcion`, `Precio`, `Activo`, `Stock`) VALUES
+(1, 1, 'Hamburguesa Clasica', 'Medallon de carne, queso, lechuga y tomate', 5500.00, 1, 22),
+(2, 1, 'Papas Fritas', 'Porcion grande de papas fritas', 2500.00, 1, 97),
+(3, 2, 'Pizza Muzarella', 'Pizza grande con salsa de tomate y queso muzarella', 8000.00, 1, 24),
+(4, 2, 'Empanada de Carne', 'Empanada frita de carne cortada a cuchillo', 1000.00, 1, 197);
 
 -- --------------------------------------------------------
 
@@ -196,78 +296,79 @@ INSERT INTO `rate_limits` (`id`, `ip_address`, `action_type`, `created_at`) VALU
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `Restaurantes`
+-- Estructura de tabla para la tabla `restaurantes`
 --
 
-CREATE TABLE `Restaurantes` (
+CREATE TABLE `restaurantes` (
   `ID_Restaurante` int(11) NOT NULL,
-  `Nombre_local` varchar(150) NOT NULL,
-  `logo_url` varchar(500) DEFAULT NULL,
+  `Nombre_local` varchar(150) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `logo_url` varchar(500) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
   `ID_direccion` int(11) DEFAULT NULL,
-  `Nombre_dueño` varchar(150) DEFAULT NULL,
-  `Telefono` varchar(20) DEFAULT NULL
+  `Nombre_dueño` varchar(150) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+  `Telefono` varchar(20) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL
 ) ;
 
 --
--- Volcado de datos para la tabla `Restaurantes`
+-- Volcado de datos para la tabla `restaurantes`
 --
 
-INSERT INTO `Restaurantes` (`ID_Restaurante`, `Nombre_local`, `logo_url`, `ID_direccion`, `Nombre_dueño`, `Telefono`) VALUES
+INSERT INTO `restaurantes` (`ID_Restaurante`, `Nombre_local`, `logo_url`, `ID_direccion`, `Nombre_dueño`, `Telefono`) VALUES
 (1, 'Burger Palace', 'https://ejemplo.com/logo1.png', 1, 'Carlos Gonzalez', '1144556677'),
 (2, 'Pizzeria Napoli', 'https://ejemplo.com/logo2.png', 3, 'Luigi Rossi', '1155667788');
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `Usuarios`
+-- Estructura de tabla para la tabla `usuarios`
 --
 
-CREATE TABLE `Usuarios` (
+CREATE TABLE `usuarios` (
   `ID_usuario` int(11) NOT NULL,
   `ID_restaurante` int(11) DEFAULT NULL,
-  `Nombre` varchar(100) NOT NULL,
-  `Apellido` varchar(100) NOT NULL,
-  `Telefono` varchar(20) DEFAULT NULL,
-  `Rol` enum('superadmin','admin','recepcionista','repartidor','chef') NOT NULL,
-  `Email` varchar(150) NOT NULL,
-  `Password` varchar(255) NOT NULL,
+  `Nombre` varchar(100) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `Apellido` varchar(100) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `Telefono` varchar(20) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+  `Rol` enum('superadmin','admin','recepcionista','repartidor','chef') CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `Email` varchar(150) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `Password` varchar(255) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
   `activo` tinyint(1) DEFAULT 1 COMMENT 'Usuario activo (1) o eliminado (0)',
   `fecha_creacion` datetime DEFAULT current_timestamp() COMMENT 'Fecha de creación del usuario'
 ) ;
 
 --
--- Volcado de datos para la tabla `Usuarios`
+-- Volcado de datos para la tabla `usuarios`
 --
 
-INSERT INTO `Usuarios` (`ID_usuario`, `ID_restaurante`, `Nombre`, `Apellido`, `Telefono`, `Rol`, `Email`, `Password`, `activo`, `fecha_creacion`) VALUES
+INSERT INTO `usuarios` (`ID_usuario`, `ID_restaurante`, `Nombre`, `Apellido`, `Telefono`, `Rol`, `Email`, `Password`, `activo`, `fecha_creacion`) VALUES
 (1, NULL, 'Admin', 'General', '1100000000', 'superadmin', 'pierreetche2006@gmail.com', '$2y$10$/IKytnF7w/JxQ45YEh/Kf.Uog8ezHZ3YzPiPDGeNQWve7AS1OvMta', 1, '2026-03-18 00:05:26'),
 (2, 1, 'Recepcion', 'Burger', '1122223333', 'recepcionista', 'tiagomaidana90@gmail.com', '$2y$10$ayc09obe74OtmoyZLUBz1uSZ5qnozAjFRumvEKNIi6qyE//gE.kue', 1, '2026-03-18 00:05:26'),
 (3, 2, 'Admin', 'Pizzeria', '1133334444', 'admin', 'tiagomaidana15@gmail.com', '$2y$10$NytnrSbxeRQg3Htb4lkb1eqSE9v6gEzu2VOqqgGjutzF4uoWY.gFC', 1, '2026-03-18 00:05:26'),
 (4, NULL, 'Pedro', 'Repartidor', '1144445555', 'repartidor', 'rutaslibres17@gmail.com', '$2y$10$ObKw3Rupdtr0q2s7cA.Jt.DS6H47KFpkyv6HXiBazNU6Q5ck9qGGu', 1, '2026-03-18 00:05:26'),
-(5, 1, 'juan', 'perez', '2241121314', 'chef', 'info@zatmeni.ar', '$2y$10$8AtguhZsV.Oan9h8p36acek29JKcAasjZMlym9YUtnMvxeMRiAx6q', 1, '2026-03-18 00:05:26');
+(5, 1, 'juan', 'perez', '2241121314', 'chef', 'info@zatmeni.ar', '$2y$10$8AtguhZsV.Oan9h8p36acek29JKcAasjZMlym9YUtnMvxeMRiAx6q', 1, '2026-03-18 00:05:26'),
+(7, 2, 'abc', '', NULL, 'recepcionista', 'algo@gmail.com', '$2y$10$XQo8/vF78BXMs9Wnz3Gi7eouhQneVRrOUoNvNOOQgjDOD24voUggq', 1, '2026-03-23 23:18:44');
 
 --
 -- Índices para tablas volcadas
 --
 
 --
--- Indices de la tabla `Clientes`
+-- Indices de la tabla `clientes`
 --
-ALTER TABLE `Clientes`
+ALTER TABLE `clientes`
   ADD PRIMARY KEY (`ID_cliente`);
 
 --
--- Indices de la tabla `Detalle_pedido`
+-- Indices de la tabla `detalle_pedido`
 --
-ALTER TABLE `Detalle_pedido`
+ALTER TABLE `detalle_pedido`
   ADD PRIMARY KEY (`ID_detalle`),
   ADD KEY `ID_pedido` (`ID_pedido`),
   ADD KEY `ID_producto` (`ID_producto`);
 
 --
--- Indices de la tabla `Direcciones`
+-- Indices de la tabla `direcciones`
 --
-ALTER TABLE `Direcciones`
+ALTER TABLE `direcciones`
   ADD PRIMARY KEY (`ID_direccion`);
 
 --
@@ -278,9 +379,9 @@ ALTER TABLE `password_resets`
   ADD KEY `token_hash` (`token_hash`);
 
 --
--- Indices de la tabla `Pedidos`
+-- Indices de la tabla `pedidos`
 --
-ALTER TABLE `Pedidos`
+ALTER TABLE `pedidos`
   ADD PRIMARY KEY (`ID_pedido`),
   ADD KEY `ID_cliente` (`ID_cliente`),
   ADD KEY `ID_restaurante` (`ID_restaurante`),
@@ -289,9 +390,9 @@ ALTER TABLE `Pedidos`
   ADD KEY `idx_pedidos_fecha` (`fecha_creacion`);
 
 --
--- Indices de la tabla `Productos`
+-- Indices de la tabla `productos`
 --
-ALTER TABLE `Productos`
+ALTER TABLE `productos`
   ADD PRIMARY KEY (`ID_producto`),
   ADD KEY `ID_restaurante` (`ID_restaurante`);
 
@@ -303,16 +404,16 @@ ALTER TABLE `rate_limits`
   ADD KEY `ip_address` (`ip_address`,`action_type`,`created_at`);
 
 --
--- Indices de la tabla `Restaurantes`
+-- Indices de la tabla `restaurantes`
 --
-ALTER TABLE `Restaurantes`
+ALTER TABLE `restaurantes`
   ADD PRIMARY KEY (`ID_Restaurante`),
   ADD KEY `ID_direccion` (`ID_direccion`);
 
 --
--- Indices de la tabla `Usuarios`
+-- Indices de la tabla `usuarios`
 --
-ALTER TABLE `Usuarios`
+ALTER TABLE `usuarios`
   ADD PRIMARY KEY (`ID_usuario`),
   ADD UNIQUE KEY `Email` (`Email`),
   ADD KEY `ID_restaurante` (`ID_restaurante`),
@@ -325,22 +426,22 @@ ALTER TABLE `Usuarios`
 --
 
 --
--- AUTO_INCREMENT de la tabla `Clientes`
+-- AUTO_INCREMENT de la tabla `clientes`
 --
-ALTER TABLE `Clientes`
+ALTER TABLE `clientes`
   MODIFY `ID_cliente` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de la tabla `Detalle_pedido`
+-- AUTO_INCREMENT de la tabla `detalle_pedido`
 --
-ALTER TABLE `Detalle_pedido`
+ALTER TABLE `detalle_pedido`
   MODIFY `ID_detalle` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de la tabla `Direcciones`
+-- AUTO_INCREMENT de la tabla `direcciones`
 --
-ALTER TABLE `Direcciones`
-  MODIFY `ID_direccion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+ALTER TABLE `direcciones`
+  MODIFY `ID_direccion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- AUTO_INCREMENT de la tabla `password_resets`
@@ -349,15 +450,15 @@ ALTER TABLE `password_resets`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
--- AUTO_INCREMENT de la tabla `Pedidos`
+-- AUTO_INCREMENT de la tabla `pedidos`
 --
-ALTER TABLE `Pedidos`
-  MODIFY `ID_pedido` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+ALTER TABLE `pedidos`
+  MODIFY `ID_pedido` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
--- AUTO_INCREMENT de la tabla `Productos`
+-- AUTO_INCREMENT de la tabla `productos`
 --
-ALTER TABLE `Productos`
+ALTER TABLE `productos`
   MODIFY `ID_producto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
@@ -367,15 +468,15 @@ ALTER TABLE `rate_limits`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
--- AUTO_INCREMENT de la tabla `Restaurantes`
+-- AUTO_INCREMENT de la tabla `restaurantes`
 --
-ALTER TABLE `Restaurantes`
+ALTER TABLE `restaurantes`
   MODIFY `ID_Restaurante` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de la tabla `Usuarios`
+-- AUTO_INCREMENT de la tabla `usuarios`
 --
-ALTER TABLE `Usuarios`
+ALTER TABLE `usuarios`
   MODIFY `ID_usuario` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -383,37 +484,37 @@ ALTER TABLE `Usuarios`
 --
 
 --
--- Filtros para la tabla `Detalle_pedido`
+-- Filtros para la tabla `detalle_pedido`
 --
-ALTER TABLE `Detalle_pedido`
-  ADD CONSTRAINT `Detalle_pedido_ibfk_1` FOREIGN KEY (`ID_pedido`) REFERENCES `Pedidos` (`ID_pedido`) ON DELETE CASCADE,
-  ADD CONSTRAINT `Detalle_pedido_ibfk_2` FOREIGN KEY (`ID_producto`) REFERENCES `Productos` (`ID_producto`);
+ALTER TABLE `detalle_pedido`
+  ADD CONSTRAINT `detalle_pedido_ibfk_1` FOREIGN KEY (`ID_pedido`) REFERENCES `pedidos` (`ID_pedido`) ON DELETE CASCADE,
+  ADD CONSTRAINT `detalle_pedido_ibfk_2` FOREIGN KEY (`ID_producto`) REFERENCES `productos` (`ID_producto`);
 
 --
--- Filtros para la tabla `Pedidos`
+-- Filtros para la tabla `pedidos`
 --
-ALTER TABLE `Pedidos`
-  ADD CONSTRAINT `Pedidos_ibfk_1` FOREIGN KEY (`ID_cliente`) REFERENCES `Clientes` (`ID_cliente`) ON DELETE CASCADE,
-  ADD CONSTRAINT `Pedidos_ibfk_2` FOREIGN KEY (`ID_restaurante`) REFERENCES `Restaurantes` (`ID_Restaurante`) ON DELETE CASCADE,
-  ADD CONSTRAINT `Pedidos_ibfk_3` FOREIGN KEY (`ID_direccion`) REFERENCES `Direcciones` (`ID_direccion`);
+ALTER TABLE `pedidos`
+  ADD CONSTRAINT `pedidos_ibfk_1` FOREIGN KEY (`ID_cliente`) REFERENCES `clientes` (`ID_cliente`) ON DELETE CASCADE,
+  ADD CONSTRAINT `pedidos_ibfk_2` FOREIGN KEY (`ID_restaurante`) REFERENCES `restaurantes` (`ID_Restaurante`) ON DELETE CASCADE,
+  ADD CONSTRAINT `pedidos_ibfk_3` FOREIGN KEY (`ID_direccion`) REFERENCES `direcciones` (`ID_direccion`);
 
 --
--- Filtros para la tabla `Productos`
+-- Filtros para la tabla `productos`
 --
-ALTER TABLE `Productos`
-  ADD CONSTRAINT `Productos_ibfk_1` FOREIGN KEY (`ID_restaurante`) REFERENCES `Restaurantes` (`ID_Restaurante`) ON DELETE CASCADE;
+ALTER TABLE `productos`
+  ADD CONSTRAINT `productos_ibfk_1` FOREIGN KEY (`ID_restaurante`) REFERENCES `restaurantes` (`ID_Restaurante`) ON DELETE CASCADE;
 
 --
--- Filtros para la tabla `Restaurantes`
+-- Filtros para la tabla `restaurantes`
 --
-ALTER TABLE `Restaurantes`
-  ADD CONSTRAINT `Restaurantes_ibfk_1` FOREIGN KEY (`ID_direccion`) REFERENCES `Direcciones` (`ID_direccion`) ON DELETE SET NULL;
+ALTER TABLE `restaurantes`
+  ADD CONSTRAINT `restaurantes_ibfk_1` FOREIGN KEY (`ID_direccion`) REFERENCES `direcciones` (`ID_direccion`) ON DELETE SET NULL;
 
 --
--- Filtros para la tabla `Usuarios`
+-- Filtros para la tabla `usuarios`
 --
-ALTER TABLE `Usuarios`
-  ADD CONSTRAINT `Usuarios_ibfk_1` FOREIGN KEY (`ID_restaurante`) REFERENCES `Restaurantes` (`ID_Restaurante`) ON DELETE SET NULL;
+ALTER TABLE `usuarios`
+  ADD CONSTRAINT `usuarios_ibfk_1` FOREIGN KEY (`ID_restaurante`) REFERENCES `restaurantes` (`ID_Restaurante`) ON DELETE SET NULL;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

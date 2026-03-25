@@ -111,7 +111,7 @@
         /* ── PARALLAX BACKGROUND CANVAS ─────────────── */
         #bg-canvas {
             position: fixed; inset: 0;
-            pointer-events: none; z-index: 0; opacity: 0.45;
+            pointer-events: none; z-index: 0; opacity: 0.65;
         }
 
         /* ── GRID OVERLAY ───────────────────────────── */
@@ -277,7 +277,7 @@
         .cta-card {
             background: linear-gradient(135deg, rgba(245,166,35,0.1) 0%, rgba(245,166,35,0.03) 100%);
             border: 1px solid var(--amber-border); border-radius: 20px;
-            padding: 60px var(--sp-xl); text-align: center; position: relative; overflow: hidden;
+            padding: 60px var(--sp-xl); text-align: center; position: relative; overflow: visible;
         }
         .cta-card::before {
             content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 1px;
@@ -296,12 +296,15 @@
 
         /* ── FOOTER ─────────────────────────────────── */
         .site-footer {
-            background: rgba(0,0,0,0.3); border-top: 1px solid var(--border);
+            background: rgba(10, 12, 18, 0.88);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
             position: relative; z-index: 1; padding: 60px var(--sp-xl) 32px;
         }
         .footer-inner { max-width: 1100px; margin: 0 auto; }
         .footer-top {
-            display: grid; grid-template-columns: 1.8fr 1fr 1fr;
+            display: flex; justify-content: space-between;
             gap: 48px; padding-bottom: 48px;
             border-bottom: 1px solid var(--border); margin-bottom: 32px;
         }
@@ -328,14 +331,14 @@
         .footer-dev i { color: var(--amber); }
         .footer-col-title {
             font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.1em; color: var(--text-3); margin-bottom: 16px;
+            letter-spacing: 0.1em; color: var(--text-2); margin-bottom: 16px;
         }
         .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-        .footer-links a {
+        .footer-links a {   
             font-size: 0.85rem; color: var(--text-2); text-decoration: none;
             display: flex; align-items: center; gap: 8px; transition: color 0.2s;
         }
-        .footer-links a i { font-size: 0.7rem; color: var(--text-3); transition: color 0.2s; width: 14px; }
+        .footer-links a i { font-size: 1.2rem; color: var(--text-3); transition: color 0.2s; width: 14px; }
         .footer-links a:hover { color: var(--amber); }
         .footer-links a:hover i { color: var(--amber); }
         .footer-bottom {
@@ -349,6 +352,68 @@
             width: 6px; height: 6px; border-radius: 50%; background: var(--teal);
             animation: pulse-dot 1.8s ease-in-out infinite;
         }
+
+        /* ── CUSTOM SELECT ──────────────────────── */
+        .cf-custom-select { position: relative; width: 100%; }
+
+        .cf-select-trigger {
+            width: 100%; display: flex; align-items: center; justify-content: space-between;
+            background: rgba(255,255,255,0.035); border: 1px solid var(--border-hi);
+            border-radius: var(--r-md); color: var(--text);
+            font-family: 'DM Sans', sans-serif; font-size: 0.875rem;
+            padding: 11px 14px; cursor: pointer; text-align: left;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            outline: none;
+        }
+        .cf-select-trigger:hover,
+        .cf-select-trigger[aria-expanded="true"] {
+            border-color: var(--amber-border);
+            box-shadow: 0 0 0 3px var(--amber-glow);
+            background: rgba(245,166,35,0.04);
+        }
+        .cf-select-value { flex: 1; color: var(--text); }
+        .cf-select-value.placeholder { color: #a8adc2; }
+
+        .cf-select-arrow {
+            font-size: 0.7rem; color: var(--text-3);
+            transition: transform 0.22s var(--ease-out);
+            flex-shrink: 0;
+        }
+        .cf-select-trigger[aria-expanded="true"] .cf-select-arrow { transform: rotate(180deg); color: var(--amber); }
+
+        .cf-select-dropdown {
+            position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+            background: var(--bg2); border: 1px solid var(--amber-border);
+            border-radius: var(--r-md);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(245,166,35,0.08);
+            list-style: none; padding: 6px; z-index: 200;
+            opacity: 0; transform: translateY(-8px) scale(0.98);
+            pointer-events: none;
+            transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+            overflow: hidden;
+        }
+        .cf-select-dropdown.open {
+            opacity: 1; transform: translateY(0) scale(1); pointer-events: all;
+        }
+        .cf-select-dropdown li {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 14px; border-radius: 8px;
+            font-family: 'DM Sans', sans-serif; font-size: 0.875rem;
+            color: var(--text-2); cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .cf-select-dropdown li i {
+            width: 16px; text-align: center;
+            font-size: 0.75rem; color: var(--text-3);
+            transition: color 0.15s;
+        }
+        .cf-select-dropdown li:hover { background: rgba(245,166,35,0.1); color: var(--text); }
+        .cf-select-dropdown li:hover i { color: var(--amber); }
+        .cf-select-dropdown li.selected {
+            background: rgba(245,166,35,0.15); color: var(--amber);
+            border: 1px solid var(--amber-border);
+        }
+        .cf-select-dropdown li.selected i { color: var(--amber); }
 
         @media (max-width: 720px) {
             .footer-top { grid-template-columns: 1fr; gap: 32px; }
@@ -647,26 +712,26 @@
                 <div class="cf-group-title"><i class="fa-solid fa-tag"></i> Motivo</div>
                 <div class="cf-field cf-field-full">
                     <label for="cf-asunto">Asunto / Motivo <span class="req">*</span></label>
-                    <select id="cf-asunto" name="asunto" required>
-                        <option value="" disabled selected>Seleccioná un motivo…</option>
-                        <option value="Consulta general">Consulta general</option>
-                        <option value="Solicitar información">Solicitar información</option>
-                        <option value="Contratar servicio">Contratar servicio</option>
-                        <option value="Soporte técnico">Soporte técnico</option>
-                        <option value="Otro">Otro</option>
-                    </select>
+                    <!-- Custom select -->
+                    <div class="cf-custom-select" id="cf-asunto-wrap">
+                        <input type="hidden" id="cf-asunto" name="asunto" required>
+                        <button type="button" class="cf-select-trigger" id="cf-asunto-trigger" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="cf-select-value" id="cf-asunto-display">Seleccioná un motivo…</span>
+                            <i class="fa-solid fa-chevron-down cf-select-arrow"></i>
+                        </button>
+                        <ul class="cf-select-dropdown" id="cf-asunto-list" role="listbox">
+                            <li role="option" data-value="Consulta general"><i class="fa-regular fa-comment"></i> Consulta general</li>
+                            <li role="option" data-value="Solicitar información"><i class="fa-solid fa-circle-info"></i> Solicitar información</li>
+                            <li role="option" data-value="Contratar servicio"><i class="fa-solid fa-handshake"></i> Contratar servicio</li>
+                            <li role="option" data-value="Soporte técnico"><i class="fa-solid fa-screwdriver-wrench"></i> Soporte técnico</li>
+                            <li role="option" data-value="Otro"><i class="fa-solid fa-ellipsis"></i> Otro</li>
+                        </ul>
+                    </div>
                 </div>
                 <div class="cf-group-title"><i class="fa-solid fa-comment-dots"></i> Consulta</div>
                 <div class="cf-field cf-field-full">
                     <label for="cf-mensaje">Mensaje <span class="req">*</span></label>
                     <textarea id="cf-mensaje" name="mensaje" rows="5" placeholder="Contanos en qué podemos ayudarte…" required></textarea>
-                </div>
-                <div class="cf-legal">
-                    <label class="cf-checkbox-label">
-                        <input type="checkbox" id="cf-privacidad" name="privacidad" required>
-                        <span class="cf-checkbox-custom"></span>
-                        <span>Acepto la <a href="#" class="cf-link">política de privacidad</a></span>
-                    </label>
                 </div>
                 <div class="cf-submit-row">
                     <button type="submit" class="btn-primary cf-btn-submit" id="cf-submit-btn">
@@ -703,17 +768,14 @@
                     <ul class="footer-links">
                         <li><a href="login.html"><i class="fa-solid fa-arrow-right-to-bracket"></i> Acceder</a></li>
                         <li><a href="#contacto-seccion"><i class="fa-solid fa-envelope"></i> Contacto</a></li>
-                        <li><a href="#"><i class="fa-solid fa-shield-halved"></i> Política de privacidad</a></li>
                     </ul>
                 </div>
 
                 <div>
-                    <p class="footer-col-title">Módulos</p>
+                    <p class="footer-col-title">Desarrolladores</p>
                     <ul class="footer-links">
-                        <li><a href="#"><i class="fa-solid fa-receipt"></i> Recepción</a></li>
-                        <li><a href="#"><i class="fa-solid fa-utensils"></i> Cocina</a></li>
-                        <li><a href="#"><i class="fa-solid fa-motorcycle"></i> Reparto</a></li>
-                        <li><a href="#"><i class="fa-solid fa-chart-line"></i> Administración</a></li>
+                        <li><a href="https://github.com/PierSoco"><i class="fa-brands fa-github"></i> Pierre Socodober</a></li>
+                        <li><a href="https://github.com/TiagoM395"><i class="fa-brands fa-github"></i> Tiago Maidana</a></li>
                     </ul>
                 </div>
             </div>
@@ -737,7 +799,7 @@
         const canvas = document.getElementById('bg-canvas');
         const ctx    = canvas.getContext('2d');
         let W, H;
-        const mouse = { x: 0, y: 0 };
+        const mouse = { x: null, y: null };
         let nodes = [];
 
         function resize() {
@@ -745,16 +807,26 @@
             H = canvas.height = window.innerHeight;
         }
 
+        const SHAPES = ['circle','circle','circle','hex','hex','cross','ring'];
+        const COLORS = [
+            '#f5a623','#f5a623','#f5a623',
+            '#2dd4bf','#2dd4bf',
+            'rgba(255,255,255,0.8)','rgba(255,255,255,0.8)',
+            '#60a5fa','#a78bfa'
+        ];
+
         function mkNodes(n) {
             return Array.from({ length: n }, (_, i) => ({
                 x:        Math.random() * (window.innerWidth  || 1200),
                 y:        Math.random() * (window.innerHeight * 3 || 2400),
-                r:        Math.random() * 1.8 + 0.4,
-                drift:    Math.random() * 0.016 + 0.005,
+                r:        Math.random() * 2.2 + 0.5,
+                drift:    Math.random() * 0.018 + 0.004,
                 parallax: Math.random() * 0.55 + 0.08,
-                opacity:  Math.random() * 0.5 + 0.12,
-                shape:    i % 6 === 0 ? 'hex' : 'circle',
-                color:    i % 5 === 0 ? '#f5a623' : (i % 4 === 0 ? '#2dd4bf' : 'rgba(255,255,255,0.7)'),
+                opacity:  Math.random() * 0.55 + 0.15,
+                shape:    SHAPES[i % SHAPES.length],
+                color:    COLORS[i % COLORS.length],
+                pulseSpeed: Math.random() * 0.02 + 0.008,
+                pulseOffset: Math.random() * Math.PI * 2,
             }));
         }
 
@@ -769,49 +841,80 @@
             ctx.closePath();
         }
 
+        function crossPath(cx, cy, r) {
+            ctx.beginPath();
+            ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy);
+            ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r);
+        }
+
+        let tick = 0;
         function draw() {
             ctx.clearRect(0, 0, W, H);
             const sy = window.scrollY;
+            tick++;
 
             nodes.forEach((n, i) => {
                 const vy = n.y - sy * n.parallax;
 
-                // slow mouse attract
-                n.x += (mouse.x - n.x) * 0.00012;
-                n.y += (mouse.y - vy)  * 0.00012;
+                // slow mouse attract — only when mouse has moved
+                if (mouse.x !== null) {
+                    n.x += (mouse.x - n.x) * 0.00014;
+                    n.y += (mouse.y - vy)  * 0.00014;
+                }
                 n.y -= n.drift;
-                if (n.y < -40) n.y = H * 3;
-                if (vy < -40 || vy > H + 40) return;
+                if (n.y < -60) n.y = H * 3;
+                if (vy < -60 || vy > H + 60) return;
 
-                ctx.globalAlpha = n.opacity;
+                // pulsing opacity
+                const pulse = 1 + 0.25 * Math.sin(tick * n.pulseSpeed + n.pulseOffset);
+                const alpha = Math.min(n.opacity * pulse, 0.95);
+
+                ctx.globalAlpha = alpha;
                 ctx.fillStyle   = n.color;
+                ctx.strokeStyle = n.color;
 
                 if (n.shape === 'hex') {
-                    hexPath(n.x, vy, n.r * 3.8);
-                    ctx.strokeStyle = n.color;
-                    ctx.lineWidth   = 0.7;
+                    const hr = n.r * 4.5;
+                    hexPath(n.x, vy, hr);
+                    ctx.lineWidth   = 0.8;
                     ctx.stroke();
-                    ctx.globalAlpha = n.opacity * 0.1;
+                    ctx.globalAlpha = alpha * 0.12;
                     ctx.fill();
+                } else if (n.shape === 'ring') {
+                    ctx.beginPath();
+                    ctx.arc(n.x, vy, n.r * 3.5, 0, Math.PI * 2);
+                    ctx.lineWidth   = 0.6;
+                    ctx.globalAlpha = alpha * 0.5;
+                    ctx.stroke();
+                } else if (n.shape === 'cross') {
+                    crossPath(n.x, vy, n.r * 3);
+                    ctx.lineWidth   = 0.7;
+                    ctx.globalAlpha = alpha * 0.55;
+                    ctx.stroke();
                 } else {
                     ctx.beginPath();
                     ctx.arc(n.x, vy, n.r, 0, Math.PI * 2);
                     ctx.fill();
                 }
 
-                // connecting lines (sparse)
-                if (i % 3 === 0) {
-                    for (let j = i + 1; j < Math.min(i + 9, nodes.length); j++) {
+                // connecting lines — denser, more visible
+                if (i % 2 === 0) {
+                    for (let j = i + 1; j < Math.min(i + 12, nodes.length); j++) {
                         const b   = nodes[j];
                         const bvy = b.y - sy * b.parallax;
                         const dx  = n.x - b.x;
                         const dy  = vy  - bvy;
                         const d   = Math.sqrt(dx * dx + dy * dy);
-                        if (d < 150) {
+                        if (d < 180) {
                             ctx.beginPath();
                             ctx.moveTo(n.x, vy);
                             ctx.lineTo(b.x, bvy);
-                            ctx.strokeStyle = `rgba(245,166,35,${(1 - d / 150) * 0.06})`;
+                            const lineAlpha = (1 - d / 180) * 0.11;
+                            ctx.strokeStyle = n.color === '#f5a623' || b.color === '#f5a623'
+                                ? `rgba(245,166,35,${lineAlpha})`
+                                : n.color === '#2dd4bf' || b.color === '#2dd4bf'
+                                ? `rgba(45,212,191,${lineAlpha * 0.8})`
+                                : `rgba(255,255,255,${lineAlpha * 0.5})`;
                             ctx.lineWidth   = 0.5;
                             ctx.globalAlpha = 1;
                             ctx.stroke();
@@ -825,7 +928,7 @@
         }
 
         resize();
-        nodes = mkNodes(95);
+        nodes = mkNodes(160);
         draw();
 
         window.addEventListener('resize',    resize);
@@ -930,16 +1033,11 @@
         const email    = document.getElementById('cf-email').value.trim();
         const asunto   = document.getElementById('cf-asunto').value;
         const mensaje  = document.getElementById('cf-mensaje').value.trim();
-        const privacidad = document.getElementById('cf-privacidad').checked;
         const telefono = document.getElementById('cf-telefono').value.trim();
         const empresa  = document.getElementById('cf-empresa').value.trim();
 
         if (!nombre || !email || !asunto || !mensaje) {
             showFeedback('error','<i class="fa-solid fa-circle-exclamation"></i> Por favor completá todos los campos obligatorios.');
-            return;
-        }
-        if (!privacidad) {
-            showFeedback('error','<i class="fa-solid fa-circle-exclamation"></i> Debés aceptar la política de privacidad.');
             return;
         }
         btn.disabled = true;
@@ -963,13 +1061,61 @@
         btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar mensaje';
     });
 
-    function showFeedback(type, html) {
+    /* ═══════════════════════════════════════════
+       CUSTOM SELECT — #cf-asunto
+    ═══════════════════════════════════════════ */
+    (function() {
+        const trigger  = document.getElementById('cf-asunto-trigger');
+        const dropdown = document.getElementById('cf-asunto-list');
+        const display  = document.getElementById('cf-asunto-display');
+        const hidden   = document.getElementById('cf-asunto');
+
+        // mark placeholder style
+        display.classList.add('placeholder');
+
+        trigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const open = trigger.getAttribute('aria-expanded') === 'true';
+            trigger.setAttribute('aria-expanded', !open);
+            dropdown.classList.toggle('open', !open);
+        });
+
+        dropdown.querySelectorAll('li').forEach(li => {
+            li.addEventListener('click', function() {
+                const val = this.dataset.value;
+                hidden.value = val;
+                display.textContent = val;
+                display.classList.remove('placeholder');
+                dropdown.querySelectorAll('li').forEach(l => l.classList.remove('selected'));
+                this.classList.add('selected');
+                trigger.setAttribute('aria-expanded', 'false');
+                dropdown.classList.remove('open');
+            });
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!document.getElementById('cf-asunto-wrap').contains(e.target)) {
+                trigger.setAttribute('aria-expanded', 'false');
+                dropdown.classList.remove('open');
+            }
+        });
+
+        // keyboard nav
+        trigger.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') { trigger.click(); e.preventDefault(); }
+            if (e.key === 'Escape') {
+                trigger.setAttribute('aria-expanded', 'false');
+                dropdown.classList.remove('open');
+            }
+        });
+    })();
+
+    
         const fb = document.getElementById('cf-feedback');
         fb.className    = 'cf-feedback cf-feedback--' + type;
         fb.innerHTML    = html;
         fb.style.display = 'flex';
         fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
     </script>
 </body>
 </html>
