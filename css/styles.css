@@ -1219,7 +1219,7 @@ body.home-body { overflow-x: hidden; }
 }
 
 .req { color: var(--amber); }
-.opt { color: var(--text-3); font-weight: 400; font-size: 0.74rem; }
+.opt { color: #a8adc2; font-weight: 400; font-size: 0.74rem; }
 
 .cf-field input,
 .cf-field-full input,
@@ -1243,7 +1243,7 @@ body.home-body { overflow-x: hidden; }
 .cf-field-full input::placeholder,
 .cf-field textarea::placeholder,
 .cf-field-full textarea::placeholder {
-    color: var(--text-3);
+    color: #a8adc2;
 }
 
 .cf-field input:focus,
