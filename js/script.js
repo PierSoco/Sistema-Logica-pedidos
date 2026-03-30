@@ -525,7 +525,7 @@ async function verDetallePedido(idPedido) {
     const modal = document.getElementById('modal-detalle-pedido');
     document.getElementById('detalle-pedido-titulo').textContent = `Pedido #${idPedido}`;
     document.getElementById('detalle-pedido-contenido').innerHTML =
-        '<p style="text-align:center;color:#94a3b8;padding:40px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</p>';
+        '<p style="text-align:center;color:var(--text-3);padding:40px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</p>';
     modal.classList.add('visible');
 
     try {
@@ -535,13 +535,13 @@ async function verDetallePedido(idPedido) {
 
         const p = result.data;
         const piso = p.piso_depto ? ` · ${p.piso_depto}` : '';
-        const ref  = p.referencias ? `<br><span style="font-size:12px;color:#64748b;">📌 ${p.referencias}</span>` : '';
+        const ref  = p.referencias ? `<br><span style="font-size:12px;color:var(--text-3);">📌 ${p.referencias}</span>` : '';
         const itemsHTML = (p.items||[]).map(item => `
             <tr>
                 <td>${item.nombre}</td>
                 <td style="text-align:center;font-weight:600;">${item.Cantidad}</td>
                 <td style="text-align:right;">$${parseFloat(item.Precio).toFixed(2)}</td>
-                <td style="text-align:right;font-weight:700;color:#0d9488;">$${parseFloat(item.Subtotal).toFixed(2)}</td>
+                <td style="text-align:right;font-weight:700;color:var(--teal);">$${parseFloat(item.Subtotal).toFixed(2)}</td>
             </tr>`).join('');
 
         document.getElementById('detalle-pedido-contenido').innerHTML = `
@@ -549,7 +549,7 @@ async function verDetallePedido(idPedido) {
                 <div class="detalle-card">
                     <p class="detalle-card-title"><i class="fa-solid fa-user"></i> Cliente</p>
                     <p><strong>${p.c_nombre} ${p.c_apellido}</strong></p>
-                    <p><i class="fa-solid fa-phone" style="font-size:11px;color:#94a3b8;"></i> ${p.c_telefono || '—'}</p>
+                    <p><i class="fa-solid fa-phone" style="font-size:11px;color:var(--text-3);"></i> ${p.c_telefono || '—'}</p>
                 </div>
                 <div class="detalle-card">
                     <p class="detalle-card-title"><i class="fa-solid fa-map-marker-alt"></i> Dirección</p>
@@ -560,11 +560,11 @@ async function verDetallePedido(idPedido) {
             <p class="form-section-label" style="margin-bottom:10px;"><i class="fa-solid fa-utensils"></i> Productos</p>
             <table class="tabla-detalle-pedido">
                 <thead><tr><th>Producto</th><th style="text-align:center">Cant.</th><th style="text-align:right">P.Unit.</th><th style="text-align:right">Subtotal</th></tr></thead>
-                <tbody>${itemsHTML || '<tr><td colspan="4" style="text-align:center;color:#94a3b8;">Sin productos</td></tr>'}</tbody>
+                <tbody>${itemsHTML || '<tr><td colspan="4" style="text-align:center;color:var(--text-3);">Sin productos</td></tr>'}</tbody>
             </table>
             <div class="total-bar" style="margin-top:16px;">
                 <span class="total-bar-label">Total del pedido</span>
-                <span class="total-bar-amount">$${parseFloat(p.Total).toFixed(2)}</span>
+                <span class="total-bar-amount" style="color:var(--teal);">$${parseFloat(p.Total).toFixed(2)}</span>
             </div>`;
     } catch { mostrarMensaje('error','Error al cargar detalle'); }
 }
@@ -2131,3 +2131,163 @@ function activarDropZones() {
         }
     });
 }
+
+async function solicitarRecuperacion() {
+    const emailInput = document.getElementById('email-recuperacion');
+    const email = emailInput.value.trim();
+
+    if (!email) {
+        alert('Por favor, ingresá tu correo electrónico.');
+        return;
+    }
+
+    try {
+        // Asegurate de apuntar a la URL correcta de tu action
+        const response = await fetch('backend/funciones.php?action=forgotPassword', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email })
+        });
+
+        const data = await response.json();
+
+        if (data.success === false) {
+            // Si no existe el correo o hay otro error
+            alert(data.error); 
+        } else {
+            // Si todo salió bien
+            alert(data.mensaje);
+            emailInput.value = ''; // Limpiar el input
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Hubo un problema de conexión con el servidor.');
+    }
+}
+
+// Función para mostrar u ocultar la contraseña
+function togglePassword(inputId) {
+    // Si la función recibe un ID (como en restablecer.html), usamos ese.
+    // Si no recibe nada (como en login.html), usamos 'password' por defecto.
+    const idDelInput = inputId || 'password';
+    
+    // Seleccionamos el input
+    const passwordInput = document.getElementById(idDelInput);
+    
+    if (passwordInput) {
+        // Seleccionamos el ícono del ojito que está justo al lado del input
+        const icon = passwordInput.nextElementSibling;
+        
+        // Alternamos el tipo de input y el ícono
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text'; // Mostramos el texto
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash'); // Cambiamos al ojito tachado
+        } else {
+            passwordInput.type = 'password'; // Ocultamos el texto
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye'); // Volvemos al ojito normal
+        }
+    }
+}
+
+async function guardarNuevaPassword() {
+    // 1. Obtener los valores de los inputs
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+
+    // 2. Extraer el "token" de la URL (ejemplo: restablecer.html?token=abcd123...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    // Validaciones básicas
+    if (!token) {
+        alert('Enlace no válido o expirado. Por favor, solicitá un nuevo restablecimiento.');
+        return;
+    }
+
+    if (newPassword.length < 8) {
+        alert('La contraseña debe tener al menos 8 caracteres.');
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        alert('Las contraseñas no coinciden. Verificalas e intentá de nuevo.');
+        return;
+    }
+
+    try {
+        // 3. Enviar la petición al backend
+        // Ojo acá: asegurate de que la ruta a funciones.php sea la correcta
+        const response = await fetch('backend/funciones.php?action=resetPassword', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                token: token,
+                password: newPassword
+            })
+        });
+
+        const data = await response.json(); 
+
+        // 4. Manejar la respuesta del servidor
+        if (data.success) {
+            alert('¡Contraseña actualizada con éxito! Ya podés iniciar sesión.');
+            // Redirigir al login
+            window.location.href = 'login.html'; 
+        } else {
+            // Mostrar error (ej: token expirado o inválido)
+            alert(data.error || 'Hubo un error al restablecer la contraseña.');
+        }
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión con el servidor. Intentá nuevamente más tarde.');
+    }
+}
+
+// ==========================================
+// SOPORTE PARA LA TECLA "ENTER" EN LOS INPUTS
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // 1. Para login.html (Ejecuta loginUsuario)
+    const loginInputs = document.querySelectorAll('#username, #password');
+    if (loginInputs.length > 0) {
+        loginInputs.forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); // Evita que el navegador recargue la página
+                    // Asegurate de que tu función de login se llame así
+                    if (typeof loginUsuario === 'function') loginUsuario(); 
+                }
+            });
+        });
+    }
+
+    // 2. Para olvide.html (Ejecuta solicitarRecuperacion)
+    const emailRecuperacion = document.getElementById('email-recuperacion');
+    if (emailRecuperacion) {
+        emailRecuperacion.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (typeof solicitarRecuperacion === 'function') solicitarRecuperacion();
+            }
+        });
+    }
+
+    // 3. Para restablecer.html (Ejecuta guardarNuevaPassword)
+    const resetInputs = document.querySelectorAll('#new-password, #confirm-password');
+    if (resetInputs.length > 0) {
+        resetInputs.forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (typeof guardarNuevaPassword === 'function') guardarNuevaPassword();
+                }
+            });
+        });
+    }
+});
