@@ -1421,10 +1421,50 @@ function enviarFormularioContacto() {
 function sendPasswordResetEmail($email, $token) {
     $resetLink = "https://zatmeni.ar/zple/restablecer.html?token=" . urlencode($token);
     $to = $email;
-    $subject = "Recuperacion de Contrasena";
-    $message = "Haz clic aqui para restablecer tu clave (expira en 30 min):\n" . $resetLink;
-    $headers = "From: noreply@zatmeni.ar";
-    @mail($to, $subject, $message, $headers);
+    $subject = "Recuperacion de Contrasena - RepartoGO";
+    
+    // Plantilla HTML con el diseño de tu web
+    $message = "
+    <html>
+    <head>
+      <title>Recuperar Contraseña</title>
+    </head>
+    <body style='font-family: Arial, sans-serif; background-color: #0f172a; padding: 30px; margin: 0;'>
+      <div style='max-width: 500px; margin: 0 auto; background-color: #1e293b; padding: 40px 30px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);'>
+        
+        <div style='font-size: 45px; margin-bottom: 10px;'>🚚</div>
+        <h1 style='color: #ffffff; margin: 0 0 5px 0; font-size: 28px;'>Reparto<em style='color: #3b82f6; font-style: normal;'>GO</em></h1>
+        <p style='color: #94a3b8; font-size: 14px; margin: 0 0 30px 0;'>Sistema de logística y gestión</p>
+        
+        <h2 style='color: #ffffff; font-size: 20px; margin-bottom: 15px;'>Recuperación de contraseña</h2>
+        
+        <p style='color: #cbd5e1; font-size: 16px; line-height: 1.5; margin-bottom: 30px;'>
+          Hola, hemos recibido una solicitud para restablecer tu contraseña. Hacé clic en el siguiente botón para crear una nueva. Si no fuiste vos, podés ignorar este correo sin problemas.
+        </p>
+        
+        <a href='" . $resetLink . "' style='background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px;'>
+          Restablecer mi contraseña
+        </a>
+        
+        <div style='margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;'>
+            <p style='color: #64748b; font-size: 12px; margin: 0;'>
+              Este enlace expirará en 30 minutos.<br>
+              &copy; " . date("Y") . " RepartoGO. Todos los derechos reservados.
+            </p>
+        </div>
+
+      </div>
+    </body>
+    </html>
+    ";
+
+    // Cabeceras necesarias para enviar HTML
+    $headers  = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+    $headers .= "From: noreply@zatmeni.ar\r\n";
+
+    // Enviamos el correo (quitamos el @ para poder ver errores en el log del servidor si falla)
+    return mail($to, $subject, $message, $headers);
 }
 
 function procesarForgotPassword($pdo) {
@@ -1432,9 +1472,15 @@ function procesarForgotPassword($pdo) {
     $email = filter_var($data['email'] ?? '', FILTER_VALIDATE_EMAIL);
     $ip = $_SERVER['REMOTE_ADDR'];
 
+    // Validar que el correo tenga formato correcto antes de consultar
+    if (!$email) {
+        echo json_encode(['success' => false, 'error' => 'Por favor, ingresá un correo electrónico válido.']);
+        return;
+    }
+
     try {
         if (!checkRateLimit($pdo, $ip, 'password_reset')) {
-            echo json_encode(['success' => true, 'mensaje' => 'Espere una hora para reintentar.']);
+            echo json_encode(['success' => false, 'error' => 'Demasiados intentos. Espere una hora para reintentar.']);
             return;
         }
 
@@ -1442,19 +1488,28 @@ function procesarForgotPassword($pdo) {
         $stmt->execute([':email' => $email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($user) {
-            $token = bin2hex(random_bytes(32));
-            $token_hash = hash('sha256', $token);
-            $expires_at = date('Y-m-d H:i:s', strtotime('+30 minutes'));
-
-            $stmt = $pdo->prepare("INSERT INTO password_resets (user_id, token_hash, expires_at, ip_request) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$user['ID_usuario'], $token_hash, $expires_at, $ip]);
-
-            sendPasswordResetEmail($email, $token);
+        // 1. CONDICIÓN: Si el usuario NO existe, cortamos y mandamos error
+        if (!$user) {
+            echo json_encode(['success' => false, 'error' => 'No existe ninguna cuenta registrada con este correo electrónico.']);
+            return;
         }
-        echo json_encode(['success' => true, 'mensaje' => 'Si el correo existe, recibiras un enlace.']);
+
+        // 2. Si pasa la validación (el correo existe), creamos el token
+        $token = bin2hex(random_bytes(32));
+        $token_hash = hash('sha256', $token);
+        $expires_at = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+
+        $stmt = $pdo->prepare("INSERT INTO password_resets (user_id, token_hash, expires_at, ip_request) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$user['ID_usuario'], $token_hash, $expires_at, $ip]);
+
+        // Enviamos el correo formateado
+        sendPasswordResetEmail($email, $token);
+        
+        // Respondemos con éxito
+        echo json_encode(['success' => true, 'mensaje' => '¡Correo de recuperación enviado! Revisá tu bandeja de entrada o spam.']);
+
     } catch (PDOException $e) {
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        echo json_encode(['success' => false, 'error' => 'Error del servidor: ' . $e->getMessage()]);
     }
 }
 
