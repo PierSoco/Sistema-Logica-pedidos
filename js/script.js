@@ -299,6 +299,7 @@ function renderizarTablaPedidosRecepcion(pedidos) {
 }
 
 // ── VISTA TABLA ──────────────────────────
+// ── VISTA TABLA ──────────────────────────
 function renderizarTabla(pedidos) {
     const tbody = document.querySelector('#tabla-pedidos-recepcion tbody');
     if (!tbody) return;
@@ -311,6 +312,14 @@ function renderizarTabla(pedidos) {
         return;
     }
 
+    const estados = [
+        { value: 'Pendiente', label: '⏳ Pendiente' },
+        { value: 'Preparando', label: '👨‍🍳 Preparando' },
+        { value: 'En camino', label: '🛵 En camino' },
+        { value: 'Entregado', label: '✅ Entregado' },
+        { value: 'Cancelado', label: '❌ Cancelado' }
+    ];
+
     pedidos.forEach(p => {
         const piso = p.piso_depto  ? ` · <em style="color:var(--text-3)">${p.piso_depto}</em>` : '';
         const ref  = p.referencias ? `<br><small style="color:var(--text-3)">📌 ${p.referencias}</small>` : '';
@@ -322,35 +331,34 @@ function renderizarTabla(pedidos) {
         // Click en la fila abre el detalle
         tr.addEventListener('click', () => verDetallePedido(p.ID_pedido));
 
+        // Construir select con opciones
+        const selectHTML = `<select class="select-estado" onchange="cambiarEstadoPedido(${p.ID_pedido}, this.value, this)">
+            ${estados.map(e => `<option value="${e.value}" ${p.Estado === e.value ? 'selected' : ''}>${e.label}</option>`).join('')}
+        </select>`;
+
         tr.innerHTML = `
             <td>
                 <strong class="hist-id">#${p.ID_pedido}</strong>
             </td>
             <td>
-                <div class="hist-cliente-nombre">${p.c_nombre} ${p.c_apellido}</div>
+                <div class="hist-cliente-nombre">${escapeHtml(p.c_nombre)} ${escapeHtml(p.c_apellido)}</div>
                 <div class="hist-cliente-tel">
                     <i class="fa-solid fa-phone" style="font-size:.62rem;margin-right:3px;"></i>
-                    ${p.c_telefono || '—'}
+                    ${escapeHtml(p.c_telefono || '—')}
                 </div>
             </td>
             <td>
-                <div class="hist-dir">${p.Calle} ${p.Numero}${piso}</div>
-                <div class="hist-dir"><small>${p.Localidad || ''}${ref}</small></div>
+                <div class="hist-dir">${escapeHtml(p.Calle)} ${escapeHtml(p.Numero)}${piso}</div>
+                <div class="hist-dir"><small>${escapeHtml(p.Localidad || '')}${ref}</small></div>
             </td>
             <td>
-                <div class="hist-productos" title="${p.detalles_resumen || ''}">${p.detalles_resumen || '—'}</div>
+                <div class="hist-productos" title="${escapeHtml(p.detalles_resumen || '')}">${escapeHtml(p.detalles_resumen || '—')}</div>
             </td>
             <td>
                 <span class="hist-total">$${parseFloat(p.Total).toFixed(2)}</span>
             </td>
             <td onclick="event.stopPropagation()">
-                <select class="select-estado" onchange="cambiarEstadoPedido(${p.ID_pedido}, this.value, this)">
-                    <option value="Pendiente" ${selectedPendiente}>⏳ Pendiente</option>
-                    <option value="Preparando" ${selectedPreparando}>👨‍🍳 Preparando</option>
-                    <option value="En camino" ${selectedEncamino}>🛵 En camino</option>
-                    <option value="Entregado" ${selectedEntregado}>✅ Entregado</option>
-                    <option value="Cancelado" ${selectedCancelado}>❌ Cancelado</option>
-                </select>
+                ${selectHTML}
             </td>
             <td onclick="event.stopPropagation()">
                 <button class="btn-icon" title="Ver detalle" onclick="verDetallePedido(${p.ID_pedido})">
@@ -363,6 +371,17 @@ function renderizarTabla(pedidos) {
 
         tbody.appendChild(tr);
     });
+}
+
+// Función de ayuda para escapar HTML y prevenir XSS
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 // ── VISTA TARJETAS — KANBAN ──────────────
