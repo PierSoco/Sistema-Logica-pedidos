@@ -102,6 +102,10 @@ if (isset($_GET['action'])) {
         default:
             echo json_encode(['error' => 'Acción no válida']);
             break;
+        // Agregar este case en el switch principal
+        case 'resendResetEmail':
+            procesarResendResetEmail($pdo);
+            break;
     }
     exit;
 }
@@ -1217,13 +1221,11 @@ function enviarFormularioContacto() {
     $asunto   = trim(strip_tags($data['asunto']   ?? ''));
     $mensaje  = trim(strip_tags($data['mensaje']  ?? ''));
 
-    // Validación básica
     if (!$nombre || !$email || !$asunto || !$mensaje) {
         echo json_encode(['success' => false, 'mensaje' => 'Faltan campos obligatorios.']);
         return;
     }
 
-    // Asuntos permitidos
     $asuntosValidos = ['Consulta general', 'Solicitar información', 'Contratar servicio', 'Soporte técnico', 'Otro'];
     if (!in_array($asunto, $asuntosValidos)) {
         echo json_encode(['success' => false, 'mensaje' => 'Asunto no válido.']);
@@ -1235,50 +1237,69 @@ function enviarFormularioContacto() {
     $fechaEnvio    = date('d/m/Y \a \l\a\s H:i') . 'hs';
     $mensajeHtml   = nl2br(htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8'));
 
-    // HELPER: fila de dato para tablas HTML
+    // ── LOGO (URL pública de tu imagen) ──────────────────────────────
+    $logoUrl = 'https://zatmeni.ar/zple/assets/img/logo.png'; // ← ajustá la ruta
+
+    // ── HELPER: fila de dato ──────────────────────────────────────────
     function emailRow($label, $value) {
         return '
         <tr>
           <td style="padding:10px 0;border-bottom:1px solid #1e2235;width:130px;vertical-align:top;">
-            <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#454b6b;">'
+            <span style="font-family:Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#454b6b;">'
             . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>
           </td>
           <td style="padding:10px 0;border-bottom:1px solid #1e2235;vertical-align:top;">
-            <span style="font-size:14px;color:#eef0f8;">'
+            <span style="font-family:Arial,sans-serif;font-size:14px;color:#eef0f8;">'
             . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '</span>
           </td>
         </tr>';
     }
 
-    // Wrapper HTML base
-    $baseWrap = '
-    <div style="background:#0a0c12;margin:0;padding:0;font-family:\'DM Sans\',Arial,sans-serif;">
+    // ── WRAPPER BASE ──────────────────────────────────────────────────
+    $baseWrap = '<!DOCTYPE html>
+    <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+    <body style="margin:0;padding:0;background:#0a0c12;font-family:Arial,sans-serif;">
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0c12;min-height:100vh;">
     <tr><td align="center" style="padding:40px 16px;">';
-    $baseWrapClose = '</td></tr></table></div>';
+    $baseWrapClose = '</td></tr></table></body></html>';
 
-    // ── CORREO INTERNO ────────────────────────────────────────────
-    $destinatarioInterno = 'info@zatmeni.ar'; // ← Cambiar por el correo de destino
+    // ── HEADER con logo ───────────────────────────────────────────────
+    function emailHeader($logoUrl, $accentColor, $accentAlpha, $accentBorder) {
+        return '
+        <tr>
+          <td style="background:linear-gradient(135deg,' . $accentAlpha . ' 0%,rgba(245,166,35,.02) 100%);padding:0;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr><td style="height:3px;background:linear-gradient(90deg,transparent,' . $accentColor . ',transparent);"></td></tr>
+              <tr>
+                <td style="padding:32px 40px 24px;">
+                  <table cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="vertical-align:middle;">
+                        <!-- Logo imagen -->
+                        <img src="' . $logoUrl . '" width="40" height="40"
+                             alt="RepartoGO"
+                             style="display:block;border-radius:10px;border:0;"
+                             onerror="this.style.display=\'none\'">
+                      </td>
+                      <td style="vertical-align:middle;padding-left:10px;">
+                        <span style="font-family:Arial,sans-serif;font-size:17px;font-weight:800;color:#eef0f8;letter-spacing:-.02em;">Reparto<span style="color:#f5a623;">GO</span></span>
+                      </td>
+                    </tr>
+                  </table>';
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // CORREO INTERNO
+    // ════════════════════════════════════════════════════════════════
+    $destinatarioInterno = 'info@zatmeni.ar'; // ← tu correo destino
     $asuntoInterno       = "Nuevo contacto: {$asunto} — {$nombre}";
 
     $htmlInterno = $baseWrap . '
-      <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#10131e;border-radius:16px;border:1px solid #1a1f35;overflow:hidden;">
-        <tr>
-          <td style="background:linear-gradient(135deg,rgba(245,166,35,.18) 0%,rgba(245,166,35,.04) 100%);padding:0;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr><td style="height:3px;background:linear-gradient(90deg,transparent,#f5a623,transparent);"></td></tr>
-              <tr>
-                <td style="padding:36px 40px 28px;">
-                  <table cellpadding="0" cellspacing="0" border="0">
-                    <tr>
-                      <td style="background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);border-radius:10px;padding:8px 14px;">
-                        <span style="font-size:18px;">🚚</span>
-                        <span style="font-size:16px;font-weight:800;color:#eef0f8;letter-spacing:-.02em;vertical-align:middle;margin-left:6px;">Reparto<span style="color:#f5a623;">GO</span></span>
-                      </td>
-                    </tr>
-                  </table>
-                  <p style="margin:20px 0 0;font-size:22px;font-weight:800;color:#eef0f8;letter-spacing:-.02em;">💬 Nuevo mensaje de contacto</p>
-                  <p style="margin:8px 0 0;font-size:13px;color:#8891b8;line-height:1.6;">Se recibió una nueva consulta a través del formulario del sitio web.</p>
+      <table width="600" cellpadding="0" cellspacing="0" border="0"
+             style="max-width:600px;width:100%;background:#10131e;border-radius:16px;border:1px solid #1a1f35;overflow:hidden;mso-table-lspace:0;mso-table-rspace:0;">
+        ' . emailHeader($logoUrl, '#f5a623', 'rgba(245,166,35,.15)', 'rgba(245,166,35,.3)') . '
+                  <p style="margin:18px 0 4px;font-family:Arial,sans-serif;font-size:22px;font-weight:800;color:#eef0f8;letter-spacing:-.02em;">💬 Nuevo mensaje de contacto</p>
+                  <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;color:#8891b8;line-height:1.6;">Se recibió una nueva consulta a través del formulario del sitio web.</p>
                 </td>
               </tr>
             </table>
@@ -1286,30 +1307,37 @@ function enviarFormularioContacto() {
         </tr>
         <tr>
           <td style="padding:32px 40px;">
-            <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
+            <!-- Chip de asunto -->
+            <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
               <tr>
-                <td style="background:rgba(245,166,35,.14);border:1px solid rgba(245,166,35,.32);border-radius:999px;padding:6px 16px;">
-                  <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f5a623;">' . htmlspecialchars($asunto, ENT_QUOTES, 'UTF-8') . '</span>
+                <td style="background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.3);border-radius:999px;padding:6px 18px;">
+                  <span style="font-family:Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f5a623;">' . htmlspecialchars($asunto, ENT_QUOTES, 'UTF-8') . '</span>
                 </td>
               </tr>
             </table>
-            <p style="margin:0 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#f5a623;border-bottom:1px solid #1e2235;padding-bottom:10px;">Datos del remitente</p>
+
+            <!-- Datos remitente -->
+            <p style="margin:0 0 10px;font-family:Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#f5a623;border-bottom:1px solid #1e2235;padding-bottom:10px;">Datos del remitente</p>
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
               ' . emailRow('Nombre', $nombre) . emailRow('Email', $email) . emailRow('Teléfono', $telefonoLinea) . emailRow('Empresa', $empresaLinea) . '
             </table>
-            <p style="margin:0 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#f5a623;border-bottom:1px solid #1e2235;padding-bottom:10px;">Mensaje</p>
+
+            <!-- Mensaje -->
+            <p style="margin:0 0 10px;font-family:Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#f5a623;border-bottom:1px solid #1e2235;padding-bottom:10px;">Mensaje</p>
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
               <tr>
                 <td style="background:#0d1020;border:1px solid #1e2235;border-left:3px solid #f5a623;border-radius:0 10px 10px 0;padding:18px 20px;">
-                  <p style="margin:0;font-size:14px;color:#c8ceea;line-height:1.75;">' . $mensajeHtml . '</p>
+                  <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;color:#c8ceea;line-height:1.75;">' . $mensajeHtml . '</p>
                 </td>
               </tr>
             </table>
+
+            <!-- Botón responder -->
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
                 <td align="center">
                   <a href="mailto:' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '?subject=Re:%20' . rawurlencode($asunto) . '"
-                     style="display:inline-block;background:#f5a623;color:#0a0c12;font-size:14px;font-weight:700;text-decoration:none;padding:13px 32px;border-radius:10px;">
+                     style="display:inline-block;background:#f5a623;color:#0a0c12;font-family:Arial,sans-serif;font-size:14px;font-weight:700;text-decoration:none;padding:13px 32px;border-radius:10px;letter-spacing:.01em;">
                     ✉ Responder a ' . htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8') . '
                   </a>
                 </td>
@@ -1317,10 +1345,13 @@ function enviarFormularioContacto() {
             </table>
           </td>
         </tr>
+
+        <!-- Footer -->
         <tr>
-          <td style="background:#0d1020;border-top:1px solid #1e2235;padding:20px 40px;">
-            <p style="margin:0;font-size:11px;color:#454b6b;text-align:center;line-height:1.6;">
-              Enviado el ' . $fechaEnvio . ' · RepartoGO — Sistema de logística · <a href="https://zatmeni.ar" style="color:#f5a623;text-decoration:none;">zatmeni.ar</a>
+          <td style="background:#0d1020;border-top:1px solid #1e2235;padding:18px 40px;">
+            <p style="margin:0;font-family:Arial,sans-serif;font-size:11px;color:#454b6b;text-align:center;line-height:1.6;">
+              Enviado el ' . $fechaEnvio . ' &middot; RepartoGO &mdash; Sistema de logística &middot;
+              <a href="https://zatmeni.ar" style="color:#f5a623;text-decoration:none;">zatmeni.ar</a>
             </p>
           </td>
         </tr>
@@ -1331,37 +1362,29 @@ function enviarFormularioContacto() {
     $headersInterno .= "Reply-To: {$email}\r\n";
     $headersInterno .= "MIME-Version: 1.0\r\n";
     $headersInterno .= "Content-Type: text/html; charset=UTF-8\r\n";
+    $headersInterno .= "X-Mailer: PHP/" . phpversion() . "\r\n";
 
     $envioInterno = mail($destinatarioInterno, $asuntoInterno, $htmlInterno, $headersInterno);
 
-    // ── CORREO DE CONFIRMACIÓN AL USUARIO ────────────────────────
-    $asuntoConfirmacion = "Recibimos tu mensaje — RepartoGO";
+    // ════════════════════════════════════════════════════════════════
+    // CORREO DE CONFIRMACIÓN AL USUARIO
+    // ════════════════════════════════════════════════════════════════
+    $asuntoConfirmacion = "✅ Recibimos tu mensaje — RepartoGO";
 
     $htmlConfirmacion = $baseWrap . '
-      <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#10131e;border-radius:16px;border:1px solid #1a1f35;overflow:hidden;">
-        <tr>
-          <td style="background:linear-gradient(135deg,rgba(45,212,191,.12) 0%,rgba(45,212,191,.03) 100%);padding:0;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr><td style="height:3px;background:linear-gradient(90deg,transparent,#2dd4bf,transparent);"></td></tr>
-              <tr>
-                <td style="padding:36px 40px 28px;">
-                  <table cellpadding="0" cellspacing="0" border="0">
+      <table width="600" cellpadding="0" cellspacing="0" border="0"
+             style="max-width:600px;width:100%;background:#10131e;border-radius:16px;border:1px solid #1a1f35;overflow:hidden;">
+        ' . emailHeader($logoUrl, '#2dd4bf', 'rgba(45,212,191,.12)', 'rgba(45,212,191,.3)') . '
+                  <!-- Ícono check -->
+                  <table cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;">
                     <tr>
-                      <td style="background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);border-radius:10px;padding:8px 14px;">
-                        <span style="font-size:18px;">🚚</span>
-                        <span style="font-size:16px;font-weight:800;color:#eef0f8;letter-spacing:-.02em;vertical-align:middle;margin-left:6px;">Reparto<span style="color:#f5a623;">GO</span></span>
-                      </td>
-                    </tr>
-                  </table>
-                  <table cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
-                    <tr>
-                      <td style="background:rgba(45,212,191,.14);border:1px solid rgba(45,212,191,.3);border-radius:50%;width:52px;height:52px;text-align:center;vertical-align:middle;">
+                      <td style="background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.28);border-radius:50%;width:52px;height:52px;text-align:center;vertical-align:middle;">
                         <span style="font-size:24px;line-height:52px;">✅</span>
                       </td>
                     </tr>
                   </table>
-                  <p style="margin:16px 0 0;font-size:22px;font-weight:800;color:#eef0f8;letter-spacing:-.02em;">¡Mensaje recibido, ' . htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8') . '!</p>
-                  <p style="margin:8px 0 0;font-size:13px;color:#8891b8;line-height:1.6;">Gracias por contactarnos. Te responderemos a la brevedad posible.</p>
+                  <p style="margin:16px 0 4px;font-family:Arial,sans-serif;font-size:22px;font-weight:800;color:#eef0f8;letter-spacing:-.02em;">¡Mensaje recibido, ' . htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8') . '!</p>
+                  <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;color:#8891b8;line-height:1.6;">Gracias por contactarnos. Te responderemos a la brevedad posible.</p>
                 </td>
               </tr>
             </table>
@@ -1369,22 +1392,27 @@ function enviarFormularioContacto() {
         </tr>
         <tr>
           <td style="padding:32px 40px;">
-            <p style="margin:0 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#2dd4bf;border-bottom:1px solid #1e2235;padding-bottom:10px;">Resumen de tu consulta</p>
+            <!-- Resumen -->
+            <p style="margin:0 0 10px;font-family:Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#2dd4bf;border-bottom:1px solid #1e2235;padding-bottom:10px;">Resumen de tu consulta</p>
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
               ' . emailRow('Nombre', $nombre) . emailRow('Email', $email) . emailRow('Teléfono', $telefonoLinea) . emailRow('Empresa', $empresaLinea) . emailRow('Asunto', $asunto) . '
             </table>
-            <p style="margin:0 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#2dd4bf;border-bottom:1px solid #1e2235;padding-bottom:10px;">Tu mensaje</p>
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:32px;">
+
+            <!-- Mensaje del usuario -->
+            <p style="margin:0 0 10px;font-family:Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#2dd4bf;border-bottom:1px solid #1e2235;padding-bottom:10px;">Tu mensaje</p>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
               <tr>
                 <td style="background:#0d1020;border:1px solid #1e2235;border-left:3px solid #2dd4bf;border-radius:0 10px 10px 0;padding:18px 20px;">
-                  <p style="margin:0;font-size:14px;color:#c8ceea;line-height:1.75;">' . $mensajeHtml . '</p>
+                  <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;color:#c8ceea;line-height:1.75;">' . $mensajeHtml . '</p>
                 </td>
               </tr>
             </table>
+
+            <!-- Aviso de respuesta -->
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td style="background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.2);border-radius:12px;padding:18px 22px;">
-                  <p style="margin:0;font-size:13px;color:#8891b8;line-height:1.7;">
+                <td style="background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.18);border-radius:12px;padding:18px 22px;">
+                  <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;color:#8891b8;line-height:1.7;">
                     🕐 &nbsp;Nuestro equipo revisará tu mensaje y se pondrá en contacto a la brevedad.<br>
                     Si tenés alguna consulta urgente, podés responder directamente este correo.
                   </p>
@@ -1393,11 +1421,14 @@ function enviarFormularioContacto() {
             </table>
           </td>
         </tr>
+
+        <!-- Footer -->
         <tr>
-          <td style="background:#0d1020;border-top:1px solid #1e2235;padding:20px 40px;">
-            <p style="margin:0;font-size:11px;color:#454b6b;text-align:center;line-height:1.6;">
-              Este correo fue generado automáticamente · ' . $fechaEnvio . '<br>
-              RepartoGO — Sistema de logística · <a href="https://zatmeni.ar" style="color:#f5a623;text-decoration:none;">zatmeni.ar</a>
+          <td style="background:#0d1020;border-top:1px solid #1e2235;padding:18px 40px;">
+            <p style="margin:0;font-family:Arial,sans-serif;font-size:11px;color:#454b6b;text-align:center;line-height:1.6;">
+              Correo automático &middot; ' . $fechaEnvio . '<br>
+              RepartoGO &mdash; Sistema de logística &middot;
+              <a href="https://zatmeni.ar" style="color:#f5a623;text-decoration:none;">zatmeni.ar</a>
             </p>
           </td>
         </tr>
@@ -1407,6 +1438,7 @@ function enviarFormularioContacto() {
     $headersConfirmacion  = "From: RepartoGO <noreply@zatmeni.ar>\r\n";
     $headersConfirmacion .= "MIME-Version: 1.0\r\n";
     $headersConfirmacion .= "Content-Type: text/html; charset=UTF-8\r\n";
+    $headersConfirmacion .= "X-Mailer: PHP/" . phpversion() . "\r\n";
 
     mail($email, $asuntoConfirmacion, $htmlConfirmacion, $headersConfirmacion);
 
@@ -1420,51 +1452,105 @@ function enviarFormularioContacto() {
 // ==========================================
 function sendPasswordResetEmail($email, $token) {
     $resetLink = "https://zatmeni.ar/zple/restablecer.html?token=" . urlencode($token);
-    $to = $email;
-    $subject = "Recuperacion de Contrasena - RepartoGO";
-    
-    // Plantilla HTML con el diseño de tu web
-    $message = "
-    <html>
-    <head>
-      <title>Recuperar Contraseña</title>
-    </head>
-    <body style='font-family: Arial, sans-serif; background-color: #0f172a; padding: 30px; margin: 0;'>
-      <div style='max-width: 500px; margin: 0 auto; background-color: #1e293b; padding: 40px 30px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);'>
-        
-        <div style='font-size: 45px; margin-bottom: 10px;'>🚚</div>
-        <h1 style='color: #ffffff; margin: 0 0 5px 0; font-size: 28px;'>Reparto<em style='color: #3b82f6; font-style: normal;'>GO</em></h1>
-        <p style='color: #94a3b8; font-size: 14px; margin: 0 0 30px 0;'>Sistema de logística y gestión</p>
-        
-        <h2 style='color: #ffffff; font-size: 20px; margin-bottom: 15px;'>Recuperación de contraseña</h2>
-        
-        <p style='color: #cbd5e1; font-size: 16px; line-height: 1.5; margin-bottom: 30px;'>
-          Hola, hemos recibido una solicitud para restablecer tu contraseña. Hacé clic en el siguiente botón para crear una nueva. Si no fuiste vos, podés ignorar este correo sin problemas.
-        </p>
-        
-        <a href='" . $resetLink . "' style='background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px;'>
-          Restablecer mi contraseña
-        </a>
-        
-        <div style='margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;'>
-            <p style='color: #64748b; font-size: 12px; margin: 0;'>
-              Este enlace expirará en 30 minutos.<br>
-              &copy; " . date("Y") . " RepartoGO. Todos los derechos reservados.
-            </p>
-        </div>
+    $logoUrl   = 'https://zatmeni.ar/zple/assets/img/logo.png'; // ← ajustá la ruta
+    $anio      = date('Y');
 
-      </div>
-    </body>
-    </html>
-    ";
+    $subject = "🔑 Restablecer contraseña — RepartoGO";
 
-    // Cabeceras necesarias para enviar HTML
-    $headers  = "MIME-Version: 1.0\r\n";
-    $headers .= "Content-type: text/html; charset=UTF-8\r\n";
-    $headers .= "From: noreply@zatmeni.ar\r\n";
+    $message = '<!DOCTYPE html>
+    <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+    <body style="margin:0;padding:0;background:#0a0c12;font-family:Arial,sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0c12;min-height:100vh;">
+      <tr><td align="center" style="padding:40px 16px;">
 
-    // Enviamos el correo (quitamos el @ para poder ver errores en el log del servidor si falla)
-    return mail($to, $subject, $message, $headers);
+        <table width="520" cellpadding="0" cellspacing="0" border="0"
+               style="max-width:520px;width:100%;background:#10131e;border-radius:16px;border:1px solid #1a1f35;overflow:hidden;">
+
+          <!-- Barra superior amber -->
+          <tr><td style="height:3px;background:linear-gradient(90deg,transparent,#f5a623,transparent);"></td></tr>
+
+          <!-- Header con logo -->
+          <tr>
+            <td style="background:linear-gradient(135deg,rgba(245,166,35,.13) 0%,rgba(245,166,35,.02) 100%);padding:32px 40px 28px;">
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="vertical-align:middle;">
+                    <img src="' . $logoUrl . '" width="40" height="40" alt="RepartoGO"
+                         style="display:block;border-radius:10px;border:0;">
+                  </td>
+                  <td style="vertical-align:middle;padding-left:10px;">
+                    <span style="font-family:Arial,sans-serif;font-size:17px;font-weight:800;color:#eef0f8;letter-spacing:-.02em;">Reparto<span style="color:#f5a623;">GO</span></span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Ícono candado -->
+              <table cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;">
+                <tr>
+                  <td style="background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.28);border-radius:50%;width:52px;height:52px;text-align:center;vertical-align:middle;">
+                    <span style="font-size:24px;line-height:52px;">🔑</span>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:16px 0 4px;font-family:Arial,sans-serif;font-size:22px;font-weight:800;color:#eef0f8;letter-spacing:-.02em;">Restablecer contraseña</p>
+              <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;color:#8891b8;line-height:1.6;">Recibimos una solicitud para cambiar tu contraseña.</p>
+            </td>
+          </tr>
+
+          <!-- Cuerpo -->
+          <tr>
+            <td style="padding:32px 40px;">
+              <p style="margin:0 0 24px;font-family:Arial,sans-serif;font-size:14px;color:#c8ceea;line-height:1.75;">
+                Hacé clic en el siguiente botón para crear una nueva contraseña. Si no fuiste vos quien hizo esta solicitud, podés ignorar este correo sin problemas — tu cuenta sigue segura.
+              </p>
+
+              <!-- Botón CTA -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:28px;">
+                <tr>
+                  <td align="center">
+                    <a href="' . $resetLink . '"
+                       style="display:inline-block;background:#f5a623;color:#0a0c12;font-family:Arial,sans-serif;font-size:15px;font-weight:800;text-decoration:none;padding:14px 36px;border-radius:10px;letter-spacing:.01em;">
+                      Restablecer mi contraseña
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Aviso de expiración -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.18);border-radius:12px;padding:14px 18px;">
+                    <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#f87171;line-height:1.6;">
+                      ⏱ &nbsp;Este enlace expira en <strong>30 minutos</strong>. Si ya expiró, solicitá uno nuevo desde la pantalla de inicio de sesión.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#0d1020;border-top:1px solid #1e2235;padding:18px 40px;">
+              <p style="margin:0;font-family:Arial,sans-serif;font-size:11px;color:#454b6b;text-align:center;line-height:1.6;">
+                Correo automático · No respondas este mensaje<br>
+                &copy; ' . $anio . ' RepartoGO &mdash; <a href="https://zatmeni.ar" style="color:#f5a623;text-decoration:none;">zatmeni.ar</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td></tr>
+      </table>
+    </body></html>';
+
+    $headers  = "From: RepartoGO <noreply@zatmeni.ar>\r\n";
+    $headers .= "MIME-Version: 1.0\r\n";
+    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+    $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
+
+    return mail($email, $subject, $message, $headers);
 }
 
 function procesarForgotPassword($pdo) {
@@ -1971,5 +2057,93 @@ function marcarPedidoListo($pdo) {
         echo json_encode(['status' => 'success', 'message' => "Pedido #{$id} marcado como En camino", 'data' => ['id' => $id]]);
     } catch (PDOException $e) {
         echo json_encode(['status' => 'error', 'message' => 'Error', 'data' => ['error' => $e->getMessage()]]);
+    }
+}
+
+// ==========================================
+// REENVÍO DE CORREO DE RECUPERACIÓN
+// ==========================================
+
+function procesarResendResetEmail($pdo) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    $email = filter_var($data['email'] ?? '', FILTER_VALIDATE_EMAIL);
+    $ip = $_SERVER['REMOTE_ADDR'];
+    
+    // Validar formato de email
+    if (!$email) {
+        echo json_encode(['success' => false, 'error' => 'Por favor, ingresá un correo electrónico válido.']);
+        return;
+    }
+    
+    try {
+        // Verificar rate limit específico para reenvíos (más restrictivo)
+        $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM rate_limits WHERE ip_address = ? AND action_type = 'resend_reset' AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)");
+        $stmtCheck->execute([$ip]);
+        if ($stmtCheck->fetchColumn() >= 2) {
+            echo json_encode(['success' => false, 'error' => 'Demasiados intentos de reenvío. Esperá una hora para reintentar.']);
+            return;
+        }
+        
+        // Buscar el usuario por email
+        $stmt = $pdo->prepare("SELECT ID_usuario, Email FROM usuarios WHERE Email = :email AND activo = 1 LIMIT 1");
+        $stmt->execute([':email' => $email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$user) {
+            // No revelamos si el email existe o no por seguridad
+            echo json_encode(['success' => false, 'error' => 'No se encontró una cuenta con este correo electrónico.']);
+            return;
+        }
+        
+        // Buscar si existe un token válido no usado para este usuario
+        $stmtToken = $pdo->prepare("
+            SELECT id, token_hash, expires_at 
+            FROM password_resets 
+            WHERE user_id = :user_id 
+              AND used = 0 
+              AND expires_at > NOW()
+            ORDER BY created_at DESC 
+            LIMIT 1
+        ");
+        $stmtToken->execute([':user_id' => $user['ID_usuario']]);
+        $existingReset = $stmtToken->fetch(PDO::FETCH_ASSOC);
+        
+        $token = null;
+        
+        if ($existingReset) {
+            // Token válido existe, lo reutilizamos (pero no generamos uno nuevo)
+            // Para mantener la seguridad, mejor generamos uno nuevo pero marcamos el anterior como usado
+            $stmtUpdate = $pdo->prepare("UPDATE password_resets SET used = 1 WHERE id = :id");
+            $stmtUpdate->execute([':id' => $existingReset['id']]);
+        }
+        
+        // Generar nuevo token
+        $token = bin2hex(random_bytes(32));
+        $token_hash = hash('sha256', $token);
+        $expires_at = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+        
+        $stmtInsert = $pdo->prepare("
+            INSERT INTO password_resets (user_id, token_hash, expires_at, ip_request, created_at) 
+            VALUES (?, ?, ?, ?, NOW())
+        ");
+        $stmtInsert->execute([$user['ID_usuario'], $token_hash, $expires_at, $ip]);
+        
+        // Registrar rate limit
+        $stmtRate = $pdo->prepare("INSERT INTO rate_limits (ip_address, action_type) VALUES (?, 'resend_reset')");
+        $stmtRate->execute([$ip]);
+        
+        // Enviar el correo
+        $enviado = sendPasswordResetEmail($email, $token);
+        
+        if ($enviado) {
+            echo json_encode(['success' => true, 'mensaje' => 'Correo reenviado exitosamente. Revisá tu bandeja de entrada o carpeta de spam.']);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Error al enviar el correo. Intentá nuevamente más tarde.']);
+        }
+        
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'error' => 'Error del servidor: ' . $e->getMessage()]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'error' => 'Error inesperado: ' . $e->getMessage()]);
     }
 }

@@ -6,6 +6,8 @@ let totalPedidoActual = 0;
 let DATA_RECEPCION = { productos: [], pedidos: [], detalles: [], restaurante: null };
 let productoSeleccionadoTemporal = null;
 let stepActual = 1;
+let reenvioCooldown = false;
+let countdownInterval = null;
 const TOTAL_STEPS = 3;
 
 // ── AUTO-RECARGA: setTimeout encadenado — UNA sola instancia activa ──
@@ -2132,39 +2134,6 @@ function activarDropZones() {
     });
 }
 
-async function solicitarRecuperacion() {
-    const emailInput = document.getElementById('email-recuperacion');
-    const email = emailInput.value.trim();
-
-    if (!email) {
-        alert('Por favor, ingresá tu correo electrónico.');
-        return;
-    }
-
-    try {
-        // Asegurate de apuntar a la URL correcta de tu action
-        const response = await fetch('backend/funciones.php?action=forgotPassword', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email })
-        });
-
-        const data = await response.json();
-
-        if (data.success === false) {
-            // Si no existe el correo o hay otro error
-            alert(data.error); 
-        } else {
-            // Si todo salió bien
-            alert(data.mensaje);
-            emailInput.value = ''; // Limpiar el input
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Hubo un problema de conexión con el servidor.');
-    }
-}
-
 // Función para mostrar u ocultar la contraseña
 function togglePassword(inputId) {
     // Si la función recibe un ID (como en restablecer.html), usamos ese.
@@ -2291,3 +2260,146 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+
+// ==========================================
+// REENVÍO DE CORREO DE RECUPERACIÓN
+// ==========================================
+
+async function reenviarCorreo() {
+    const emailInput = document.getElementById('email-recuperacion');
+    const email = emailInput.value.trim();
+    const btnReenviar = document.getElementById('btn-reenviar');
+    const statusDiv = document.getElementById('resend-status');
+    
+    // Verificar cooldown
+    if (reenvioCooldown) {
+        mostrarStatusMessage('Por favor, esperá 30 segundos antes de reenviar.', 'info');
+        return;
+    }
+    
+    // Validar email
+    if (!email) {
+        mostrarStatusMessage('Ingresá tu correo electrónico primero.', 'error');
+        emailInput.focus();
+        return;
+    }
+    
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        mostrarStatusMessage('Ingresá un correo electrónico válido.', 'error');
+        emailInput.focus();
+        return;
+    }
+    
+    // Deshabilitar botón y mostrar loading
+    btnReenviar.disabled = true;
+    btnReenviar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Reenviando...';
+    statusDiv.style.display = 'none';
+    
+    try {
+        const response = await fetch('backend/funciones.php?action=resendResetEmail', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            mostrarStatusMessage(data.mensaje || 'Correo reenviado exitosamente. Revisá tu bandeja de entrada o spam.', 'success');
+            // Iniciar cooldown de 30 segundos
+            iniciarCooldown(30);
+        } else {
+            mostrarStatusMessage(data.error || 'No se pudo reenviar el correo. Verificá que el email esté registrado.', 'error');
+            btnReenviar.disabled = false;
+            btnReenviar.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Reenviar correo';
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarStatusMessage('Error de conexión. Intentá nuevamente más tarde.', 'error');
+        btnReenviar.disabled = false;
+        btnReenviar.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Reenviar correo';
+    }
+}
+
+function mostrarStatusMessage(mensaje, tipo) {
+    const statusDiv = document.getElementById('resend-status');
+    statusDiv.className = `status-message ${tipo}`;
+    statusDiv.innerHTML = `<i class="fa-solid ${tipo === 'success' ? 'fa-circle-check' : (tipo === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info')}"></i> ${mensaje}`;
+    statusDiv.style.display = 'block';
+    
+    // Auto-ocultar después de 5 segundos
+    setTimeout(() => {
+        if (statusDiv.style.display === 'block') {
+            statusDiv.style.display = 'none';
+        }
+    }, 5000);
+}
+
+function iniciarCooldown(segundos) {
+    reenvioCooldown = true;
+    const btnReenviar = document.getElementById('btn-reenviar');
+    const countdownDiv = document.getElementById('countdown-timer');
+    let tiempoRestante = segundos;
+    
+    if (countdownInterval) clearInterval(countdownInterval);
+    
+    countdownInterval = setInterval(() => {
+        tiempoRestante--;
+        
+        if (tiempoRestante <= 0) {
+            clearInterval(countdownInterval);
+            countdownDiv.innerHTML = '';
+            btnReenviar.disabled = false;
+            btnReenviar.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Reenviar correo';
+            reenvioCooldown = false;
+        } else {
+            countdownDiv.innerHTML = `⏱ Puedes reenviar en <span class="countdown">${tiempoRestante}</span> segundos`;
+            btnReenviar.disabled = true;
+            btnReenviar.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> Esperar...';
+        }
+    }, 1000);
+}
+
+// Modificar la función existente solicitarRecuperacion para que también inicie cooldown
+const solicitarRecuperacionOriginal = window.solicitarRecuperacion;
+window.solicitarRecuperacion = async function() {
+    const emailInput = document.getElementById('email-recuperacion');
+    const email = emailInput.value.trim();
+    const btnEnviar = document.getElementById('btn-enviar');
+    
+    if (!email) {
+        alert('Por favor, ingresá tu correo electrónico.');
+        return;
+    }
+    
+    btnEnviar.disabled = true;
+    btnEnviar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+    
+    try {
+        const response = await fetch('backend/funciones.php?action=forgotPassword', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success === false) {
+            mostrarStatusMessage(data.error, 'error');
+        } else {
+            mostrarStatusMessage(data.mensaje, 'success');
+            iniciarCooldown(30);
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarStatusMessage('Hubo un problema de conexión con el servidor.', 'error');
+    } finally {
+        btnEnviar.disabled = false;
+        btnEnviar.innerHTML = '<i class="fa-solid fa-envelope"></i> Enviar Enlace';
+    }
+};
