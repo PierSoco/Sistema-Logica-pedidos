@@ -7,6 +7,78 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
     <title>Recuperar Contraseña — RepartoGO</title>
+    <style>
+        /* Estilos adicionales para el reenvío */
+        .resend-section {
+            margin-top: 20px;
+            text-align: center;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .btn-resend {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-2);
+            padding: 10px 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: var(--r-sm);
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-resend:hover {
+            border-color: var(--amber);
+            color: var(--amber);
+            background: var(--amber-glow);
+        }
+        
+        .btn-resend:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .status-message {
+            font-size: 0.8rem;
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: var(--r-sm);
+            display: none;
+            text-align: center;
+        }
+        
+        .status-message.success {
+            background: var(--teal-glow);
+            border: 1px solid rgba(45,212,191,0.3);
+            color: var(--teal);
+            display: block;
+        }
+        
+        .status-message.error {
+            background: var(--red-glow);
+            border: 1px solid rgba(248,113,113,0.3);
+            color: var(--red);
+            display: block;
+        }
+        
+        .status-message.info {
+            background: var(--blue-glow);
+            border: 1px solid rgba(96,165,250,0.3);
+            color: var(--blue);
+            display: block;
+        }
+        
+        .countdown {
+            font-weight: 700;
+            color: var(--amber);
+        }
+    </style>
 </head>
 <body class="login-body">
 
@@ -36,10 +108,19 @@
                 <input type="email" id="email-recuperacion" placeholder="Ingresá tu correo" autocomplete="email">
             </div>
 
-            <button class="login-btn" onclick="solicitarRecuperacion()">
+            <button class="login-btn" id="btn-enviar" onclick="solicitarRecuperacion()">
                 <i class="fa-solid fa-envelope"></i>
                 Enviar Enlace
             </button>
+            
+            <div class="resend-section">
+                <button class="btn-resend" id="btn-reenviar" onclick="reenviarCorreo()">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    Reenviar correo
+                </button>
+                <div id="resend-status" class="status-message"></div>
+                <div id="countdown-timer" style="font-size: 0.75rem; color: var(--text-3); margin-top: 8px;"></div>
+            </div>
         </div>
 
         <div class="login-footer">
