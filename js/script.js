@@ -342,14 +342,12 @@ function renderizarTabla(pedidos) {
                 <span class="hist-total">$${parseFloat(p.Total).toFixed(2)}</span>
             </td>
             <td onclick="event.stopPropagation()">
-                <select class="select-estado"
-                        onchange="cambiarEstadoPedido(${p.ID_pedido}, this.value, this)"
-                        data-estado-original="${p.Estado}">
-                    <option value="Pendiente"  ${p.Estado==='Pendiente'  ?'selected':''}>⏳ Pendiente</option>
-                    <option value="Preparando" ${p.Estado==='Preparando' ?'selected':''}>👨‍🍳 Preparando</option>
-                    <option value="En camino"  ${p.Estado==='En camino'  ?'selected':''}>🛵 En camino</option>
-                    <option value="Entregado"  ${p.Estado==='Entregado'  ?'selected':''}>✅ Entregado</option>
-                    <option value="Cancelado"  ${p.Estado==='Cancelado'  ?'selected':''}>❌ Cancelado</option>
+                <select class="select-estado" onchange="cambiarEstadoPedido(${p.ID_pedido}, this.value, this)">
+                    <option value="Pendiente" ${selectedPendiente}>⏳ Pendiente</option>
+                    <option value="Preparando" ${selectedPreparando}>👨‍🍳 Preparando</option>
+                    <option value="En camino" ${selectedEncamino}>🛵 En camino</option>
+                    <option value="Entregado" ${selectedEntregado}>✅ Entregado</option>
+                    <option value="Cancelado" ${selectedCancelado}>❌ Cancelado</option>
                 </select>
             </td>
             <td onclick="event.stopPropagation()">
