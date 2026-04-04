@@ -1927,9 +1927,10 @@ tr.pedido-fila:hover .hist-id { text-decoration:underline; text-underline-offset
 .pc-actions { display:flex; gap:6px; }
 .pc-btn {
     width:28px; height:28px; border-radius:var(--r-sm);
-    border:1px solid var(--border); background:rgba(255,255,255,.04);
-    color:var(--text-3); font-size:.72rem; cursor:pointer;
+    border:1px solid var(--border); background:var(--red-glow);
+    color:var(--red); font-size:.72rem; cursor:pointer;
     display:flex; align-items:center; justify-content:center; transition:all .15s;
+    border-color: rgba(248,113,113,0.4);
 }
 .pc-btn:hover { border-color:var(--amber); color:var(--amber); background:var(--amber-glow); }
 .pc-btn.danger:hover { border-color:rgba(248,113,113,.4); color:var(--red); background:var(--red-glow); }
@@ -1995,10 +1996,12 @@ tr.pedido-fila:hover .hist-id { text-decoration:underline; text-underline-offset
     background:rgba(255,255,255,.1);
     border-radius:999px;
     padding:2px 8px;
-    font-size:.68rem;
+    font-size:1rem;
     font-weight:800;
     min-width:22px;
     text-align:center;
+    aspect-ratio: 1/1;
+    width: 30px;
 }
 .kanban-pendiente  { background:var(--amber-glow);          color:var(--amber);  border-bottom-color:var(--amber-border); }
 .kanban-pendiente  .kanban-col-badge { background:var(--amber); color:#0a0c12; }
@@ -2119,10 +2122,10 @@ tr.pedido-fila:hover .hist-id { text-decoration:underline; text-underline-offset
     <div class="app-wrapper">
 
         <header class="app-header">
-            <a href="index.html" class="brand">
-                <div class="brand-icon">🚚</div>
-                Reparto<em>GO</em>
-            </a>
+            <div class="brand"> 
+                <div class="brand-icon">🚚 </div>
+                Recep<em>ción</em>
+            </div>
             <div class="header-right">
                 <!-- USER DROPDOWN TRIGGER -->
                 <div class="user-menu-wrap" id="user-menu-wrap">
@@ -2398,8 +2401,6 @@ tr.pedido-fila:hover .hist-id { text-decoration:underline; text-underline-offset
             </section>
 
             <section id="panel-recepcionista" class="panel-section hidden">
-                <p class="panel-title">Recep<em>ción</em></p>
-                <p class="panel-subtitle">Gestión de ingresos y nuevos despachos.</p>
 
                 <div class="crud-container">
                     <div class="crud-header">
@@ -2943,24 +2944,32 @@ tr.pedido-fila:hover .hist-id { text-decoration:underline; text-underline-offset
         }
 
         /* Posiciona el panel bajo el trigger usando getBoundingClientRect */
-        function positionPanel(trigger) {
+       function positionPanel(trigger) {
             var panel = getPortalPanel();
             var rect = trigger.getBoundingClientRect();
-            var panelW = 170; // ancho mínimo del panel
+            var panelHeight = panel.offsetHeight;
+            var spaceBelow = window.innerHeight - rect.bottom;
+            var spaceAbove = rect.top;
 
             var left = rect.left;
-            var top  = rect.bottom + 6;
+            var top;
+            if (spaceBelow >= panelHeight + 6 || spaceBelow > spaceAbove) {
+                // Mostrar debajo
+                top = rect.bottom + 6;
+            } else {
+                // Mostrar arriba
+                top = rect.top - panelHeight - 6;
+            }
 
-            /* Evitar que se salga por la derecha */
+            // Ajuste horizontal para no salirse por la derecha
+            var panelW = 170;
             if (left + panelW > window.innerWidth - 8) {
                 left = rect.right - panelW;
             }
 
-            panel.style.position = 'fixed';
-            panel.style.left     = left + 'px';
-            panel.style.top      = top  + 'px';
+            panel.style.left = left + 'px';
+            panel.style.top = top + 'px';
             panel.style.minWidth = Math.max(rect.width, panelW) + 'px';
-            panel.style.zIndex   = '99999';
         }
 
         function openPortal(trigger) {

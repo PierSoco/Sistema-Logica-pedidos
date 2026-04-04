@@ -160,7 +160,6 @@ body::before {
 .brand {
     display: flex;
     align-items: center;
-    gap: 10px;
     font-family: var(--font-d);
     font-size: 1.25rem;
     font-weight: 800;
@@ -181,6 +180,7 @@ body::before {
     box-shadow: 0 4px 16px var(--amber-glow);
     transition: box-shadow 0.2s, transform 0.25s var(--ease-spring);
     flex-shrink: 0;
+    margin-right: 10px;
 }
 
 .brand:hover .brand-icon {
