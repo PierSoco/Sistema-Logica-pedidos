@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RepartoGO — Sistema de Logística y Pedidos</title>
+    <title>RepartoGO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://api.fontshare.com/v2/css?f[]=boska@200&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <!-- FAVICON CORREGIDO -->
+    <link rel="icon" type="image/png" href="/assets/img/favicon.png">
     <style>
         /* ── REVEAL ─────────────────────────────────── */
         .reveal {
@@ -415,6 +417,24 @@
         }
         .cf-select-dropdown li.selected i { color: var(--amber); }
 
+        /* ── LOGO NAVBAR (NUEVO) ─────────────────────── */
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: var(--amber-glow);
+            border: 1px solid var(--amber-border);
+            overflow: hidden;
+        }
+        .brand-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
         @media (max-width: 720px) {
             .footer-top { grid-template-columns: 1fr; gap: 32px; }
             .dash-wrap { height: 300px; }
@@ -436,7 +456,7 @@
     <!-- NAV -->
     <nav class="home-nav">
         <a href="index.html" class="brand">
-            <div class="brand-icon"><i class="fa-solid fa-truck"></i></div>
+            <div class="brand-icon"><img src="/assets/img/logo.png" alt="RepartoGO logo"></div>
             Reparto<em>GO</em>
         </a>
         <div style="display:flex;gap:12px;align-items:center;">
