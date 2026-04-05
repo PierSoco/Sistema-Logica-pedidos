@@ -361,7 +361,7 @@ function renderizarTabla(pedidos) {
                 ${selectHTML}
             </td>
             <td onclick="event.stopPropagation()">
-                <button class="btn-icon" title="Ver detalle" onclick="verDetallePedido(${p.ID_pedido})">
+                <button class="hist-btn-ver" title="Ver detalle" onclick="verDetallePedido(${p.ID_pedido})">
                     <i class="fa-solid fa-eye"></i>
                 </button>
                 <button class="btn-icon btn-danger" title="Cancelar" onclick="confirmarCancelarPedido(${p.ID_pedido})">
@@ -542,7 +542,10 @@ async function cambiarEstadoPedido(idPedido, nuevoEstado, selectEl) {
 // ==========================================
 async function verDetallePedido(idPedido) {
     const modal = document.getElementById('modal-detalle-pedido');
-    document.getElementById('detalle-pedido-titulo').textContent = `Pedido #${idPedido}`;
+    document.getElementById('detalle-pedido-titulo').innerHTML = `
+        <span class="titulo-pedido-texto">Pedido</span>
+        <span class="titulo-pedido-id"># ${idPedido}</span>
+    `;
     document.getElementById('detalle-pedido-contenido').innerHTML =
         '<p style="text-align:center;color:var(--text-3);padding:40px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</p>';
     modal.classList.add('visible');
