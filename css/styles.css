@@ -4407,3 +4407,39 @@ tr.pedido-fila:hover .hist-id { text-decoration: underline; text-underline-offse
 .titulo-pedido-id {
     color: var(--amber);
 }
+
+.bg-decorative {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+.bg-decorative i {
+    position: absolute;
+    color: rgba(100, 100, 100, 0.064);
+    font-size: 22vw; 
+    transition: all 0.5s ease;
+}
+.bg-decorative i:nth-child(1) {
+    font-size: 22vw; 
+}
+.bg-decorative i:nth-child(2) {
+    font-size: 22vw; 
+}
+
+.truck-1 {
+    top: 15%;  /* Antes 5% */
+    left: 8%;  /* Antes 2% */
+    transform: rotate(-12deg);
+    filter: blur(1px);
+}
+.delivery-bag {
+    bottom: 12%; /* Antes 5% */
+    right: 12%;  /* Antes 5% */
+    transform: rotate(10deg);
+    font-size: 18vw; 
+}
