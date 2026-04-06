@@ -7,8 +7,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://api.fontshare.com/v2/css?f[]=boska@200&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
-    <!-- FAVICON CORREGIDO -->
-    <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+    <!-- FAVICON CORREGIDO (ruta relativa) -->
+    <link rel="icon" type="image/png" href="assets/img/favicon.png">
+    <link rel="shortcut icon" href="assets/img/favicon.png">
     <style>
         /* ── REVEAL ─────────────────────────────────── */
         .reveal {
@@ -167,7 +168,13 @@
             width: 32px; height: 32px; border-radius: 8px;
             background: var(--amber-glow); border: 1px solid var(--amber-border);
             display: flex; align-items: center; justify-content: center;
-            color: var(--amber); font-size: 0.75rem; margin-bottom: 14px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+        .dash-sb-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
         .dash-sb-item {
             width: 36px; height: 36px; border-radius: 9px;
@@ -320,7 +327,12 @@
             width: 36px; height: 36px; border-radius: 9px;
             background: var(--amber-glow); border: 1px solid var(--amber-border);
             display: flex; align-items: center; justify-content: center;
-            color: var(--amber); font-size: 0.9rem;
+            overflow: hidden;
+        }
+        .footer-brand-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
         .footer-brand-logo em { color: var(--amber); font-style: normal; }
         .footer-tagline { font-size: 0.88rem; color: var(--text-2); line-height: 1.7; max-width: 280px; margin-bottom: 20px; }
@@ -456,7 +468,7 @@
     <!-- NAV -->
     <nav class="home-nav">
         <a href="index.html" class="brand">
-            <div class="brand-icon"><img src="/assets/img/logo.png" alt="RepartoGO logo"></div>
+            <div class="brand-icon"><img src="assets/img/logo.png" alt="RepartoGO logo"></div>
             Reparto<em>GO</em>
         </a>
         <div style="display:flex;gap:12px;align-items:center;">
@@ -521,7 +533,7 @@
             <div class="dash-wrap">
                 <!-- Sidebar icons -->
                 <div class="dash-sidebar">
-                    <div class="dash-sb-logo"><i class="fa-solid fa-truck"></i></div>
+                    <div class="dash-sb-logo"><img src="assets/img/logo.png" alt="logo"></div>
                     <div class="dash-sb-item active"><i class="fa-solid fa-chart-line"></i></div>
                     <div class="dash-sb-item"><i class="fa-solid fa-receipt"></i></div>
                     <div class="dash-sb-item"><i class="fa-solid fa-motorcycle"></i></div>
@@ -770,7 +782,7 @@
             <div class="footer-top">
                 <div>
                     <a href="index.html" class="footer-brand-logo">
-                        <div class="footer-brand-icon"><i class="fa-solid fa-truck"></i></div>
+                        <div class="footer-brand-icon"><img src="assets/img/logo.png" alt="logo"></div>
                         Reparto<em>GO</em>
                     </a>
                     <p class="footer-tagline">
@@ -1130,12 +1142,13 @@
         });
     })();
 
-    
+    function showFeedback(type, html) {
         const fb = document.getElementById('cf-feedback');
         fb.className    = 'cf-feedback cf-feedback--' + type;
         fb.innerHTML    = html;
         fb.style.display = 'flex';
         fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
     </script>
 </body>
 </html>
