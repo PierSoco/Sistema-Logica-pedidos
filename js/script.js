@@ -2423,3 +2423,542 @@ window.solicitarRecuperacion = async function() {
         btnEnviar.innerHTML = '<i class="fa-solid fa-envelope"></i> Enviar Enlace';
     }
 };
+
+/* ═══════════════════════════════════════════════════════════════════
+   DASHBOARD.HTML — CUSTOM ESTADO DROPDOWN COMPONENT
+   - Un solo menú abierto a la vez
+   - Cierre al clickear fuera
+   - Panel en portal (body) para evitar overflow:hidden
+═══════════════════════════════════════════════════════════════════ */
+(function () {
+    'use strict';
+
+    var ESTADOS = ['Pendiente', 'Preparando', 'En camino', 'Entregado', 'Cancelado'];
+
+    var portalPanel = null;
+    var activeTrigger = null;
+
+    function getPortalPanel() {
+        if (!portalPanel) {
+            portalPanel = document.createElement('div');
+            portalPanel.className = 'custom-estado-panel';
+            portalPanel.setAttribute('role', 'listbox');
+            portalPanel.innerHTML = '<div class="cep-title">Cambiar estado</div>';
+
+            ESTADOS.forEach(function(val) {
+                var opt = document.createElement('div');
+                opt.className = 'cep-option';
+                opt.dataset.val = val;
+                opt.setAttribute('role', 'option');
+                opt.innerHTML =
+                    '<span class="cep-dot"></span>' +
+                    '<span>' + val + '</span>' +
+                    '<i class="fa-solid fa-check cep-check"></i>';
+                opt.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (activeTrigger) activeTrigger._selectOption(val);
+                    closePortal();
+                });
+                portalPanel.appendChild(opt);
+            });
+
+            document.body.appendChild(portalPanel);
+        }
+        return portalPanel;
+    }
+
+    function positionPanel(trigger) {
+        var panel = getPortalPanel();
+        var rect = trigger.getBoundingClientRect();
+        var panelHeight = panel.offsetHeight;
+        var spaceBelow = window.innerHeight - rect.bottom;
+        var spaceAbove = rect.top;
+
+        var left = rect.left;
+        var top;
+        if (spaceBelow >= panelHeight + 6 || spaceBelow > spaceAbove) {
+            top = rect.bottom + 6;
+        } else {
+            top = rect.top - panelHeight - 6;
+        }
+
+        var panelW = 170;
+        if (left + panelW > window.innerWidth - 8) {
+            left = rect.right - panelW;
+        }
+
+        panel.style.left = left + 'px';
+        panel.style.top = top + 'px';
+        panel.style.minWidth = Math.max(rect.width, panelW) + 'px';
+    }
+
+    function openPortal(trigger) {
+        if (activeTrigger && activeTrigger !== trigger) {
+            activeTrigger.classList.remove('open');
+            activeTrigger.setAttribute('aria-expanded', 'false');
+        }
+
+        activeTrigger = trigger;
+        var panel = getPortalPanel();
+        var currentVal = trigger.dataset.val;
+
+        panel.querySelectorAll('.cep-option').forEach(function(opt) {
+            var sel = opt.dataset.val === currentVal;
+            opt.classList.toggle('selected', sel);
+            opt.setAttribute('aria-selected', sel ? 'true' : 'false');
+        });
+
+        positionPanel(trigger);
+        trigger.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+
+        panel.classList.remove('visible');
+        panel.offsetHeight;
+        panel.classList.add('visible');
+    }
+
+    function closePortal() {
+        if (activeTrigger) {
+            activeTrigger.classList.remove('open');
+            activeTrigger.setAttribute('aria-expanded', 'false');
+            activeTrigger = null;
+        }
+        var panel = getPortalPanel();
+        panel.classList.remove('visible');
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!activeTrigger) return;
+        var panel = getPortalPanel();
+        if (!panel.contains(e.target) && e.target !== activeTrigger && !activeTrigger.contains(e.target)) {
+            closePortal();
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closePortal();
+    });
+
+    window.addEventListener('scroll', function() {
+        if (activeTrigger) positionPanel(activeTrigger);
+    }, true);
+    window.addEventListener('resize', function() {
+        if (activeTrigger) positionPanel(activeTrigger);
+    });
+
+    function buildDropdown(nativeSelect) {
+        var currentVal = nativeSelect.value || 'Pendiente';
+
+        var wrap = document.createElement('div');
+        wrap.className = 'custom-estado-wrap';
+
+        var trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'custom-estado-trigger';
+        trigger.dataset.val = currentVal;
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.innerHTML =
+            '<span class="cet-dot"></span>' +
+            '<span class="cet-label">' + currentVal + '</span>' +
+            '<svg class="cet-chevron" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+            '<path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '</svg>';
+
+        trigger._selectOption = function(val) {
+            nativeSelect.value = val;
+            nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            trigger.dataset.val = val;
+            trigger.querySelector('.cet-label').textContent = val;
+        };
+
+        trigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (activeTrigger === trigger && getPortalPanel().classList.contains('visible')) {
+                closePortal();
+            } else {
+                openPortal(trigger);
+            }
+        });
+
+        wrap.appendChild(trigger);
+        return wrap;
+    }
+
+    function initDropdowns() {
+        document.querySelectorAll('.select-estado, .pc-select-estado').forEach(function(sel) {
+            if (sel.dataset.customInit) return;
+            sel.dataset.customInit = 'true';
+            var wrap = buildDropdown(sel);
+            sel.parentNode.insertBefore(wrap, sel.nextSibling);
+        });
+    }
+
+    /* Solo inicializar si estamos en dashboard.html */
+    if (document.querySelector('.select-estado, .pc-select-estado, #panel-recepcionista')) {
+        initDropdowns();
+        var observer = new MutationObserver(initDropdowns);
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   INDEX.HTML — CANVAS PARALLAX (nodos flotantes + líneas)
+═══════════════════════════════════════════════════════════════════ */
+(function () {
+    const canvas = document.getElementById('bg-canvas');
+    if (!canvas) return; // solo en index.html
+
+    const ctx = canvas.getContext('2d');
+    let W, H;
+    const mouse = { x: null, y: null };
+    let nodes = [];
+
+    function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+    }
+
+    const SHAPES = ['circle','circle','circle','hex','hex','cross','ring'];
+    const COLORS = [
+        '#f5a623','#f5a623','#f5a623',
+        '#2dd4bf','#2dd4bf',
+        'rgba(255,255,255,0.8)','rgba(255,255,255,0.8)',
+        '#60a5fa','#a78bfa'
+    ];
+
+    function mkNodes(n) {
+        return Array.from({ length: n }, (_, i) => ({
+            x:        Math.random() * (window.innerWidth  || 1200),
+            y:        Math.random() * (window.innerHeight * 3 || 2400),
+            r:        Math.random() * 2.2 + 0.5,
+            drift:    Math.random() * 0.018 + 0.004,
+            parallax: Math.random() * 0.55 + 0.08,
+            opacity:  Math.random() * 0.55 + 0.15,
+            shape:    SHAPES[i % SHAPES.length],
+            color:    COLORS[i % COLORS.length],
+            pulseSpeed: Math.random() * 0.02 + 0.008,
+            pulseOffset: Math.random() * Math.PI * 2,
+        }));
+    }
+
+    function hexPath(cx, cy, r) {
+        ctx.beginPath();
+        for (let k = 0; k < 6; k++) {
+            const a = (Math.PI / 3) * k - Math.PI / 6;
+            k === 0
+                ? ctx.moveTo(cx + r * Math.cos(a), cy + r * Math.sin(a))
+                : ctx.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+        }
+        ctx.closePath();
+    }
+
+    function crossPath(cx, cy, r) {
+        ctx.beginPath();
+        ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy);
+        ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r);
+    }
+
+    let tick = 0;
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+        const sy = window.scrollY;
+        tick++;
+
+        nodes.forEach((n, i) => {
+            const vy = n.y - sy * n.parallax;
+
+            if (mouse.x !== null) {
+                n.x += (mouse.x - n.x) * 0.00014;
+                n.y += (mouse.y - vy)  * 0.00014;
+            }
+            n.y -= n.drift;
+            if (n.y < -60) n.y = H * 3;
+            if (vy < -60 || vy > H + 60) return;
+
+            const pulse = 1 + 0.25 * Math.sin(tick * n.pulseSpeed + n.pulseOffset);
+            const alpha = Math.min(n.opacity * pulse, 0.95);
+
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle   = n.color;
+            ctx.strokeStyle = n.color;
+
+            if (n.shape === 'hex') {
+                const hr = n.r * 4.5;
+                hexPath(n.x, vy, hr);
+                ctx.lineWidth   = 0.8;
+                ctx.stroke();
+                ctx.globalAlpha = alpha * 0.12;
+                ctx.fill();
+            } else if (n.shape === 'ring') {
+                ctx.beginPath();
+                ctx.arc(n.x, vy, n.r * 3.5, 0, Math.PI * 2);
+                ctx.lineWidth   = 0.6;
+                ctx.globalAlpha = alpha * 0.5;
+                ctx.stroke();
+            } else if (n.shape === 'cross') {
+                crossPath(n.x, vy, n.r * 3);
+                ctx.lineWidth   = 0.7;
+                ctx.globalAlpha = alpha * 0.55;
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.arc(n.x, vy, n.r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            if (i % 2 === 0) {
+                for (let j = i + 1; j < Math.min(i + 12, nodes.length); j++) {
+                    const b   = nodes[j];
+                    const bvy = b.y - sy * b.parallax;
+                    const dx  = n.x - b.x;
+                    const dy  = vy  - bvy;
+                    const d   = Math.sqrt(dx * dx + dy * dy);
+                    if (d < 180) {
+                        ctx.beginPath();
+                        ctx.moveTo(n.x, vy);
+                        ctx.lineTo(b.x, bvy);
+                        const lineAlpha = (1 - d / 180) * 0.11;
+                        ctx.strokeStyle = n.color === '#f5a623' || b.color === '#f5a623'
+                            ? `rgba(245,166,35,${lineAlpha})`
+                            : n.color === '#2dd4bf' || b.color === '#2dd4bf'
+                            ? `rgba(45,212,191,${lineAlpha * 0.8})`
+                            : `rgba(255,255,255,${lineAlpha * 0.5})`;
+                        ctx.lineWidth   = 0.5;
+                        ctx.globalAlpha = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+        });
+
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(draw);
+    }
+
+    resize();
+    nodes = mkNodes(160);
+    draw();
+
+    window.addEventListener('resize',    resize);
+    window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   INDEX.HTML — SCROLL REVEAL
+═══════════════════════════════════════════════════════════════════ */
+(function () {
+    if (!document.querySelector('.reveal')) return;
+
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach((e, i) => {
+            if (e.isIntersecting) {
+                e.target.style.transitionDelay = (i * 0.06) + 's';
+                e.target.classList.add('visible');
+                io.unobserve(e.target);
+            }
+        });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   INDEX.HTML — ANIMATED COUNTERS
+═══════════════════════════════════════════════════════════════════ */
+(function () {
+    if (!document.querySelector('.stats-row')) return;
+
+    const counterObs = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            entry.target.querySelectorAll('[data-target]').forEach(el => {
+                const target = parseInt(el.dataset.target);
+                const suffix = el.dataset.suffix || '';
+                let current  = 0;
+                const inc    = target / (1400 / 16);
+                const t = setInterval(() => {
+                    current += inc;
+                    if (current >= target) {
+                        el.textContent = target.toLocaleString('es-AR') + suffix;
+                        clearInterval(t);
+                    } else {
+                        el.textContent = Math.floor(current).toLocaleString('es-AR');
+                    }
+                }, 16);
+            });
+            counterObs.unobserve(entry.target);
+        });
+    }, { threshold: 0.3 });
+    document.querySelectorAll('.stats-row').forEach(el => counterObs.observe(el));
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   INDEX.HTML — FEATURE CARD 3D TILT
+═══════════════════════════════════════════════════════════════════ */
+(function () {
+    const cards = document.querySelectorAll('.feature-card');
+    if (!cards.length) return;
+
+    cards.forEach(card => {
+        card.addEventListener('mousemove', e => {
+            const r = card.getBoundingClientRect();
+            const x = (e.clientX - r.left)  / r.width  - 0.5;
+            const y = (e.clientY - r.top)   / r.height - 0.5;
+            card.style.transform  = `translateY(-5px) rotateY(${x*6}deg) rotateX(${-y*6}deg)`;
+            card.style.transition = 'transform 0.1s';
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform  = '';
+            card.style.transition = 'transform 0.4s cubic-bezier(0.16,1,0.3,1)';
+        });
+    });
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   INDEX.HTML — MOCKUP LIVE (nuevo pedido cada 5s)
+═══════════════════════════════════════════════════════════════════ */
+(function () {
+    const col = document.getElementById('col-nuevo-cards');
+    if (!col) return;
+
+    const fakeNames   = ['Herrera, Diego','Ruiz, Paola','Castro, Esteban','Gomez, Nico','Varela, Nadia','Ortiz, Fabio','Acosta, Sol'];
+    const fakeStreets = ['Roca 224','Alvear 1100','Urquiza 890','25 de Mayo 77','Brown 540','Paz 333','Moreno 1500'];
+    let orderNum = 48;
+    let newCount = 3;
+
+    setInterval(() => {
+        orderNum++; newCount++;
+        const card = document.createElement('div');
+        card.className = 'dash-order-card card-animate';
+        card.innerHTML = `
+            <div class="doc-num">#${orderNum}</div>
+            <div class="doc-name">${fakeNames[Math.floor(Math.random()*fakeNames.length)]}</div>
+            <div class="doc-addr"><i class="fa-solid fa-location-dot" style="font-size:.5rem;color:var(--text-3)"></i> ${fakeStreets[Math.floor(Math.random()*fakeStreets.length)]}</div>
+            <div class="doc-time"><i class="fa-regular fa-clock"></i> ahora</div>`;
+        col.insertBefore(card, col.firstChild);
+        if (col.children.length > 3) col.removeChild(col.lastChild);
+        const cntNuevo = document.getElementById('cnt-nuevo');
+        const mcNuevos = document.getElementById('mc-nuevos');
+        if (cntNuevo) cntNuevo.textContent = Math.min(newCount, 9);
+        if (mcNuevos) mcNuevos.textContent = Math.min(newCount, 9);
+    }, 5000);
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   INDEX.HTML — VER DEMO → scroll to mockup
+═══════════════════════════════════════════════════════════════════ */
+(function () {
+    const btn = document.getElementById('ver-demo-btn');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+        document.querySelector('.hero-mockup').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   INDEX.HTML — FORMULARIO CONTACTO
+═══════════════════════════════════════════════════════════════════ */
+(function () {
+    const form = document.getElementById('contactForm');
+    if (!form) return;
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn      = document.getElementById('cf-submit-btn');
+        const nombre   = document.getElementById('cf-nombre').value.trim();
+        const email    = document.getElementById('cf-email').value.trim();
+        const asunto   = document.getElementById('cf-asunto').value;
+        const mensaje  = document.getElementById('cf-mensaje').value.trim();
+        const telefono = document.getElementById('cf-telefono').value.trim();
+        const empresa  = document.getElementById('cf-empresa').value.trim();
+
+        if (!nombre || !email || !asunto || !mensaje) {
+            showFeedback('error','<i class="fa-solid fa-circle-exclamation"></i> Por favor completá todos los campos obligatorios.');
+            return;
+        }
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Enviando…';
+        try {
+            const res  = await fetch('backend/funciones.php?action=enviarContacto', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre, email, telefono, empresa, asunto, mensaje })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showFeedback('success','<i class="fa-solid fa-circle-check"></i> ¡Mensaje enviado! Te enviamos una confirmación a tu correo.');
+                form.reset();
+            } else {
+                showFeedback('error','<i class="fa-solid fa-circle-exclamation"></i> ' + (data.mensaje || 'Ocurrió un error.'));
+            }
+        } catch {
+            showFeedback('error','<i class="fa-solid fa-circle-exclamation"></i> Error de conexión.');
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar mensaje';
+    });
+
+    function showFeedback(type, html) {
+        const fb = document.getElementById('cf-feedback');
+        fb.className    = 'cf-feedback cf-feedback--' + type;
+        fb.innerHTML    = html;
+        fb.style.display = 'flex';
+        fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   INDEX.HTML — CUSTOM SELECT #cf-asunto
+═══════════════════════════════════════════════════════════════════ */
+(function () {
+    const trigger  = document.getElementById('cf-asunto-trigger');
+    if (!trigger) return;
+
+    const dropdown = document.getElementById('cf-asunto-list');
+    const display  = document.getElementById('cf-asunto-display');
+    const hidden   = document.getElementById('cf-asunto');
+
+    display.classList.add('placeholder');
+
+    trigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const open = trigger.getAttribute('aria-expanded') === 'true';
+        trigger.setAttribute('aria-expanded', !open);
+        dropdown.classList.toggle('open', !open);
+    });
+
+    dropdown.querySelectorAll('li').forEach(li => {
+        li.addEventListener('click', function() {
+            const val = this.dataset.value;
+            hidden.value = val;
+            display.textContent = val;
+            display.classList.remove('placeholder');
+            dropdown.querySelectorAll('li').forEach(l => l.classList.remove('selected'));
+            this.classList.add('selected');
+            trigger.setAttribute('aria-expanded', 'false');
+            dropdown.classList.remove('open');
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!document.getElementById('cf-asunto-wrap').contains(e.target)) {
+            trigger.setAttribute('aria-expanded', 'false');
+            dropdown.classList.remove('open');
+        }
+    });
+
+    trigger.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') { trigger.click(); e.preventDefault(); }
+        if (e.key === 'Escape') {
+            trigger.setAttribute('aria-expanded', 'false');
+            dropdown.classList.remove('open');
+        }
+    });
+})();
