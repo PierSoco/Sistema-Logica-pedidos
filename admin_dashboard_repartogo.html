@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+  
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --amber:#BA7517;--amber-bg:#FAEEDA;--amber-light:#FAC775;
+    --teal:#0F6E56;--teal-bg:#E1F5EE;--teal-mid:#1D9E75;
+    --blue:#185FA5;--blue-bg:#E6F1FB;--blue-mid:#378ADD;
+    --red:#A32D2D;--red-bg:#FCEBEB;--red-mid:#E24B4A;
+    --green:#3B6D11;--green-bg:#EAF3DE;--green-mid:#639922;
+    --purple:#534AB7;--purple-bg:#EEEDFE;--purple-mid:#7F77DD;
+    --coral:#993C1D;--coral-bg:#FAECE7;--coral-mid:#D85A30;
+  }
+  body{font-family:var(--font-sans,system-ui,sans-serif);font-size:13px;background:transparent;color:var(--color-text-primary)}
+  
+  .adm-wrap{display:flex;height:620px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;background:var(--color-background-primary)}
+  
+  /* SIDEBAR */
+  .adm-sidebar{width:180px;flex-shrink:0;border-right:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);display:flex;flex-direction:column;overflow-y:auto}
+  .adm-brand{padding:14px 12px 10px;font-size:14px;font-weight:500;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
+  .adm-brand span{font-size:10px;font-weight:400;color:var(--color-text-secondary);display:block;margin-top:1px}
+  .adm-section{font-size:10px;font-weight:500;color:var(--color-text-tertiary);padding:10px 12px 4px;letter-spacing:.06em;text-transform:uppercase}
+  .adm-nav{display:flex;flex-direction:column;gap:1px;padding:0 6px}
+  .adm-btn{display:flex;align-items:center;gap:7px;padding:7px 8px;border:none;background:none;cursor:pointer;border-radius:var(--border-radius-md);font-size:12px;color:var(--color-text-secondary);text-align:left;width:100%;transition:background .15s}
+  .adm-btn:hover{background:var(--color-background-primary);color:var(--color-text-primary)}
+  .adm-btn.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:500}
+  .adm-btn.active .nav-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0}
+  .nav-icon{font-size:13px;width:16px;text-align:center;flex-shrink:0}
+  .nav-badge{margin-left:auto;background:var(--red-bg);color:var(--red);font-size:10px;font-weight:500;padding:1px 5px;border-radius:20px}
+  
+  /* MAIN */
+  .adm-main{flex:1;overflow-y:auto;background:var(--color-background-tertiary)}
+  
+  /* PANELS */
+  .panel{display:none;padding:16px;animation:fadeIn .15s ease}
+  .panel.active{display:block}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  
+  /* PANEL HEADER */
+  .ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .ph-title{font-size:16px;font-weight:500;color:var(--color-text-primary)}
+  .ph-sub{font-size:11px;color:var(--color-text-secondary);margin-top:1px}
+  .ph-badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:500}
+  .badge-live{background:var(--teal-bg);color:var(--teal)}
+  
+  /* KPI GRID */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+  .kpi-grid-3{grid-template-columns:repeat(3,1fr)}
+  .kpi-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;position:relative;overflow:hidden}
+  .kpi-bar{position:absolute;left:0;top:0;bottom:0;width:3px}
+  .kpi-label{font-size:10px;color:var(--color-text-secondary);margin-bottom:4px}
+  .kpi-val{font-size:20px;font-weight:500;color:var(--color-text-primary);line-height:1}
+  .kpi-sub{font-size:10px;color:var(--color-text-secondary);margin-top:3px}
+  .kpi-trend{font-size:10px;font-weight:500}
+  .up{color:var(--green)}
+  .down{color:var(--red)}
+  
+  /* STATUS PILLS */
+  .estado-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:14px}
+  .estado-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 8px;text-align:center}
+  .estado-num{font-size:22px;font-weight:500}
+  .estado-label{font-size:10px;color:var(--color-text-secondary);margin-top:2px}
+  .s-pend{color:var(--amber)}
+  .s-prep{color:var(--blue)}
+  .s-cam{color:var(--purple)}
+  .s-entr{color:var(--green)}
+  .s-canc{color:var(--red)}
+  
+  /* SECTION CARD */
+  .sec-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px;margin-bottom:10px}
+  .sec-title{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+  .sec-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  
+  /* REPARTIDORES */
+  .rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .rep-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-secondary)}
+  .rep-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+  .rep-name{font-size:11px;font-weight:500;color:var(--color-text-primary)}
+  .rep-status{font-size:10px}
+  .rep-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+  .status-disp{background:var(--green-bg);color:var(--green)}
+  .status-ocup{background:var(--amber-bg);color:var(--amber)}
+  .status-desc{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+  
+  /* ALERTAS */
+  .alert-item{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:var(--border-radius-md);margin-bottom:6px;border-left:3px solid}
+  .alert-red{background:var(--red-bg);border-color:var(--red-mid)}
+  .alert-amber{background:var(--amber-bg);border-color:var(--amber-light)}
+  .alert-blue{background:var(--blue-bg);border-color:var(--blue-mid)}
+  .alert-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+  .alert-text{font-size:11px}
+  .alert-title{font-weight:500;color:var(--color-text-primary);margin-bottom:1px}
+  .alert-sub{color:var(--color-text-secondary)}
+  .alert-time{margin-left:auto;font-size:10px;color:var(--color-text-tertiary);flex-shrink:0;padding-top:2px}
+  
+  /* HISTORIAL TABLE */
+  .hist-filters{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+  .hist-input{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:5px 8px;font-size:11px;background:var(--color-background-primary);color:var(--color-text-primary);outline:none}
+  .hist-input:focus{border-color:var(--color-border-secondary)}
+  .hist-table{width:100%;border-collapse:collapse;font-size:11px}
+  .hist-table th{text-align:left;padding:6px 8px;color:var(--color-text-secondary);font-weight:400;border-bottom:0.5px solid var(--color-border-tertiary)}
+  .hist-table td{padding:7px 8px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
+  .hist-table tr:last-child td{border-bottom:none}
+  .hist-table tr:hover td{background:var(--color-background-secondary)}
+  .pill{display:inline-block;font-size:10px;font-weight:500;padding:2px 6px;border-radius:20px}
+  .pill-pend{background:var(--amber-bg);color:var(--amber)}
+  .pill-prep{background:var(--blue-bg);color:var(--blue)}
+  .pill-cam{background:var(--purple-bg);color:var(--purple)}
+  .pill-entr{background:var(--green-bg);color:var(--green)}
+  .pill-canc{background:var(--red-bg);color:var(--red)}
+  .pago-ef{background:var(--green-bg);color:var(--green)}
+  .pago-mp{background:var(--blue-bg);color:var(--blue)}
+  .pago-tc{background:var(--purple-bg);color:var(--purple)}
+  
+  /* TIEMPOS */
+  .flow-track{display:flex;align-items:center;gap:0;margin-bottom:12px}
+  .flow-step{flex:1;text-align:center;position:relative}
+  .flow-step::after{content:'';position:absolute;top:14px;right:-50%;width:100%;height:1.5px;background:var(--color-border-tertiary)}
+  .flow-step:last-child::after{display:none}
+  .flow-circle{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:11px;font-weight:500;position:relative;z-index:1}
+  .flow-label{font-size:9px;color:var(--color-text-secondary)}
+  .flow-time{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+  .flow-avg{font-size:9px;color:var(--color-text-tertiary)}
+  
+  .metric-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+  .metric-mini{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 10px}
+  .metric-mini-label{font-size:10px;color:var(--color-text-secondary)}
+  .metric-mini-val{font-size:16px;font-weight:500;color:var(--color-text-primary)}
+  
+  /* MENU */
+  .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .menu-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-secondary)}
+  .menu-info{flex:1}
+  .menu-name{font-size:12px;font-weight:500;color:var(--color-text-primary)}
+  .menu-price{font-size:11px;color:var(--color-text-secondary)}
+  .menu-stock{font-size:10px;color:var(--color-text-tertiary)}
+  .toggle{position:relative;width:32px;height:18px;flex-shrink:0}
+  .toggle input{opacity:0;width:0;height:0;position:absolute}
+  .toggle-slider{position:absolute;inset:0;border-radius:9px;background:var(--color-border-secondary);cursor:pointer;transition:.2s}
+  .toggle input:checked+.toggle-slider{background:var(--teal-mid)}
+  .toggle-slider::after{content:'';position:absolute;width:12px;height:12px;border-radius:50%;background:white;top:3px;left:3px;transition:.2s}
+  .toggle input:checked+.toggle-slider::after{transform:translateX(14px)}
+  
+  /* COSTOS */
+  .costo-table{width:100%;border-collapse:collapse;font-size:11px}
+  .costo-table th{text-align:left;padding:6px 8px;color:var(--color-text-secondary);font-weight:400;border-bottom:0.5px solid var(--color-border-tertiary)}
+  .costo-table td{padding:8px 8px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
+  .margin-bar{display:flex;align-items:center;gap:6px}
+  .bar-track{flex:1;height:6px;background:var(--color-border-tertiary);border-radius:3px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:3px}
+  
+  /* ACCESOS */
+  .accesos-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .acceso-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;background:var(--color-background-secondary)}
+  .acceso-rol{font-size:11px;font-weight:500;color:var(--color-text-primary);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+  .acceso-perms{display:flex;flex-wrap:wrap;gap:3px}
+  .perm-pill{font-size:9px;padding:2px 5px;border-radius:3px;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary)}
+  .perm-pill.on{background:var(--teal-bg);color:var(--teal);border-color:transparent}
+  .perm-pill.off{background:var(--red-bg);color:var(--red);border-color:transparent;text-decoration:line-through;opacity:.7}
+  
+  /* RENTABILIDAD & HORAS */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+</style>
+
+<h2 class="sr-only">Panel de administración RepartoGO — módulos de gestión operativa</h2>
+
+<div class="adm-wrap">
+  <!-- SIDEBAR -->
+  <aside class="adm-sidebar">
+    <div class="adm-brand">RepartoGO <em>Admin</em><span>Panel de control</span></div>
+    <div style="height:6px"></div>
+    <div class="adm-section">Operaciones</div>
+    <nav class="adm-nav">
+      <button class="adm-btn active" onclick="showPanel('pedidos',this)"><span class="nav-dot"></span><span class="nav-icon">📦</span>Pedidos<span class="nav-badge">8</span></button>
+      <button class="adm-btn" onclick="showPanel('personal',this)"><span class="nav-icon">🛵</span>Personal</button>
+      <button class="adm-btn" onclick="showPanel('alertas',this)"><span class="nav-icon">🔔</span>Alertas<span class="nav-badge">3</span></button>
+      <button class="adm-btn" onclick="showPanel('historial',this)"><span class="nav-icon">📋</span>Historial</button>
+    </nav>
+    <div class="adm-section">Análisis</div>
+    <nav class="adm-nav">
+      <button class="adm-btn" onclick="showPanel('tiempos',this)"><span class="nav-icon">⏱</span>Tiempos</button>
+      <button class="adm-btn" onclick="showPanel('kpis',this)"><span class="nav-icon">📊</span>KPIs</button>
+      <button class="adm-btn" onclick="showPanel('rentabilidad',this)"><span class="nav-icon">💹</span>Rentabilidad</button>
+      <button class="adm-btn" onclick="showPanel('horas',this)"><span class="nav-icon">🕐</span>Horas Pico</button>
+    </nav>
+    <div class="adm-section">Gestión</div>
+    <nav class="adm-nav">
+      <button class="adm-btn" onclick="showPanel('menu',this)"><span class="nav-icon">🍽</span>Menú</button>
+      <button class="adm-btn" onclick="showPanel('costos',this)"><span class="nav-icon">💰</span>Costos</button>
+      <button class="adm-btn" onclick="showPanel('accesos',this)"><span class="nav-icon">🔐</span>Accesos</button>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="adm-main">
+
+    <!-- PEDIDOS -->
+    <div id="panel-pedidos" class="panel active">
+      <div class="ph"><div><div class="ph-title">Pedidos</div><div class="ph-sub">Conteo por estado — actualizado hace 1 min</div></div><span class="ph-badge badge-live">● EN VIVO</span></div>
+      <div class="estado-grid">
+        <div class="estado-card"><div class="estado-num s-pend">14</div><div class="estado-label">Pendiente</div></div>
+        <div class="estado-card"><div class="estado-num s-prep">5</div><div class="estado-label">Preparando</div></div>
+        <div class="estado-card"><div class="estado-num s-cam">3</div><div class="estado-label">En camino</div></div>
+        <div class="estado-card"><div class="estado-num s-entr">30</div><div class="estado-label">Entregado</div></div>
+        <div class="estado-card"><div class="estado-num s-canc">4</div><div class="estado-label">Cancelado</div></div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-bar" style="background:var(--amber-light)"></div><div class="kpi-label">Total hoy</div><div class="kpi-val">56</div><div class="kpi-sub kpi-trend up">+12% vs ayer</div></div>
+        <div class="kpi-card"><div class="kpi-bar" style="background:var(--teal-mid)"></div><div class="kpi-label">Facturado</div><div class="kpi-val">$312k</div><div class="kpi-sub kpi-trend up">+8% vs ayer</div></div>
+        <div class="kpi-card"><div class="kpi-bar" style="background:var(--blue-mid)"></div><div class="kpi-label">Ticket prom.</div><div class="kpi-val">$5.5k</div><div class="kpi-sub kpi-trend down">-3% vs ayer</div></div>
+        <div class="kpi-card"><div class="kpi-bar" style="background:var(--red-mid)"></div><div class="kpi-label">Cancelación</div><div class="kpi-val">7.1%</div><div class="kpi-sub kpi-trend down">+1.2% vs ayer</div></div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-title"><span class="sec-dot" style="background:var(--amber-light)"></span>Pedidos activos ahora</div>
+        <table class="hist-table">
+          <thead><tr><th>#</th><th>Cliente</th><th>Restaurante</th><th>Estado</th><th>Hace</th><th>Total</th></tr></thead>
+          <tbody>
+            <tr><td>#33</td><td>pierre d.</td><td>Burger Palace</td><td><span class="pill pill-pend">Pendiente</span></td><td>1h 20m</td><td>$10.000</td></tr>
+            <tr><td>#34</td><td>pierre d.</td><td>Burger Palace</td><td><span class="pill pill-prep">Preparando</span></td><td>58m</td><td>$24.000</td></tr>
+            <tr><td>#27</td><td>jose d.</td><td>Burger Palace</td><td><span class="pill pill-cam">En camino</span></td><td>34d</td><td>$16.000</td></tr>
+            <tr><td>#29</td><td>dai j.</td><td>Burger Palace</td><td><span class="pill pill-pend">Pendiente</span></td><td>34d</td><td>$3.000</td></tr>
+            <tr><td>#30</td><td>tero j.</td><td>Burger Palace</td><td><span class="pill pill-prep">Preparando</span></td><td>34d</td><td>$33.000</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PERSONAL -->
+    <div id="panel-personal" class="panel">
+      <div class="ph"><div><div class="ph-title">Estado del Personal</div><div class="ph-sub">Disponibilidad de repartidores en vivo</div></div><span class="ph-badge badge-live">● EN VIVO</span></div>
+      <div class="kpi-grid kpi-grid-3" style="margin-bottom:12px">
+        <div class="kpi-card"><div class="kpi-bar" style="background:var(--teal-mid)"></div><div class="kpi-label">Disponibles</div><div class="kpi-val" style="color:var(--teal)">2</div><div class="kpi-sub">listos para salir</div></div>
+        <div class="kpi-card"><div class="kpi-bar" style="background:var(--amber-light)"></div><div class="kpi-label">En reparto</div><div class="kpi-val" style="color:var(--amber)">1</div><div class="kpi-sub">con pedido activo</div></div>
+        <div class="kpi-card"><div class="kpi-bar" style="background:var(--color-border-tertiary)"></div><div class="kpi-label">Descanso</div><div class="kpi-val" style="color:var(--color-text-secondary)">1</div><div class="kpi-sub">fuera de turno</div></div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-title"><span class="sec-dot" style="background:var(--teal-mid)"></span>Repartidores activos</div>
+        <div class="rep-grid">
+          <div class="rep-item">
+            <div class="rep-avatar" style="background:var(--teal-bg);color:var(--teal)">PR</div>
+            <div style="flex:1"><div class="rep-name">Pedro Repartidor</div><div class="rep-status status-ocup">🟡 En camino — Pedido #27</div></div>
+          </div>
+          <div class="rep-item">
+            <div class="rep-avatar" style="background:var(--green-bg);color:var(--green)">JG</div>
+            <div style="flex:1"><div class="rep-name">Juan González</div><div class="rep-status status-disp">🟢 Disponible</div></div>
+          </div>
+          <div class="rep-item">
+            <div class="rep-avatar" style="background:var(--blue-bg);color:var(--blue)">ML</div>
+            <div style="flex:1"><div class="rep-name">Marcos López</div><div class="rep-status status-disp">🟢 Disponible</div></div>
+          </div>
+          <div class="rep-item">
+            <div class="rep-avatar" style="background:var(--color-background-secondary);color:var(--color-text-secondary)">AR</div>
+            <div style="flex:1"><div class="rep-name">Ana Ríos</div><div class="rep-status" style="color:var(--color-text-tertiary);font-size:10px">⚪ Descanso</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-title"><span class="sec-dot" style="background:var(--blue-mid)"></span>Cocina</div>
+        <div class="rep-grid">
+          <div class="rep-item">
+            <div class="rep-avatar" style="background:var(--amber-bg);color:var(--amber)">JP</div>
+            <div style="flex:1"><div class="rep-name">juan perez (chef)</div><div class="rep-status status-ocup">🟡 Cocinando — 2 pedidos</div></div>
+          </div>
+          <div class="rep-item">
+            <div class="rep-avatar" style="background:var(--green-bg);color:var(--green)">LM</div>
+            <div style="flex:1"><div class="rep-name">Luisa Martinez</div><div class="rep-status status-disp">🟢 Disponible</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTAS -->
+    <div id="panel-alertas" class="panel">
+      <div class="ph"><div><div class="ph-title">Alertas del Sistema</div><div class="ph-sub">Avisos por retrasos y anomalías</div></div><span class="ph-badge" style="background:var(--red-bg);color:var(--red)">3 activas</span></div>
+      <div class="alert-item alert-red">
+        <div class="alert-icon">🚨</div>
+        <div class="alert-text"><div class="alert-title">Pedido #27 — retraso crítico</div><div class="alert-sub">En camino hace 34 días — tiempo estimado superado por 33d 23h</div></div>
+        <div class="alert-time">ahora</div>
+      </div>
+      <div class="alert-item alert-red">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-text"><div class="alert-title">14 pedidos pendientes sin asignar</div><div class="alert-sub">Ningún repartidor asignado — demanda supera capacidad actual</div></div>
+        <div class="alert-time">1 min</div>
+      </div>
+      <div class="alert-item alert-amber">
+        <div class="alert-icon">🍔</div>
+        <div class="alert-text"><div class="alert-title">Stock bajo — Hamburguesa Clásica</div><div class="alert-sub">Solo 3 unidades disponibles en Burger Palace</div></div>
+        <div class="alert-time">5 min</div>
+      </div>
+      <div class="alert-item alert-amber">
+        <div class="alert-icon">📦</div>
+        <div class="alert-text"><div class="alert-title">Pedido #29 sin movimiento</div><div class="alert-sub">Pendiente desde hace 34 días — revisar estado del pedido</div></div>
+        <div class="alert-time">34d</div>
+      </div>
+      <div class="alert-item alert-blue">
+        <div class="alert-icon">💡</div>
+        <div class="alert-text"><div class="alert-title">Tasa de cancelación elevada</div><div class="alert-sub">7.1% — promedio normal es 3.5% — revisar causas frecuentes</div></div>
+        <div class="alert-time">hoy</div>
+      </div>
+    </div>
+
+    <!-- HISTORIAL -->
+    <div id="panel-historial" class="panel">
+      <div class="ph"><div><div class="ph-title">Historial de Pedidos</div><div class="ph-sub">Logs filtrables por fecha, cliente y pago</div></div></div>
+      <div class="hist-filters">
+        <input class="hist-input" type="date" id="h-desde" value="2026-03-14" style="width:128px">
+        <input class="hist-input" type="date" id="h-hasta" value="2026-04-27" style="width:128px">
+        <input class="hist-input" type="text" id="h-cliente" placeholder="Buscar cliente..." style="flex:1;min-width:100px" oninput="filtrarHist()">
+        <select class="hist-input" id="h-pago" onchange="filtrarHist()" style="width:110px">
+          <option value="">Todos los pagos</option>
+          <option value="Efectivo">Efectivo</option>
+          <option value="MercadoPago">MercadoPago</option>
+          <option value="Tarjeta">Tarjeta</option>
+        </select>
+        <select class="hist-input" id="h-estado" onchange="filtrarHist()" style="width:110px">
+          <option value="">Todos los estados</option>
+          <option value="Entregado">Entregado</option>
+          <option value="Cancelado">Cancelado</option>
+          <option value="Pendiente">Pendiente</option>
+        </select>
+      </div>
+      <table class="hist-table" id="hist-table">
+        <thead><tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Restaurante</th><th>Estado</th><th>Pago</th><th>Total</th></tr></thead>
+        <tbody id="hist-body"></tbody>
+      </table>
+    </div>
+
+    <!-- TIEMPOS -->
+    <div id="panel-tiempos" class="panel">
+      <div class="ph"><div><div class="ph-title">Métricas de Tiempos</div><div class="ph-sub">Flujo Pedido → Cocina → Reparto → Entrega</div></div></div>
+      <div class="sec-card">
+        <div class="sec-title"><span class="sec-dot" style="background:var(--blue-mid)"></span>Flujo promedio del pedido</div>
+        <div class="flow-track">
+          <div class="flow-step"><div class="flow-circle" style="background:var(--amber-bg);color:var(--amber)">📥</div><div class="flow-label">Recepción</div><div class="flow-time">0 min</div><div class="flow-avg">inicio</div></div>
+          <div class="flow-step"><div class="flow-circle" style="background:var(--blue-bg);color:var(--blue)">👨‍🍳</div><div class="flow-label">Cocina</div><div class="flow-time">12 min</div><div class="flow-avg">prom.</div></div>
+          <div class="flow-step"><div class="flow-circle" style="background:var(--purple-bg);color:var(--purple)">🛵</div><div class="flow-label">Reparto</div><div class="flow-time">8 min</div><div class="flow-avg">prom.</div></div>
+          <div class="flow-step"><div class="flow-circle" style="background:var(--teal-bg);color:var(--teal)">✅</div><div class="flow-label">Entrega</div><div class="flow-time">28 min</div><div class="flow-avg">total</div></div>
+        </div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-mini"><div class="metric-mini-label">Tiempo mínimo</div><div class="metric-mini-val">18 min</div></div>
+        <div class="metric-mini"><div class="metric-mini-label">Tiempo máximo</div><div class="metric-mini-val">47 min</div></div>
+        <div class="metric-mini"><div class="metric-mini-label">SLA cumplido</div><div class="metric-mini-val" style="color:var(--teal)">82%</div></div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-title"><span class="sec-dot" style="background:var(--purple-mid)"></span>Tiempo por restaurante (promedio hoy)</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px"><span style="width:100px;color:var(--color-text-secondary)">Burger Palace</span><div style="flex:1;height:10px;background:var(--color-border-tertiary);border-radius:5px;overflow:hidden"><div style="width:60%;height:100%;background:var(--amber-light);border-radius:5px"></div></div><span style="width:40px;text-align:right;font-weight:500">27 min</span></div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px"><span style="width:100px;color:var(--color-text-secondary)">Pizzeria Napoli</span><div style="flex:1;height:10px;background:var(--color-border-tertiary);border-radius:5px;overflow:hidden"><div style="width:70%;height:100%;background:var(--blue-mid);border-radius:5px"></div></div><span style="width:40px;text-align:right;font-weight:500">32 min</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MENU -->
+    <div id="panel-menu" class="panel">
+      <div class="ph"><div><div class="ph-title">Gestión del Menú</div><div class="ph-sub">Activación / desactivación instantánea de platos</div></div></div>
+      <div class="menu-grid">
+        <div class="menu-item">
+          <div style="width:36px;height:36px;border-radius:var(--border-radius-md);background:var(--amber-bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🍔</div>
+          <div class="menu-info">
+            <div class="menu-name">Hamburguesa Clásica</div>
+            <div class="menu-price">$5.500 · Burger Palace</div>
+            <div class="menu-stock" style="color:var(--red)">⚠ Stock: 3 unidades</div>
+          </div>
+          <label class="toggle"><input type="checkbox" checked onchange="toggleMenu(this,'Hamburguesa Clásica')"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="menu-item">
+          <div style="width:36px;height:36px;border-radius:var(--border-radius-md);background:var(--amber-bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🍟</div>
+          <div class="menu-info">
+            <div class="menu-name">Papas Fritas</div>
+            <div class="menu-price">$2.500 · Burger Palace</div>
+            <div class="menu-stock">Stock: 77 unidades</div>
+          </div>
+          <label class="toggle"><input type="checkbox" checked onchange="toggleMenu(this,'Papas Fritas')"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="menu-item">
+          <div style="width:36px;height:36px;border-radius:var(--border-radius-md);background:var(--coral-bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🍕</div>
+          <div class="menu-info">
+            <div class="menu-name">Pizza Muzarella</div>
+            <div class="menu-price">$8.000 · Pizzeria Napoli</div>
+            <div class="menu-stock">Stock: 23 unidades</div>
+          </div>
+          <label class="toggle"><input type="checkbox" checked onchange="toggleMenu(this,'Pizza Muzarella')"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="menu-item">
+          <div style="width:36px;height:36px;border-radius:var(--border-radius-md);background:var(--coral-bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🥟</div>
+          <div class="menu-info">
+            <div class="menu-name">Empanada de Carne</div>
+            <div class="menu-price">$1.000 · Pizzeria Napoli</div>
+            <div class="menu-stock">Stock: 194 unidades</div>
+          </div>
+          <label class="toggle"><input type="checkbox" checked onchange="toggleMenu(this,'Empanada de Carne')"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+      <div id="menu-log" style="margin-top:10px;font-size:11px;color:var(--teal);padding:6px 10px;border-radius:var(--border-radius-md);background:var(--teal-bg);display:none"></div>
+    </div>
+
+    <!-- COSTOS -->
+    <div id="panel-costos" class="panel">
+      <div class="ph"><div><div class="ph-title">Costos y Márgenes</div><div class="ph-sub">Seguimiento de precios y margen de ganancia</div></div></div>
+      <table class="costo-table">
+        <thead><tr><th>Producto</th><th>Precio venta</th><th>Costo est.</th><th>Margen</th><th>Ventas hoy</th><th>Ingreso</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span style="font-weight:500">Hamburguesa Clásica</span></td>
+            <td>$5.500</td>
+            <td>$3.200</td>
+            <td><div class="margin-bar"><div class="bar-track"><div class="bar-fill" style="width:42%;background:var(--teal-mid)"></div></div><span style="font-size:10px;color:var(--teal);font-weight:500">42%</span></div></td>
+            <td>28</td>
+            <td style="font-weight:500">$154.000</td>
+          </tr>
+          <tr>
+            <td><span style="font-weight:500">Papas Fritas</span></td>
+            <td>$2.500</td>
+            <td>$900</td>
+            <td><div class="margin-bar"><div class="bar-track"><div class="bar-fill" style="width:64%;background:var(--green)"></div></div><span style="font-size:10px;color:var(--green);font-weight:500">64%</span></div></td>
+            <td>17</td>
+            <td style="font-weight:500">$42.500</td>
+          </tr>
+          <tr>
+            <td><span style="font-weight:500">Pizza Muzarella</span></td>
+            <td>$8.000</td>
+            <td>$5.500</td>
+            <td><div class="margin-bar"><div class="bar-track"><div class="bar-fill" style="width:31%;background:var(--amber)"></div></div><span style="font-size:10px;color:var(--amber);font-weight:500">31%</span></div></td>
+            <td>8</td>
+            <td style="font-weight:500">$64.000</td>
+          </tr>
+          <tr>
+            <td><span style="font-weight:500">Empanada de Carne</span></td>
+            <td>$1.000</td>
+            <td>$420</td>
+            <td><div class="margin-bar"><div class="bar-track"><div class="bar-fill" style="width:58%;background:var(--green)"></div></div><span style="font-size:10px;color:var(--green);font-weight:500">58%</span></div></td>
+            <td>19</td>
+            <td style="font-weight:500">$19.000</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <div class="metric-mini" style="flex:1"><div class="metric-mini-label">Ingreso total hoy</div><div class="metric-mini-val">$279.500</div></div>
+        <div class="metric-mini" style="flex:1"><div class="metric-mini-label">Margen promedio</div><div class="metric-mini-val" style="color:var(--teal)">49%</div></div>
+        <div class="metric-mini" style="flex:1"><div class="metric-mini-label">Producto estrella</div><div class="metric-mini-val" style="font-size:13px">Papas Fritas</div></div>
+      </div>
+    </div>
+
+    <!-- ACCESOS -->
+    <div id="panel-accesos" class="panel">
+      <div class="ph"><div><div class="ph-title">Accesos y Permisos</div><div class="ph-sub">Permisos restringidos según perfil de usuario</div></div></div>
+      <div class="accesos-grid">
+        <div class="acceso-card">
+          <div class="acceso-rol"><span style="width:8px;height:8px;border-radius:50%;background:var(--red-mid);display:inline-block"></span>Superadmin</div>
+          <div class="acceso-perms">
+            <span class="perm-pill on">Panel global</span><span class="perm-pill on">Usuarios</span><span class="perm-pill on">Restaurantes</span><span class="perm-pill on">Estadísticas</span><span class="perm-pill on">Costos</span><span class="perm-pill on">KPIs</span>
+          </div>
+        </div>
+        <div class="acceso-card">
+          <div class="acceso-rol"><span style="width:8px;height:8px;border-radius:50%;background:var(--amber-light);display:inline-block"></span>Admin</div>
+          <div class="acceso-perms">
+            <span class="perm-pill on">Pedidos</span><span class="perm-pill on">Menú</span><span class="perm-pill on">Costos</span><span class="perm-pill on">Personal</span><span class="perm-pill on">Historial</span><span class="perm-pill off">Usuarios</span>
+          </div>
+        </div>
+        <div class="acceso-card">
+          <div class="acceso-rol"><span style="width:8px;height:8px;border-radius:50%;background:var(--blue-mid);display:inline-block"></span>Recepcionista</div>
+          <div class="acceso-perms">
+            <span class="perm-pill on">Nuevo pedido</span><span class="perm-pill on">Pedidos actuales</span><span class="perm-pill on">Historial</span><span class="perm-pill off">Menú</span><span class="perm-pill off">Costos</span><span class="perm-pill off">KPIs</span>
+          </div>
+        </div>
+        <div class="acceso-card">
+          <div class="acceso-rol"><span style="width:8px;height:8px;border-radius:50%;background:var(--teal-mid);display:inline-block"></span>Repartidor</div>
+          <div class="acceso-perms">
+            <span class="perm-pill on">Mis pedidos</span><span class="perm-pill on">Estado entrega</span><span class="perm-pill off">Historial</span><span class="perm-pill off">Costos</span><span class="perm-pill off">Menú</span>
+          </div>
+        </div>
+        <div class="acceso-card">
+          <div class="acceso-rol"><span style="width:8px;height:8px;border-radius:50%;background:var(--purple-mid);display:inline-block"></span>Chef</div>
+          <div class="acceso-perms">
+            <span class="perm-pill on">Cola cocina</span><span class="perm-pill on">Estado platos</span><span class="perm-pill on">Stock</span><span class="perm-pill off">Pedidos</span><span class="perm-pill off">Clientes</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div id="panel-kpis" class="panel">
+      <div class="ph"><div><div class="ph-title">KPIs Operativos</div><div class="ph-sub">Rendimiento en cocina y tiempos de entrega</div></div></div>
+      <div class="kpi-grid" style="margin-bottom:12px">
+        <div class="kpi-card"><div class="kpi-bar" style="background:var(--teal-mid)"></div><div class="kpi-label">Tasa entrega</div><div class="kpi-val" style="color:var(--teal)">89%</div><div class="kpi-sub">pedidos entregados</div></div>
+        <div class="kpi-card"><div class="kpi-bar" style="background:var(--blue-mid)"></div><div class="kpi-label">Tiempo cocina</div><div class="kpi-val">12 min</div><div class="kpi-sub kpi-trend up">SLA: 15 min ✓</div></div>
+        <div class="kpi-card"><div class="kpi-bar" style="background:var(--amber-light)"></div><div class="kpi-label">Tiempo reparto</div><div class="kpi-val">16 min</div><div class="kpi-sub kpi-trend down">SLA: 12 min ✗</div></div>
+        <div class="kpi-card"><div class="kpi-bar" style="background:var(--purple-mid)"></div><div class="kpi-label">Satisfacción</div><div class="kpi-val">4.2★</div><div class="kpi-sub">sobre 5 estrellas</div></div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-title"><span class="sec-dot" style="background:var(--blue-mid)"></span>Rendimiento por restaurante</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="font-size:11px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-weight:500">Burger Palace</span><span style="color:var(--teal)">92% efectividad</span></div>
+            <div style="height:8px;background:var(--color-border-tertiary);border-radius:4px;overflow:hidden"><div style="width:92%;height:100%;background:var(--teal-mid);border-radius:4px"></div></div>
+          </div>
+          <div style="font-size:11px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-weight:500">Pizzeria Napoli</span><span style="color:var(--amber)">74% efectividad</span></div>
+            <div style="height:8px;background:var(--color-border-tertiary);border-radius:4px;overflow:hidden"><div style="width:74%;height:100%;background:var(--amber-light);border-radius:4px"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-mini"><div class="metric-mini-label">Pedidos/hora pico</div><div class="metric-mini-val">18</div></div>
+        <div class="metric-mini"><div class="metric-mini-label">Cancels evitables</div><div class="metric-mini-val" style="color:var(--red)">3</div></div>
+        <div class="metric-mini"><div class="metric-mini-label">Clientes recurrentes</div><div class="metric-mini-val">68%</div></div>
+      </div>
+    </div>
+
+    <!-- RENTABILIDAD -->
+    <div id="panel-rentabilidad" class="panel">
+      <div class="ph"><div><div class="ph-title">Rentabilidad</div><div class="ph-sub">Comparativa ventas vs costos — análisis semanal</div></div></div>
+      <div class="kpi-grid kpi-grid-3" style="margin-bottom:12px">
+        <div class="kpi-card"><div class="kpi-bar" style="background:var(--teal-mid)"></div><div class="kpi-label">Ingresos semana</div><div class="kpi-val">$1.87M</div><div class="kpi-sub kpi-trend up">+15% vs sem. ant.</div></div>
+        <div class="kpi-card"><div class="kpi-bar" style="background:var(--red-mid)"></div><div class="kpi-label">Costos semana</div><div class="kpi-val">$960k</div><div class="kpi-sub kpi-trend up">+8% vs sem. ant.</div></div>
+        <div class="kpi-card"><div class="kpi-bar" style="background:var(--amber-light)"></div><div class="kpi-label">Ganancia neta</div><div class="kpi-val" style="color:var(--teal)">$910k</div><div class="kpi-sub kpi-trend up">+23% vs sem. ant.</div></div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-title"><span class="sec-dot" style="background:var(--teal-mid)"></span>Ventas vs Costos por restaurante</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:11px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:500">Burger Palace</span><span style="color:var(--color-text-secondary)">$1.21M ventas · $580k costos</span></div>
+            <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;gap:1px">
+              <div style="flex:1.21;background:var(--teal-mid)"></div>
+              <div style="flex:0.58;background:var(--red-mid)"></div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:3px"><span style="color:var(--teal)">■ Ventas</span><span style="color:var(--red)">■ Costos</span><span style="color:var(--color-text-secondary);margin-left:auto">Margen: 52%</span></div>
+          </div>
+          <div style="font-size:11px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:500">Pizzeria Napoli</span><span style="color:var(--color-text-secondary)">$660k ventas · $380k costos</span></div>
+            <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;gap:1px">
+              <div style="flex:0.66;background:var(--blue-mid)"></div>
+              <div style="flex:0.38;background:var(--coral-mid)"></div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:3px"><span style="color:var(--blue)">■ Ventas</span><span style="color:var(--coral)">■ Costos</span><span style="color:var(--color-text-secondary);margin-left:auto">Margen: 42%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HORAS PICO -->
+    <div id="panel-horas" class="panel">
+      <div class="ph"><div><div class="ph-title">Horas Pico</div><div class="ph-sub">Gráficos de demanda para refuerzo de turnos</div></div></div>
+      <div class="sec-card">
+        <div class="sec-title"><span class="sec-dot" style="background:var(--amber-light)"></span>Demanda por franja horaria — promedio semanal</div>
+        <div id="chart-horas" style="position:relative;width:100%;height:200px">
+          <canvas id="horasChart" role="img" aria-label="Gráfico de demanda de pedidos por hora del día">Demanda: 11h pico almuerzo, 20-21h pico cena</canvas>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px">
+        <div class="acceso-card" style="text-align:center">
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Pico almuerzo</div>
+          <div style="font-size:18px;font-weight:500;color:var(--amber)">11:00–13:00</div>
+          <div style="font-size:10px;color:var(--color-text-tertiary)">~18 pedidos/hora</div>
+        </div>
+        <div class="acceso-card" style="text-align:center">
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Pico cena</div>
+          <div style="font-size:18px;font-weight:500;color:var(--red)">20:00–22:00</div>
+          <div style="font-size:10px;color:var(--color-text-tertiary)">~24 pedidos/hora</div>
+        </div>
+        <div class="acceso-card" style="text-align:center">
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Refuerzo sugerido</div>
+          <div style="font-size:18px;font-weight:500;color:var(--teal)">+2 repartidores</div>
+          <div style="font-size:10px;color:var(--color-text-tertiary)">en pico de cena</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.adm-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  btn.classList.add('active');
+  if (!btn.querySelector('.nav-dot')) {
+    const d = document.createElement('span');
+    d.className = 'nav-dot';
+    btn.insertBefore(d, btn.firstChild);
+  }
+  if (id === 'horas') renderHorasChart();
+}
+
+const histData = [
+  {id:56,fecha:'2026-04-20',cliente:'hernan m.',rest:'Burger Palace',estado:'Pendiente',pago:'Efectivo',total:'$5.000'},
+  {id:55,fecha:'2026-04-13',cliente:'pierre d.',rest:'Burger Palace',estado:'Pendiente',pago:'MercadoPago',total:'$5.500'},
+  {id:32,fecha:'2026-03-25',cliente:'pierre d.',rest:'Pizzeria Napoli',estado:'Entregado',pago:'Tarjeta',total:'$3.000'},
+  {id:31,fecha:'2026-03-25',cliente:'pierre d.',rest:'Pizzeria Napoli',estado:'En camino',pago:'Efectivo',total:'$8.000'},
+  {id:26,fecha:'2026-03-23',cliente:'Juancito L.',rest:'Burger Palace',estado:'Entregado',pago:'Efectivo',total:'$2.500'},
+  {id:22,fecha:'2026-03-23',cliente:'Stuart L.',rest:'Burger Palace',estado:'Entregado',pago:'MercadoPago',total:'$6.500'},
+  {id:13,fecha:'2026-03-23',cliente:'Pedro M.',rest:'Burger Palace',estado:'Entregado',pago:'Tarjeta',total:'$16.500'},
+  {id:5,fecha:'2026-03-22',cliente:'matias f.',rest:'Burger Palace',estado:'Entregado',pago:'Efectivo',total:'$24.000'},
+  {id:2,fecha:'2026-03-14',cliente:'Maria G.',rest:'Pizzeria Napoli',estado:'Cancelado',pago:'MercadoPago',total:'$10.000'},
+  {id:1,fecha:'2026-03-14',cliente:'Juan P.',rest:'Burger Palace',estado:'Entregado',pago:'Efectivo',total:'$8.000'},
+];
+
+const estadoPill = {
+  'Pendiente':'pill-pend','Preparando':'pill-prep','En camino':'pill-cam','Entregado':'pill-entr','Cancelado':'pill-canc'
+};
+const pagoPill = {'Efectivo':'pago-ef','MercadoPago':'pago-mp','Tarjeta':'pago-tc'};
+
+function filtrarHist() {
+  const cliente = document.getElementById('h-cliente').value.toLowerCase();
+  const pago = document.getElementById('h-pago').value;
+  const estado = document.getElementById('h-estado').value;
+  const filtered = histData.filter(r =>
+    (!cliente || r.cliente.toLowerCase().includes(cliente)) &&
+    (!pago || r.pago === pago) &&
+    (!estado || r.estado === estado)
+  );
+  renderHist(filtered);
+}
+
+function renderHist(data) {
+  const tbody = document.getElementById('hist-body');
+  if (!tbody) return;
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td>#${r.id}</td>
+      <td>${r.fecha}</td>
+      <td>${r.cliente}</td>
+      <td>${r.rest}</td>
+      <td><span class="pill ${estadoPill[r.estado]||''}">${r.estado}</span></td>
+      <td><span class="pill ${pagoPill[r.pago]||''}">${r.pago}</span></td>
+      <td style="font-weight:500">${r.total}</td>
+    </tr>`).join('');
+}
+
+renderHist(histData);
+
+function toggleMenu(el, nombre) {
+  const log = document.getElementById('menu-log');
+  const estado = el.checked ? 'activado' : 'desactivado';
+  log.style.display = 'block';
+  log.textContent = `✓ ${nombre} ${estado} correctamente — ${new Date().toLocaleTimeString('es-AR')}`;
+}
+
+let horasChartInstance = null;
+function renderHorasChart() {
+  if (horasChartInstance) return;
+  const ctx = document.getElementById('horasChart');
+  if (!ctx) return;
+  const labels = ['8h','9h','10h','11h','12h','13h','14h','15h','16h','17h','18h','19h','20h','21h','22h','23h'];
+  const data = [2,3,5,12,18,15,10,7,5,4,6,11,20,24,18,8];
+  horasChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Pedidos',
+        data,
+        backgroundColor: data.map(v => v >= 18 ? '#E24B4A' : v >= 12 ? '#BA7517' : '#378ADD'),
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {legend:{display:false}},
+      scales: {
+        x: {grid:{display:false}, ticks:{font:{size:10}}},
+        y: {grid:{color:'rgba(0,0,0,0.06)'}, ticks:{font:{size:10}}}
+      }
+    }
+  });
+}
+
+document.querySelectorAll('.adm-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.adm-btn .nav-dot').forEach(d => {
+      if (d.parentElement !== b) d.remove();
+    });
+  });
+});
+</script>
+
+<script src="js/script.js"></script>
+</body>
+</html>

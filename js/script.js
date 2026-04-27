@@ -83,6 +83,7 @@ async function iniciarLogicaRecepcionista() {
     document.getElementById('btn-actualizar-pedidos')?.addEventListener('click', async () => {
         _detenerCiclo();                 // parar el ciclo en curso
         _lastRefreshHash = null;         // forzar recarga completa
+        _lastPedidosRenderHash = null;   // forzar re-render de tabla
         await recargarPedidosActuales(); // traer datos frescos
         await actualizarResumenSidebar(); // refrescar sidebar manualmente
         reiniciarTimer();                // reiniciar ciclo limpio
@@ -98,6 +99,22 @@ async function iniciarLogicaRecepcionista() {
 
 // Hash local de la última snapshot para detectar cambios
 let _lastRefreshHash = null;
+
+// Hash de los pedidos que se renderizaron por última vez.
+// Si el nuevo lote de pedidos produce el mismo hash, se omite el re-render
+// y se evita el parpadeo de la tabla/kanban.
+let _lastPedidosRenderHash = null;
+
+function _hashPedidos(pedidos) {
+    if (!pedidos || pedidos.length === 0) return '__empty__';
+    // Incluye los campos visibles en tabla y tarjetas
+    return pedidos.map(p =>
+        [p.ID_pedido, p.Estado, p.Total,
+         p.c_nombre, p.c_apellido, p.c_telefono,
+         p.Calle, p.Numero, p.Localidad, p.piso_depto,
+         p.referencias, p.detalles_resumen].join('|')
+    ).join('§');
+}
 
 // Recarga silenciosa: UNA sola fetch a getRefreshData.
 // Si el hash del servidor coincide con el local → sin cambios → no renderiza nada.
@@ -119,12 +136,16 @@ async function autoRecargarDatos() {
         // Guardar nuevo hash
         _lastRefreshHash = result.data.hash;
 
-        // 1. Pedidos actuales
+        // 1. Pedidos actuales — solo re-renderizar si los datos cambiaron realmente
         if (result.data.pedidos !== undefined) {
-            DATA_RECEPCION.pedidos = result.data.pedidos;
-            renderizarTablaPedidosRecepcion(result.data.pedidos);
-            const badge = document.getElementById('badge-actuales');
-            if (badge) badge.textContent = result.data.pedidos.length;
+            const nuevoPedidosHash = _hashPedidos(result.data.pedidos);
+            if (nuevoPedidosHash !== _lastPedidosRenderHash) {
+                _lastPedidosRenderHash = nuevoPedidosHash;
+                DATA_RECEPCION.pedidos = result.data.pedidos;
+                renderizarTablaPedidosRecepcion(result.data.pedidos);
+                const badge = document.getElementById('badge-actuales');
+                if (badge) badge.textContent = result.data.pedidos.length;
+            }
         }
 
         // 2. Historial (solo si fue solicitado y está visible)
@@ -243,6 +264,7 @@ async function recargarPedidosActuales() {
         const result = await res.json();
         if (result.status === 'success') {
             DATA_RECEPCION.pedidos = result.data;
+            _lastPedidosRenderHash = null;   // garantizar re-render forzado
             renderizarTablaPedidosRecepcion(result.data);
             const badge = document.getElementById('badge-actuales');
             if (badge) badge.textContent = result.data.length;
