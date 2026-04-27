@@ -106,6 +106,12 @@ if (isset($_GET['action'])) {
         case 'resendResetEmail':
             procesarResendResetEmail($pdo);
             break;
+        case 'getRestaurantes':
+            obtenerListaRestaurantes($pdo);
+            break;
+        case 'getSuperadminStats':
+            obtenerStatsSuperadmin($pdo);
+            break;
     }
     exit;
 }
@@ -1641,12 +1647,15 @@ function obtenerUsuarios($pdo) {
 
     try {
         $stmt = $pdo->prepare("
-            SELECT ID_usuario, Nombre, Email, Rol,
-                   DATE_FORMAT(fecha_creacion, '%Y-%m-%d %H:%i') as fecha_creacion,
-                   activo
-            FROM usuarios
-            WHERE activo = 1
-            ORDER BY fecha_creacion DESC
+            SELECT u.ID_usuario, u.Nombre, u.Email, u.Rol,
+                   u.ID_restaurante,
+                   r.Nombre_local AS restaurante_nombre,
+                   DATE_FORMAT(u.fecha_creacion, '%Y-%m-%d %H:%i') as fecha_creacion,
+                   u.activo
+            FROM usuarios u
+            LEFT JOIN restaurantes r ON u.ID_restaurante = r.ID_Restaurante
+            WHERE u.activo = 1
+            ORDER BY u.fecha_creacion DESC
         ");
         $stmt->execute();
         echo json_encode(['status' => 'success', 'message' => 'Usuarios obtenidos', 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
@@ -1957,19 +1966,45 @@ function obtenerEstadisticas($pdo) {
     }
 
     try {
-        $totalPedidos = $pdo->query("SELECT COUNT(*) FROM pedidos")->fetchColumn();
-        $pendientes   = $pdo->query("SELECT COUNT(*) FROM pedidos WHERE Estado = 'Pendiente'")->fetchColumn();
-        $enCamino     = $pdo->query("SELECT COUNT(*) FROM pedidos WHERE Estado = 'En camino'")->fetchColumn();
-        $facturado    = $pdo->query("SELECT COALESCE(SUM(Total), 0) FROM pedidos WHERE Estado = 'Entregado'")->fetchColumn();
+        $id_restaurante = $_SESSION['user_restaurante'] ?? null;
+        $rol = strtolower(trim($_SESSION['user_rol'] ?? ''));
+
+        // Filtro de restaurante: admin ve solo el suyo; superadmin ve todo
+        $filtroRest = ($id_restaurante && $rol !== 'superadmin')
+            ? "AND ID_restaurante = " . intval($id_restaurante)
+            : "";
+
+        $totalPedidos = $pdo->query("SELECT COUNT(*) FROM pedidos WHERE 1=1 $filtroRest")->fetchColumn();
+        $pendientes   = $pdo->query("SELECT COUNT(*) FROM pedidos WHERE Estado = 'Pendiente' $filtroRest")->fetchColumn();
+        $preparando   = $pdo->query("SELECT COUNT(*) FROM pedidos WHERE Estado = 'Preparando' $filtroRest")->fetchColumn();
+        $enCamino     = $pdo->query("SELECT COUNT(*) FROM pedidos WHERE Estado = 'En camino' $filtroRest")->fetchColumn();
+        $cancelados   = $pdo->query("SELECT COUNT(*) FROM pedidos WHERE Estado = 'Cancelado' $filtroRest")->fetchColumn();
+        $entregados   = $pdo->query("SELECT COUNT(*) FROM pedidos WHERE Estado = 'Entregado' $filtroRest")->fetchColumn();
+        $facturado    = $pdo->query("SELECT COALESCE(SUM(Total), 0) FROM pedidos WHERE Estado = 'Entregado' $filtroRest")->fetchColumn();
+
+        // Stats de hoy
+        $pedidosHoy    = $pdo->query("SELECT COUNT(*) FROM pedidos WHERE DATE(fecha_creacion) = CURDATE() $filtroRest")->fetchColumn();
+        $facturadoHoy  = $pdo->query("SELECT COALESCE(SUM(Total), 0) FROM pedidos WHERE Estado = 'Entregado' AND DATE(fecha_creacion) = CURDATE() $filtroRest")->fetchColumn();
+        $entregadosHoy = $pdo->query("SELECT COUNT(*) FROM pedidos WHERE Estado = 'Entregado' AND DATE(fecha_creacion) = CURDATE() $filtroRest")->fetchColumn();
+
+        // Ticket promedio
+        $ticketProm = $entregados > 0 ? floatval($facturado) / intval($entregados) : 0;
 
         echo json_encode([
             'status'  => 'success',
             'message' => 'Estadísticas obtenidas',
             'data'    => [
-                'total_pedidos'   => $totalPedidos,
-                'pendientes'      => $pendientes,
-                'en_camino'       => $enCamino,
-                'total_facturado' => number_format($facturado, 2, '.', '')
+                'total_pedidos'    => (int)$totalPedidos,
+                'pendientes'       => (int)$pendientes,
+                'preparando'       => (int)$preparando,
+                'en_camino'        => (int)$enCamino,
+                'entregados'       => (int)$entregados,
+                'cancelados'       => (int)$cancelados,
+                'total_facturado'  => number_format($facturado, 2, '.', ''),
+                'pedidos_hoy'      => (int)$pedidosHoy,
+                'facturado_hoy'    => number_format($facturadoHoy, 2, '.', ''),
+                'entregados_hoy'   => (int)$entregadosHoy,
+                'ticket_promedio'  => number_format($ticketProm, 2, '.', ''),
             ]
         ]);
     } catch (PDOException $e) {
@@ -1984,17 +2019,42 @@ function obtenerTodosPedidos($pdo) {
     }
 
     try {
+        $id_restaurante = $_SESSION['user_restaurante'] ?? null;
+        $rol = strtolower(trim($_SESSION['user_rol'] ?? ''));
+
+        // Filtro de restaurante: admin ve solo el suyo; superadmin ve todo
+        $filtroRest = ($id_restaurante && $rol !== 'superadmin')
+            ? "AND p.ID_restaurante = " . intval($id_restaurante)
+            : "";
+
         $stmt = $pdo->prepare("
             SELECT 
-                p.ID_pedido, p.Total, p.Estado,
-                DATE_FORMAT(p.fecha_creacion, '%Y-%m-%d %H:%i') AS fecha_creacion,
-                c.Nombre AS c_nombre, c.Apellido AS c_apellido,
-                d.calle AS Calle, d.altura AS Numero, d.Localidad
+                p.ID_pedido,
+                p.Total,
+                p.Estado,
+                p.ID_restaurante,
+                DATE_FORMAT(p.fecha_creacion, '%d/%m/%Y %H:%i') AS fecha_creacion,
+                p.fecha_creacion AS fecha_raw,
+                c.Nombre AS c_nombre, c.Apellido AS c_apellido, c.Telefono AS c_telefono,
+                d.calle AS Calle, d.altura AS Numero, d.Localidad, d.piso_depto, d.referencias,
+                r.Nombre_local AS restaurante_nombre,
+                (
+                    SELECT GROUP_CONCAT(
+                        CONCAT(dp2.Cantidad, 'x ', pr2.Nombre_producto)
+                        ORDER BY dp2.ID_detalle
+                        SEPARATOR ', '
+                    )
+                    FROM detalle_pedido dp2
+                    JOIN productos pr2 ON dp2.ID_producto = pr2.ID_producto
+                    WHERE dp2.ID_pedido = p.ID_pedido
+                ) AS detalles_resumen
             FROM pedidos p
             INNER JOIN clientes    c ON p.ID_cliente   = c.ID_cliente
             INNER JOIN direcciones d ON p.ID_direccion = d.ID_direccion
+            LEFT JOIN  restaurantes r ON p.ID_restaurante = r.ID_Restaurante
+            WHERE 1=1 $filtroRest
             ORDER BY p.ID_pedido DESC
-            LIMIT 100
+            LIMIT 500
         ");
         $stmt->execute();
         echo json_encode(['status' => 'success', 'message' => 'Pedidos obtenidos', 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
@@ -2145,5 +2205,46 @@ function procesarResendResetEmail($pdo) {
         echo json_encode(['success' => false, 'error' => 'Error del servidor: ' . $e->getMessage()]);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => 'Error inesperado: ' . $e->getMessage()]);
+    }
+}
+// ==========================================
+// LISTA DE RESTAURANTES (para filtros dropdown)
+// ==========================================
+function obtenerListaRestaurantes($pdo) {
+    validarSesionSuperadmin();
+    try {
+        $stmt = $pdo->query("
+            SELECT r.ID_Restaurante, r.Nombre_local, d.Localidad
+            FROM restaurantes r
+            LEFT JOIN direcciones d ON r.ID_direccion = d.ID_direccion
+            ORDER BY r.Nombre_local ASC
+        ");
+        echo json_encode(['status' => 'success', 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+    } catch (PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+}
+
+// ==========================================
+// STATS GLOBALES PARA SUPERADMIN
+// ==========================================
+function obtenerStatsSuperadmin($pdo) {
+    $v = validarSesionSuperadmin();
+    if (!$v['valid']) {
+        echo json_encode(['status' => 'error', 'message' => $v['error']]);
+        return;
+    }
+    try {
+        $restaurantes = $pdo->query("SELECT COUNT(*) FROM restaurantes")->fetchColumn();
+        $usuarios     = $pdo->query("SELECT COUNT(*) FROM usuarios WHERE activo = 1")->fetchColumn();
+        $activos      = $pdo->query("SELECT COUNT(*) FROM pedidos WHERE Estado IN ('Pendiente','Preparando','En camino')")->fetchColumn();
+
+        echo json_encode(['status' => 'success', 'data' => [
+            'restaurantes' => (int)$restaurantes,
+            'usuarios'     => (int)$usuarios,
+            'activos'      => (int)$activos,
+        ]]);
+    } catch (PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
     }
 }

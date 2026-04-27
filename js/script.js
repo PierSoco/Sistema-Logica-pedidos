@@ -1273,7 +1273,11 @@ async function cargarUsuarios() {
         const result   = await response.json();
 
         if (result.status === 'success') {
+            SA_STATE.todos     = result.data;
+            SA_STATE.filtrados = result.data;
             renderizarTablaUsuarios(result.data);
+            const cnt = document.getElementById('sa-usuarios-count');
+            if (cnt) cnt.textContent = `${result.data.length} usuario${result.data.length !== 1 ? 's' : ''}`;
         } else {
             mostrarMensaje('error', result.message);
         }
@@ -1289,24 +1293,40 @@ function renderizarTablaUsuarios(usuarios) {
     tbody.innerHTML = '';
 
     if (usuarios.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay usuarios registrados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="hist-loading"><i class="fa-regular fa-folder-open" style="margin-right:8px;"></i>No se encontraron usuarios.</td></tr>';
         return;
     }
 
-    usuarios.forEach(usuario => {
-        const rolClass = usuario.Rol.toLowerCase();
+    usuarios.forEach((usuario, idx) => {
+        const rolClass = (usuario.Rol || '').toLowerCase();
+        const rolEmoji = { superadmin:'👑', admin:'🏪', recepcionista:'📋', chef:'👨‍🍳', repartidor:'🛵' }[rolClass] || '•';
+        const restaurante = usuario.restaurante_nombre || '—';
+        const fecha = usuario.fecha_creacion
+            ? new Date(usuario.fecha_creacion).toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric'})
+            : '—';
+
         const tr = document.createElement('tr');
+        tr.style.animationDelay = `${idx * 0.025}s`;
         tr.innerHTML = `
-            <td>${usuario.ID_usuario}</td>
-            <td>${usuario.Nombre}</td>
-            <td>${usuario.Email}</td>
-            <td><span class="badge-rol badge-${rolClass}">${usuario.Rol}</span></td>
+            <td style="color:var(--text-3);font-size:.75rem;font-weight:600;">${usuario.ID_usuario}</td>
             <td>
-                <div class="acciones-cell">
-                    <button class="btn-editar" onclick="abrirModalEditar(${usuario.ID_usuario})">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--amber),#e84393);display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-weight:700;font-size:0.72rem;color:#fff;flex-shrink:0;">
+                        ${(usuario.Nombre||'?').charAt(0).toUpperCase()}
+                    </div>
+                    <span style="font-weight:600;color:var(--text);">${escapeHtml(usuario.Nombre||'')}</span>
+                </div>
+            </td>
+            <td style="color:var(--text-2);font-size:.82rem;">${escapeHtml(usuario.Email||'')}</td>
+            <td><span class="badge-rol badge-${rolClass}">${rolEmoji} ${usuario.Rol||''}</span></td>
+            <td style="color:var(--text-2);font-size:.8rem;">${escapeHtml(restaurante)}</td>
+            <td style="color:var(--text-3);font-size:.75rem;">${fecha}</td>
+            <td>
+                <div class="acciones-cell" style="display:flex;gap:6px;">
+                    <button class="btn-icon" title="Editar" onclick="abrirModalEditar(${usuario.ID_usuario})">
                         <i class="fa-solid fa-pen"></i>
                     </button>
-                    <button class="btn-eliminar" onclick="confirmarEliminarUsuario(${usuario.ID_usuario}, '${usuario.Nombre}')">
+                    <button class="btn-icon btn-danger" title="Eliminar" onclick="confirmarEliminarUsuario(${usuario.ID_usuario}, '${escapeHtml(usuario.Nombre||'')}')">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </div>
@@ -1438,8 +1458,19 @@ function cerrarModal() {
     if (modal) modal.style.display = 'none';
 }
 
+// ==========================================
+// SUPERADMIN — ESTADO GLOBAL
+// ==========================================
+const SA_STATE = {
+    todos:     [],       // todos los usuarios
+    filtrados: [],
+    filtroRest: '',      // ID restaurante seleccionado ('' = todos)
+};
+
 function iniciarLogicaSuperAdmin() {
     cargarUsuarios();
+    cargarRestaurantesSuperadmin();
+    cargarStatsSuperadmin();
 
     const btnNuevo       = document.getElementById('btn-nuevo-usuario');
     const btnCerrarModal = document.getElementById('btn-cerrar-modal');
@@ -1455,9 +1486,74 @@ function iniciarLogicaSuperAdmin() {
     });
 }
 
+async function cargarRestaurantesSuperadmin() {
+    try {
+        const res = await fetch('./backend/funciones.php?action=getRestaurantes');
+        const r   = await res.json();
+        if (r.status !== 'success') return;
+
+        const sel = document.getElementById('sa-filtro-restaurante');
+        if (!sel) return;
+
+        r.data.forEach(rest => {
+            const opt = document.createElement('option');
+            opt.value = rest.ID_Restaurante;
+            opt.textContent = rest.Nombre_local + (rest.Localidad ? ` · ${rest.Localidad}` : '');
+            sel.appendChild(opt);
+        });
+    } catch(e) { /* silencioso */ }
+}
+
+async function cargarStatsSuperadmin() {
+    try {
+        const res = await fetch('./backend/funciones.php?action=getSuperadminStats');
+        const r   = await res.json();
+        if (r.status !== 'success') return;
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        set('sa-stat-restaurantes', r.data.restaurantes);
+        set('sa-stat-usuarios',     r.data.usuarios);
+        set('sa-stat-activos',      r.data.activos);
+    } catch(e) { /* silencioso */ }
+}
+
+function superadminFiltrarRestaurante() {
+    SA_STATE.filtroRest = document.getElementById('sa-filtro-restaurante')?.value || '';
+    superadminFiltrarUsuarios();
+}
+
+function superadminFiltrarUsuarios() {
+    const q     = (document.getElementById('sa-buscador-usuarios')?.value || '').toLowerCase().trim();
+    const rol   = (document.getElementById('sa-filtro-rol')?.value || '').toLowerCase();
+    const rest  = SA_STATE.filtroRest;
+
+    let lista = [...SA_STATE.todos];
+
+    if (q) {
+        lista = lista.filter(u => {
+            return [u.Nombre, u.Email, u.Rol, u.restaurante_nombre].join(' ').toLowerCase().includes(q);
+        });
+    }
+    if (rol) lista = lista.filter(u => (u.Rol || '').toLowerCase() === rol);
+    if (rest) lista = lista.filter(u => String(u.ID_restaurante) === String(rest));
+
+    SA_STATE.filtrados = lista;
+    renderizarTablaUsuarios(lista);
+    const cnt = document.getElementById('sa-usuarios-count');
+    if (cnt) cnt.textContent = `${lista.length} usuario${lista.length !== 1 ? 's' : ''} encontrado${lista.length !== 1 ? 's' : ''}`;
+}
+
 // ==========================================
-// ADMIN
+// ADMIN — ESTADO GLOBAL
 // ==========================================
+const ADMIN_STATE = {
+    todos:        [],
+    filtrados:    [],
+    paginaActual: 1,
+    porPagina:    30,
+    sortCol:      'id',
+    sortDir:      'desc',
+};
+
 async function cargarEstadisticas() {
     try {
         const response = await fetch('./backend/funciones.php?action=getEstadisticas');
@@ -1470,47 +1566,199 @@ async function cargarEstadisticas() {
 }
 
 function renderizarEstadisticas(stats) {
-    const el = (id) => document.getElementById(id);
-    if (el('stat-total-pedidos')) el('stat-total-pedidos').textContent = stats.total_pedidos || 0;
-    if (el('stat-pendientes'))    el('stat-pendientes').textContent    = stats.pendientes    || 0;
-    if (el('stat-en-camino'))     el('stat-en-camino').textContent     = stats.en_camino     || 0;
-    if (el('stat-facturado'))     el('stat-facturado').textContent     = `$${stats.total_facturado || 0}`;
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    const fmt = (n) => '$' + parseFloat(n).toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:0});
+
+    set('stat-total-pedidos', stats.total_pedidos || 0);
+    set('stat-pendientes',    stats.pendientes    || 0);
+    set('stat-en-camino',     stats.en_camino     || 0);
+    set('stat-cancelados',    stats.cancelados    || 0);
+    set('stat-facturado',     fmt(stats.total_facturado || 0));
+    set('stat-ticket-prom',   '$' + parseFloat(stats.ticket_promedio || 0).toLocaleString('es-AR', {minimumFractionDigits:0}));
+
+    set('stat-pedidos-hoy',       (stats.pedidos_hoy    || 0) + ' hoy');
+    set('stat-preparando-cnt',    (stats.preparando     || 0) + ' preparando');
+    set('stat-entregados-hoy-cnt',(stats.entregados_hoy || 0) + ' entregados hoy');
+    set('stat-facturado-hoy',     fmt(stats.facturado_hoy || 0) + ' hoy');
+
+    // Indicador actualización
+    const ahora = new Date();
+    const hora  = ahora.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+    const lbl   = document.getElementById('admin-ultima-act');
+    const ind   = document.getElementById('admin-reload-ind');
+    if (lbl) lbl.textContent = `Act. ${hora}`;
+    if (ind) { ind.classList.add('pulsing'); setTimeout(() => ind.classList.remove('pulsing'), 2000); }
 }
 
 async function cargarTodosPedidos() {
+    const tbody = document.getElementById('tabla-pedidos-admin');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="hist-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</td></tr>';
     try {
         const response = await fetch('./backend/funciones.php?action=getPedidosTodos');
         const result   = await response.json();
-        if (result.status === 'success') renderizarTablaPedidosAdmin(result.data);
-        else mostrarMensaje('error', result.message);
+        if (result.status === 'success') {
+            ADMIN_STATE.todos = result.data;
+            adminFiltrar();
+        } else {
+            mostrarMensaje('error', result.message);
+        }
     } catch (error) {
         console.error('Error:', error);
     }
 }
 
-function renderizarTablaPedidosAdmin(pedidos) {
+function adminFiltrar() {
+    const q      = (document.getElementById('admin-buscador')?.value || '').toLowerCase().trim();
+    const estado = document.getElementById('admin-filtro-estado')?.value || '';
+    const fecha  = document.getElementById('admin-filtro-fecha')?.value  || '';
+
+    let lista = [...ADMIN_STATE.todos];
+
+    if (q) {
+        lista = lista.filter(p => {
+            const txt = ['#'+p.ID_pedido, p.c_nombre, p.c_apellido, p.c_telefono, p.Calle, p.Numero, p.Localidad, p.detalles_resumen].join(' ').toLowerCase();
+            return txt.includes(q);
+        });
+    }
+    if (estado) lista = lista.filter(p => p.Estado === estado);
+
+    if (fecha) {
+        const hoy = new Date();
+        hoy.setHours(0,0,0,0);
+        lista = lista.filter(p => {
+            if (!p.fecha_raw) return true;
+            const d = new Date(p.fecha_raw);
+            if (fecha === 'hoy') return d >= hoy;
+            if (fecha === 'semana') {
+                const semana = new Date(hoy); semana.setDate(hoy.getDate() - hoy.getDay());
+                return d >= semana;
+            }
+            if (fecha === 'mes') {
+                const mes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+                return d >= mes;
+            }
+            return true;
+        });
+    }
+
+    // Sort
+    lista.sort((a, b) => {
+        let va, vb;
+        if (ADMIN_STATE.sortCol === 'id')    { va = a.ID_pedido;           vb = b.ID_pedido; }
+        if (ADMIN_STATE.sortCol === 'total') { va = parseFloat(a.Total);   vb = parseFloat(b.Total); }
+        if (ADMIN_STATE.sortCol === 'fecha') { va = a.fecha_raw || '';      vb = b.fecha_raw || ''; }
+        if (va < vb) return ADMIN_STATE.sortDir === 'asc' ? -1 : 1;
+        if (va > vb) return ADMIN_STATE.sortDir === 'asc' ?  1 : -1;
+        return 0;
+    });
+
+    ADMIN_STATE.filtrados    = lista;
+    ADMIN_STATE.paginaActual = 1;
+    adminRenderizarPagina();
+}
+
+function adminSort(col) {
+    if (ADMIN_STATE.sortCol === col) {
+        ADMIN_STATE.sortDir = ADMIN_STATE.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+        ADMIN_STATE.sortCol = col;
+        ADMIN_STATE.sortDir = 'desc';
+    }
+    // Actualizar iconos
+    document.querySelectorAll('#tabla-pedidos-admin-main thead th[data-col]').forEach(th => {
+        const icon = th.querySelector('.sort-icon');
+        if (!icon) return;
+        if (th.dataset.col === col) {
+            icon.className = `fa-solid fa-sort-${ADMIN_STATE.sortDir === 'asc' ? 'up' : 'down'} sort-icon`;
+        } else {
+            icon.className = 'fa-solid fa-sort sort-icon';
+        }
+    });
+    adminFiltrar();
+}
+
+function adminReset() {
+    const b = document.getElementById('admin-buscador');
+    const s = document.getElementById('admin-filtro-estado');
+    const f = document.getElementById('admin-filtro-fecha');
+    if (b) b.value = '';
+    if (s) s.value = '';
+    if (f) f.value = '';
+    ADMIN_STATE.sortCol = 'id'; ADMIN_STATE.sortDir = 'desc';
+    adminFiltrar();
+}
+
+function adminRenderizarPagina() {
+    const { filtrados, paginaActual, porPagina } = ADMIN_STATE;
+    const total     = filtrados.length;
+    const totalPags = Math.max(1, Math.ceil(total / porPagina));
+    const desde     = (paginaActual - 1) * porPagina;
+    const hasta     = Math.min(desde + porPagina, total);
+    const pagina    = filtrados.slice(desde, hasta);
+
+    const countEl = document.getElementById('admin-count-label');
+    if (countEl) countEl.textContent = total === 0 ? 'Sin resultados' : `${total} pedido${total !== 1 ? 's' : ''} · Mostrando ${desde+1}–${hasta}`;
+
     const tbody = document.getElementById('tabla-pedidos-admin');
     if (!tbody) return;
-    tbody.innerHTML = '';
 
-    if (pedidos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay pedidos</td></tr>';
+    if (pagina.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="hist-loading"><i class="fa-regular fa-folder-open" style="margin-right:8px;"></i>Sin pedidos con esos filtros.</td></tr>';
+        document.getElementById('admin-pagination').innerHTML = '';
         return;
     }
 
-    pedidos.forEach(pedido => {
-        const estadoClass = (pedido.Estado || '').toLowerCase().replace(' ', '-');
-        tbody.innerHTML += `
-            <tr>
-                <td>#${pedido.ID_pedido}</td>
-                <td>${pedido.c_nombre || ''} ${pedido.c_apellido || ''}</td>
-                <td>${pedido.Calle || ''} ${pedido.Numero || ''}, ${pedido.Localidad || ''}</td>
-                <td>$${parseFloat(pedido.Total).toFixed(2)}</td>
-                <td><span class="badge-estado badge-${estadoClass}">${pedido.Estado}</span></td>
-                <td>${pedido.fecha_creacion || 'N/A'}</td>
-            </tr>
-        `;
-    });
+    tbody.innerHTML = pagina.map(p => {
+        const estadoCls = (p.Estado || '').toLowerCase().replace(' ', '-');
+        const estadoEmoji = {'pendiente':'⏳','preparando':'👨‍🍳','en-camino':'🛵','entregado':'✅','cancelado':'❌'}[estadoCls] || '•';
+        const piso = p.piso_depto ? ` <small>· ${escapeHtml(p.piso_depto)}</small>` : '';
+        const loc  = p.Localidad  ? `<br><small style="color:var(--text-3)">${escapeHtml(p.Localidad)}</small>` : '';
+        return `<tr class="hist-row-clickable" onclick="verDetallePedido(${p.ID_pedido})" title="Ver pedido #${p.ID_pedido}">
+            <td><span class="hist-id">#${p.ID_pedido}</span></td>
+            <td>
+                <div class="hist-cliente-nombre">${escapeHtml(p.c_nombre||'')} ${escapeHtml(p.c_apellido||'')}</div>
+                <div class="hist-cliente-tel"><i class="fa-solid fa-phone" style="font-size:.65rem;margin-right:3px;"></i>${escapeHtml(p.c_telefono||'—')}</div>
+            </td>
+            <td>
+                <div class="hist-dir">${escapeHtml(p.Calle||'')} ${escapeHtml(p.Numero||'')}${piso}${loc}</div>
+            </td>
+            <td>
+                <div class="hist-productos" title="${escapeHtml(p.detalles_resumen||'')}">${escapeHtml(p.detalles_resumen||'—')}</div>
+            </td>
+            <td><span class="hist-total">$${parseFloat(p.Total||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></td>
+            <td><span class="hist-fecha">${p.fecha_creacion||'—'}</span></td>
+            <td><span class="estado-pill ${estadoCls}">${estadoEmoji} ${p.Estado||''}</span></td>
+            <td onclick="event.stopPropagation()">
+                <button class="hist-btn-ver" title="Ver detalle" onclick="verDetallePedido(${p.ID_pedido})">
+                    <i class="fa-solid fa-eye"></i>
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+
+    // Paginación usando la función existente adaptada
+    const cont = document.getElementById('admin-pagination');
+    if (cont) {
+        if (totalPags <= 1) { cont.innerHTML = ''; return; }
+        const p = paginaActual;
+        const pages = calcularPaginas(p, totalPags);
+        let html = `<button class="pag-btn" onclick="adminIrPagina(${p-1})" ${p===1?'disabled':''}><i class="fa-solid fa-chevron-left"></i></button>`;
+        pages.forEach(pg => {
+            html += pg === '...'
+                ? '<span class="pag-ellipsis">···</span>'
+                : `<button class="pag-btn${pg===p?' active':''}" onclick="adminIrPagina(${pg})">${pg}</button>`;
+        });
+        html += `<button class="pag-btn" onclick="adminIrPagina(${p+1})" ${p===totalPags?'disabled':''}><i class="fa-solid fa-chevron-right"></i></button>`;
+        cont.innerHTML = html;
+    }
+}
+
+function adminIrPagina(n) {
+    const total = Math.ceil(ADMIN_STATE.filtrados.length / ADMIN_STATE.porPagina);
+    if (n < 1 || n > total) return;
+    ADMIN_STATE.paginaActual = n;
+    adminRenderizarPagina();
+    document.getElementById('panel-admin')?.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 function iniciarLogicaAdmin() {
@@ -1524,6 +1772,15 @@ function iniciarLogicaAdmin() {
             cargarTodosPedidos();
         });
     }
+
+    // Auto-refresh cada 60s para el panel admin
+    setInterval(() => {
+        const panelAdmin = document.getElementById('panel-admin');
+        if (panelAdmin && !panelAdmin.classList.contains('hidden')) {
+            cargarEstadisticas();
+            cargarTodosPedidos();
+        }
+    }, 60000);
 }
 
 // ==========================================
