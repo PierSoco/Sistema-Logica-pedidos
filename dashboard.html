@@ -105,33 +105,94 @@
         <main class="app-container" id="app-main">
 
             <section id="panel-superadmin" class="panel-section hidden">
-                <p class="panel-title">Panel <em>Global</em></p>
-                <p class="panel-subtitle">Gestión completa del sistema. Todos los módulos disponibles.</p>
+                <div class="admin-panel-header">
+                    <div>
+                        <p class="panel-title">Panel <em>Global</em></p>
+                        <p class="panel-subtitle">Gestión completa del sistema · Todos los restaurantes</p>
+                    </div>
+                    <div class="admin-header-actions">
+                        <div class="superadmin-rest-filter">
+                            <i class="fa-solid fa-store" style="color:var(--amber);font-size:.8rem;"></i>
+                            <select id="sa-filtro-restaurante" class="hist-select" onchange="superadminFiltrarRestaurante()" style="min-width:180px;">
+                                <option value="">Todos los restaurantes</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPIs globales -->
+                <div class="admin-kpi-grid" id="sa-kpi-grid" style="margin-bottom:28px;">
+                    <div class="admin-kpi-card admin-kpi-amber">
+                        <div class="admin-kpi-icon"><i class="fa-solid fa-store"></i></div>
+                        <div class="admin-kpi-body">
+                            <div class="admin-kpi-label">Restaurantes</div>
+                            <div class="admin-kpi-value" id="sa-stat-restaurantes">—</div>
+                            <div class="admin-kpi-sub">activos en el sistema</div>
+                        </div>
+                    </div>
+                    <div class="admin-kpi-card admin-kpi-blue">
+                        <div class="admin-kpi-icon"><i class="fa-solid fa-users"></i></div>
+                        <div class="admin-kpi-body">
+                            <div class="admin-kpi-label">Usuarios</div>
+                            <div class="admin-kpi-value" id="sa-stat-usuarios">—</div>
+                            <div class="admin-kpi-sub">total registrados</div>
+                        </div>
+                    </div>
+                    <div class="admin-kpi-card admin-kpi-teal">
+                        <div class="admin-kpi-icon"><i class="fa-solid fa-receipt"></i></div>
+                        <div class="admin-kpi-body">
+                            <div class="admin-kpi-label">Pedidos Activos</div>
+                            <div class="admin-kpi-value" id="sa-stat-activos">—</div>
+                            <div class="admin-kpi-sub">en este momento</div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="crud-container">
                     <div class="crud-header">
                         <h2><i class="fa-solid fa-users"></i> Gestión de Usuarios</h2>
-                        <button id="btn-nuevo-usuario" class="btn-primary">
-                            <i class="fa-solid fa-user-plus"></i>
-                            Nuevo Usuario
-                        </button>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <!-- Búsqueda -->
+                            <div class="admin-search-wrap">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="sa-buscador-usuarios" placeholder="Buscar por nombre, email, rol..." oninput="superadminFiltrarUsuarios()">
+                            </div>
+                            <!-- Filtro rol -->
+                            <select id="sa-filtro-rol" class="hist-select" onchange="superadminFiltrarUsuarios()">
+                                <option value="">Todos los roles</option>
+                                <option value="superadmin">SuperAdmin</option>
+                                <option value="admin">Admin</option>
+                                <option value="recepcionista">Recepcionista</option>
+                                <option value="chef">Chef</option>
+                                <option value="repartidor">Repartidor</option>
+                            </select>
+                            <button id="btn-nuevo-usuario" class="btn-primary">
+                                <i class="fa-solid fa-user-plus"></i>
+                                Nuevo Usuario
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="tabla-wrapper">
-                        <table class="tabla-usuarios">
+                    <div class="hist-info-row" style="padding:10px 16px;">
+                        <span class="hist-count-label" id="sa-usuarios-count">Cargando...</span>
+                    </div>
+
+                    <div class="hist-table-wrap">
+                        <table class="hist-table">
                             <thead>
                                 <tr>
                                     <th>ID</th>
                                     <th>Nombre</th>
                                     <th>Email</th>
                                     <th>Rol</th>
-                                    <th>Fecha Creación</th>
+                                    <th>Restaurante</th>
+                                    <th>Creación</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-usuarios-body">
                                 <tr>
-                                    <td colspan="6" class="text-center">Cargando usuarios...</td>
+                                    <td colspan="7" class="hist-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando usuarios...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -224,73 +285,134 @@
             </section>
 
             <section id="panel-admin" class="panel-section hidden">
-                <p class="panel-title">Adminis<em>tración</em></p>
-                <p class="panel-subtitle">Reportes, estadísticas y gestión operativa.</p>
-
-                <!-- Estadísticas -->
-                <div class="stats-grid">
-                    <div class="stat-card stat-primary">
-                        <div class="stat-icon">📊</div>
-                        <div class="stat-content">
-                            <div class="stat-label">Total Pedidos</div>
-                            <div class="stat-value" id="stat-total-pedidos">0</div>
-                        </div>
+                <div class="admin-panel-header">
+                    <div>
+                        <p class="panel-title">Adminis<em>tración</em></p>
+                        <p class="panel-subtitle">Reportes, estadísticas y gestión operativa del restaurante.</p>
                     </div>
-
-                    <div class="stat-card stat-warning">
-                        <div class="stat-icon">⏳</div>
-                        <div class="stat-content">
-                            <div class="stat-label">Pendientes</div>
-                            <div class="stat-value" id="stat-pendientes">0</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card stat-info">
-                        <div class="stat-icon">🚚</div>
-                        <div class="stat-content">
-                            <div class="stat-label">En Camino</div>
-                            <div class="stat-value" id="stat-en-camino">0</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card stat-success">
-                        <div class="stat-icon">💰</div>
-                        <div class="stat-content">
-                            <div class="stat-label">Facturado</div>
-                            <div class="stat-value" id="stat-facturado">$0</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tabla de pedidos -->
-                <div class="crud-container" style="margin-top: 24px;">
-                    <div class="crud-header">
-                        <h2><i class="fa-solid fa-list"></i> Todos los Pedidos</h2>
-                        <button id="btn-refresh-admin" class="btn-primary">
+                    <div class="admin-header-actions">
+                        <span class="auto-reload-indicator" id="admin-reload-ind" title="Actualización automática">
+                            <span class="auto-reload-dot"></span>
+                            <span id="admin-ultima-act">En vivo</span>
+                        </span>
+                        <button id="btn-refresh-admin" class="btn-primary" style="padding:10px 16px;">
                             <i class="fa-solid fa-rotate-right"></i>
                             Actualizar
                         </button>
                     </div>
+                </div>
 
-                    <div class="tabla-wrapper">
-                        <table class="tabla-usuarios">
+                <!-- KPI GRID -->
+                <div class="admin-kpi-grid">
+                    <div class="admin-kpi-card admin-kpi-amber">
+                        <div class="admin-kpi-icon"><i class="fa-solid fa-receipt"></i></div>
+                        <div class="admin-kpi-body">
+                            <div class="admin-kpi-label">Total Pedidos</div>
+                            <div class="admin-kpi-value" id="stat-total-pedidos">—</div>
+                            <div class="admin-kpi-sub" id="stat-pedidos-hoy">— hoy</div>
+                        </div>
+                    </div>
+                    <div class="admin-kpi-card admin-kpi-amber2">
+                        <div class="admin-kpi-icon"><i class="fa-solid fa-clock"></i></div>
+                        <div class="admin-kpi-body">
+                            <div class="admin-kpi-label">Pendientes</div>
+                            <div class="admin-kpi-value" id="stat-pendientes">—</div>
+                            <div class="admin-kpi-sub" id="stat-preparando-cnt">— preparando</div>
+                        </div>
+                    </div>
+                    <div class="admin-kpi-card admin-kpi-blue">
+                        <div class="admin-kpi-icon"><i class="fa-solid fa-motorcycle"></i></div>
+                        <div class="admin-kpi-body">
+                            <div class="admin-kpi-label">En Camino</div>
+                            <div class="admin-kpi-value" id="stat-en-camino">—</div>
+                            <div class="admin-kpi-sub" id="stat-entregados-hoy-cnt">— entregados hoy</div>
+                        </div>
+                    </div>
+                    <div class="admin-kpi-card admin-kpi-teal">
+                        <div class="admin-kpi-icon"><i class="fa-solid fa-dollar-sign"></i></div>
+                        <div class="admin-kpi-body">
+                            <div class="admin-kpi-label">Facturado</div>
+                            <div class="admin-kpi-value" id="stat-facturado">—</div>
+                            <div class="admin-kpi-sub" id="stat-facturado-hoy">— hoy</div>
+                        </div>
+                    </div>
+                    <div class="admin-kpi-card admin-kpi-red">
+                        <div class="admin-kpi-icon"><i class="fa-solid fa-ban"></i></div>
+                        <div class="admin-kpi-body">
+                            <div class="admin-kpi-label">Cancelados</div>
+                            <div class="admin-kpi-value" id="stat-cancelados">—</div>
+                            <div class="admin-kpi-sub">total histórico</div>
+                        </div>
+                    </div>
+                    <div class="admin-kpi-card admin-kpi-purple">
+                        <div class="admin-kpi-icon"><i class="fa-solid fa-chart-line"></i></div>
+                        <div class="admin-kpi-body">
+                            <div class="admin-kpi-label">Ticket Promedio</div>
+                            <div class="admin-kpi-value" id="stat-ticket-prom">—</div>
+                            <div class="admin-kpi-sub">por pedido entregado</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TABLA DE PEDIDOS -->
+                <div class="crud-container" style="margin-top: 24px;">
+                    <div class="crud-header">
+                        <h2><i class="fa-solid fa-list-ul"></i> Pedidos del Restaurante</h2>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <!-- Búsqueda -->
+                            <div class="admin-search-wrap">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="admin-buscador" placeholder="Buscar por N°, cliente, dirección..." oninput="adminFiltrar()">
+                            </div>
+                            <!-- Filtro estado -->
+                            <select id="admin-filtro-estado" class="hist-select" onchange="adminFiltrar()">
+                                <option value="">Todos los estados</option>
+                                <option value="Pendiente">⏳ Pendiente</option>
+                                <option value="Preparando">👨‍🍳 Preparando</option>
+                                <option value="En camino">🛵 En camino</option>
+                                <option value="Entregado">✅ Entregado</option>
+                                <option value="Cancelado">❌ Cancelado</option>
+                            </select>
+                            <!-- Filtro fecha -->
+                            <select id="admin-filtro-fecha" class="hist-select" onchange="adminFiltrar()">
+                                <option value="">Todas las fechas</option>
+                                <option value="hoy">Hoy</option>
+                                <option value="semana">Esta semana</option>
+                                <option value="mes">Este mes</option>
+                            </select>
+                            <button class="hist-btn-reset" onclick="adminReset()" title="Limpiar filtros">
+                                <i class="fa-solid fa-filter-circle-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Info row -->
+                    <div class="hist-info-row" style="padding:10px 16px;">
+                        <span class="hist-count-label" id="admin-count-label">Cargando...</span>
+                    </div>
+
+                    <div class="hist-table-wrap">
+                        <table class="hist-table" id="tabla-pedidos-admin-main">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th class="sortable" onclick="adminSort('id')" data-col="id">N° <i class="fa-solid fa-sort sort-icon"></i></th>
                                     <th>Cliente</th>
                                     <th>Dirección</th>
-                                    <th>Total</th>
+                                    <th>Productos</th>
+                                    <th class="sortable" onclick="adminSort('total')" data-col="total">Total <i class="fa-solid fa-sort sort-icon"></i></th>
+                                    <th class="sortable" onclick="adminSort('fecha')" data-col="fecha">Fecha <i class="fa-solid fa-sort sort-icon"></i></th>
                                     <th>Estado</th>
-                                    <th>Fecha</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-pedidos-admin">
-                                <tr>
-                                    <td colspan="6" class="text-center">Cargando pedidos...</td>
-                                </tr>
+                                <tr><td colspan="8" class="hist-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando pedidos...</td></tr>
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Paginación -->
+                    <div class="hist-pagination" id="admin-pagination"></div>
                 </div>
             </section>
 
