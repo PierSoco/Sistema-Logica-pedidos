@@ -112,6 +112,18 @@ if (isset($_GET['action'])) {
         case 'getSuperadminStats':
             obtenerStatsSuperadmin($pdo);
             break;
+        case 'getAdminMenu':
+            obtenerAdminMenu($pdo);
+            break;
+        case 'toggleProducto':
+            toggleProductoActivo($pdo);
+            break;
+        case 'getAdminHorasPico':
+            obtenerAdminHorasPico($pdo);
+            break;
+        case 'getAdminPersonal':
+            obtenerAdminPersonal($pdo);
+            break;
     }
     exit;
 }
@@ -548,6 +560,107 @@ function obtenerRefreshData($pdo) {
         echo json_encode(['status' => 'success', 'data' => $responseData]);
 
     } catch (PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+}
+
+// ==========================================
+// MODULOS EXTENDIDOS ADMIN (Menu, Horas, Personal)
+// ==========================================
+
+function obtenerAdminMenu($pdo) {
+    validarRol(['admin', 'superadmin']);
+    try {
+        $id_restaurante = $_SESSION['user_restaurante'] ?? null;
+        $rol = strtolower(trim($_SESSION['user_rol'] ?? ''));
+        $filtroRest = ($id_restaurante && $rol !== 'superadmin') ? "WHERE ID_restaurante = " . intval($id_restaurante) : "";
+
+        $stmt = $pdo->query("SELECT ID_producto, Nombre_producto, Precio, Stock, Activo FROM productos $filtroRest ORDER BY Nombre_producto ASC");
+        echo json_encode(['status' => 'success', 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+    } catch(PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+}
+
+function toggleProductoActivo($pdo) {
+    validarRol(['admin', 'superadmin']);
+    $data = json_decode(file_get_contents("php://input"), true);
+    $id = filter_var($data['id'] ?? 0, FILTER_VALIDATE_INT);
+    $activo = isset($data['activo']) ? (int)$data['activo'] : 0;
+    if(!$id) { echo json_encode(['status'=>'error','message'=>'ID inválido']); return; }
+
+    try {
+        // Seguridad: Chequeo de restaurante
+        $id_restaurante = $_SESSION['user_restaurante'] ?? null;
+        $rol = strtolower(trim($_SESSION['user_rol'] ?? ''));
+        if($rol !== 'superadmin' && $id_restaurante) {
+            $chk = $pdo->prepare("SELECT ID_restaurante FROM productos WHERE ID_producto = :id");
+            $chk->execute([':id'=>$id]);
+            $restProd = $chk->fetchColumn();
+            if($restProd != $id_restaurante) {
+                echo json_encode(['status'=>'error','message'=>'Acceso denegado']); return;
+            }
+        }
+
+        $stmt = $pdo->prepare("UPDATE productos SET Activo = :act WHERE ID_producto = :id");
+        $stmt->execute([':act'=>$activo, ':id'=>$id]);
+        echo json_encode(['status'=>'success','message'=>'Producto actualizado']);
+    } catch(PDOException $e) {
+        echo json_encode(['status'=>'error','message'=>$e->getMessage()]);
+    }
+}
+
+function obtenerAdminHorasPico($pdo) {
+    validarRol(['admin', 'superadmin']);
+    try {
+        $id_restaurante = $_SESSION['user_restaurante'] ?? null;
+        $rol = strtolower(trim($_SESSION['user_rol'] ?? ''));
+        $filtroRest = ($id_restaurante && $rol !== 'superadmin') ? "AND ID_restaurante = " . intval($id_restaurante) : "";
+
+        // Demanda agrupada por hora (últimos 7 días)
+        $stmt = $pdo->query("
+            SELECT HOUR(fecha_creacion) as hora, COUNT(*) as cantidad
+            FROM pedidos
+            WHERE fecha_creacion >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            $filtroRest
+            GROUP BY HOUR(fecha_creacion)
+        ");
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $horas = array_fill(8, 16, 0); // inicializar de 8h a 23h con ceros
+        foreach($res as $r) {
+            $h = (int)$r['hora'];
+            if($h >= 8 && $h <= 23) {
+                $horas[$h] = (int)$r['cantidad'];
+            }
+        }
+        
+        $dataOut = [];
+        for($i=8; $i<=23; $i++){
+            $dataOut[] = $horas[$i];
+        }
+        echo json_encode(['status' => 'success', 'data' => $dataOut]);
+    } catch(PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+}
+
+function obtenerAdminPersonal($pdo) {
+    validarRol(['admin', 'superadmin']);
+    try {
+        $id_restaurante = $_SESSION['user_restaurante'] ?? null;
+        $rol = strtolower(trim($_SESSION['user_rol'] ?? ''));
+        $filtroRest = ($id_restaurante && $rol !== 'superadmin') ? "AND u.ID_restaurante = " . intval($id_restaurante) : "";
+
+        $stmt = $pdo->query("
+            SELECT u.ID_usuario, u.Nombre, u.Apellido, u.Rol
+            FROM usuarios u
+            WHERE u.Rol IN ('chef', 'repartidor') AND u.activo = 1
+            $filtroRest
+            ORDER BY u.Nombre ASC
+        ");
+        echo json_encode(['status' => 'success', 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+    } catch(PDOException $e) {
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
     }
 }

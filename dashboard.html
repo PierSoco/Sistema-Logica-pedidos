@@ -378,7 +378,7 @@
                     <nav class="adm-nav">
                       <button class="adm-btn active" onclick="showAdminPanel('pedidos',this)"><span class="nav-dot"></span><span class="nav-icon">📦</span>Pedidos<span class="nav-badge">8</span></button>
                       <button class="adm-btn" onclick="showAdminPanel('personal',this)"><span class="nav-icon">🛵</span>Personal</button>
-                      <button class="adm-btn" onclick="showAdminPanel('alertas',this)"><span class="nav-icon">🔔</span>Alertas<span class="nav-badge">3</span></button>
+                      <button class="adm-btn" onclick="showAdminPanel('alertas',this)"><span class="nav-icon">🔔</span>Alertas<span class="nav-badge" id="sidebar-alertas-badge" style="display:none;">0</span></button>
                       <button class="adm-btn" onclick="showAdminPanel('historial',this)"><span class="nav-icon">📋</span>Historial</button>
                     </nav>
                     <div class="adm-section">Análisis</div>
@@ -401,30 +401,26 @@
 
                     <!-- PEDIDOS -->
                     <div id="panel-mod-pedidos" class="panel active">
-                      <div class="ph"><div><div class="ph-title">Pedidos</div><div class="ph-sub">Conteo por estado — actualizado hace 1 min</div></div><span class="ph-badge badge-live">● EN VIVO</span></div>
+                      <div class="ph"><div><div class="ph-title">Pedidos</div><div class="ph-sub" id="admin-pedidos-subtitle">Conteo por estado — actualizado recién</div></div><span class="ph-badge badge-live">● EN VIVO</span></div>
                       <div class="estado-grid">
                         <div class="estado-card"><div class="estado-num s-pend" id="stat-pendientes">14</div><div class="estado-label">Pendiente</div></div>
                         <div class="estado-card"><div class="estado-num s-prep" id="stat-preparando-cnt">5</div><div class="estado-label">Preparando</div></div>
                         <div class="estado-card"><div class="estado-num s-cam" id="stat-en-camino">3</div><div class="estado-label">En camino</div></div>
-                        <div class="estado-card"><div class="estado-num s-entr" id="stat-entregados-hoy-cnt">30</div><div class="estado-label">Entregado</div></div>
+                        <div class="estado-card"><div class="estado-num s-entr" id="stat-entregados-hoy-cnt">30</div><div class="estado-label">Entregados hoy</div></div>
                         <div class="estado-card"><div class="estado-num s-canc" id="stat-cancelados">4</div><div class="estado-label">Cancelado</div></div>
                       </div>
                       <div class="kpi-grid">
-                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--amber-light)"></div><div class="kpi-label">Total hoy</div><div class="kpi-val" id="stat-total-pedidos">56</div><div class="kpi-sub kpi-trend up">+12% vs ayer</div></div>
-                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--teal-mid)"></div><div class="kpi-label">Facturado</div><div class="kpi-val" id="stat-facturado">$312k</div><div class="kpi-sub kpi-trend up">+8% vs ayer</div></div>
-                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--blue-mid)"></div><div class="kpi-label">Ticket prom.</div><div class="kpi-val" id="stat-ticket-prom">$5.5k</div><div class="kpi-sub kpi-trend down">-3% vs ayer</div></div>
-                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--red-mid)"></div><div class="kpi-label">Cancelación</div><div class="kpi-val">7.1%</div><div class="kpi-sub kpi-trend down">+1.2% vs ayer</div></div>
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--amber-light)"></div><div class="kpi-label">Total hoy</div><div class="kpi-val" id="stat-pedidos-hoy">0</div><div class="kpi-sub">pedidos nuevos</div></div>
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--teal-mid)"></div><div class="kpi-label">Facturado hoy</div><div class="kpi-val" id="stat-facturado-hoy">$0</div><div class="kpi-sub">ingresos del día</div></div>
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--blue-mid)"></div><div class="kpi-label">Ticket prom.</div><div class="kpi-val" id="stat-ticket-prom">$0</div><div class="kpi-sub">general histórico</div></div>
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--red-mid)"></div><div class="kpi-label">Cancelación</div><div class="kpi-val" id="stat-tasa-cancelacion">0%</div><div class="kpi-sub">del total de pedidos</div></div>
                       </div>
                       <div class="sec-card">
                         <div class="sec-title"><span class="sec-dot" style="background:var(--amber-light)"></span>Pedidos activos ahora</div>
                         <table class="hist-table" id="tabla-pedidos-admin-main">
                           <thead><tr><th>#</th><th>Cliente</th><th>Estado</th><th>Hace</th><th>Total</th></tr></thead>
-                          <tbody id="tabla-pedidos-admin">
-                            <tr><td>#33</td><td>pierre d.</td><td><span class="pill pill-pend">Pendiente</span></td><td>1h 20m</td><td>$10.000</td></tr>
-                            <tr><td>#34</td><td>pierre d.</td><td><span class="pill pill-prep">Preparando</span></td><td>58m</td><td>$24.000</td></tr>
-                            <tr><td>#27</td><td>jose d.</td><td><span class="pill pill-cam">En camino</span></td><td>34d</td><td>$16.000</td></tr>
-                            <tr><td>#29</td><td>dai j.</td><td><span class="pill pill-pend">Pendiente</span></td><td>34d</td><td>$3.000</td></tr>
-                            <tr><td>#30</td><td>tero j.</td><td><span class="pill pill-prep">Preparando</span></td><td>34d</td><td>$33.000</td></tr>
+                          <tbody id="admin-activos-body">
+                            <tr><td colspan="5" class="hist-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</td></tr>
                           </tbody>
                         </table>
                       </div>
@@ -440,67 +436,23 @@
                       </div>
                       <div class="sec-card">
                         <div class="sec-title"><span class="sec-dot" style="background:var(--teal-mid)"></span>Repartidores activos</div>
-                        <div class="rep-grid">
-                          <div class="rep-item">
-                            <div class="rep-avatar" style="background:var(--teal-bg);color:var(--teal)">PR</div>
-                            <div style="flex:1"><div class="rep-name">Pedro Repartidor</div><div class="rep-status status-ocup">🟡 En camino — Pedido #27</div></div>
-                          </div>
-                          <div class="rep-item">
-                            <div class="rep-avatar" style="background:var(--green-bg);color:var(--green)">JG</div>
-                            <div style="flex:1"><div class="rep-name">Juan González</div><div class="rep-status status-disp">🟢 Disponible</div></div>
-                          </div>
-                          <div class="rep-item">
-                            <div class="rep-avatar" style="background:var(--blue-bg);color:var(--blue)">ML</div>
-                            <div style="flex:1"><div class="rep-name">Marcos López</div><div class="rep-status status-disp">🟢 Disponible</div></div>
-                          </div>
-                          <div class="rep-item">
-                            <div class="rep-avatar" style="background:var(--color-background-secondary);color:var(--color-text-secondary)">AR</div>
-                            <div style="flex:1"><div class="rep-name">Ana Ríos</div><div class="rep-status" style="color:var(--color-text-tertiary);font-size:10px">⚪ Descanso</div></div>
-                          </div>
+                        <div class="rep-grid" id="rep-grid-repartidores">
+                          <p style="font-size:11px;color:var(--text-3);padding:10px;">Cargando personal...</p>
                         </div>
                       </div>
                       <div class="sec-card">
                         <div class="sec-title"><span class="sec-dot" style="background:var(--blue-mid)"></span>Cocina</div>
-                        <div class="rep-grid">
-                          <div class="rep-item">
-                            <div class="rep-avatar" style="background:var(--amber-bg);color:var(--amber)">JP</div>
-                            <div style="flex:1"><div class="rep-name">Juan Perez (Chef)</div><div class="rep-status status-ocup">🟡 Cocinando — 2 pedidos</div></div>
-                          </div>
-                          <div class="rep-item">
-                            <div class="rep-avatar" style="background:var(--green-bg);color:var(--green)">LM</div>
-                            <div style="flex:1"><div class="rep-name">Luisa Martinez</div><div class="rep-status status-disp">🟢 Disponible</div></div>
-                          </div>
+                        <div class="rep-grid" id="rep-grid-cocina">
+                          <p style="font-size:11px;color:var(--text-3);padding:10px;">Cargando personal...</p>
                         </div>
                       </div>
                     </div>
 
                     <!-- ALERTAS -->
                     <div id="panel-mod-alertas" class="panel">
-                      <div class="ph"><div><div class="ph-title">Alertas del Sistema</div><div class="ph-sub">Avisos por retrasos y anomalías</div></div><span class="ph-badge" style="background:var(--red-bg);color:var(--red)">3 activas</span></div>
-                      <div class="alert-item alert-red">
-                        <div class="alert-icon">🚨</div>
-                        <div class="alert-text"><div class="alert-title">Pedido #27 — retraso crítico</div><div class="alert-sub">En camino hace 34 días — tiempo estimado superado por 33d 23h</div></div>
-                        <div class="alert-time">ahora</div>
-                      </div>
-                      <div class="alert-item alert-red">
-                        <div class="alert-icon">⚠️</div>
-                        <div class="alert-text"><div class="alert-title">14 pedidos pendientes sin asignar</div><div class="alert-sub">Ningún repartidor asignado — demanda supera capacidad actual</div></div>
-                        <div class="alert-time">1 min</div>
-                      </div>
-                      <div class="alert-item alert-amber">
-                        <div class="alert-icon">🍔</div>
-                        <div class="alert-text"><div class="alert-title">Stock bajo — Hamburguesa Clásica</div><div class="alert-sub">Solo 3 unidades disponibles</div></div>
-                        <div class="alert-time">5 min</div>
-                      </div>
-                      <div class="alert-item alert-amber">
-                        <div class="alert-icon">📦</div>
-                        <div class="alert-text"><div class="alert-title">Pedido #29 sin movimiento</div><div class="alert-sub">Pendiente desde hace 34 días — revisar estado del pedido</div></div>
-                        <div class="alert-time">34d</div>
-                      </div>
-                      <div class="alert-item alert-blue">
-                        <div class="alert-icon">💡</div>
-                        <div class="alert-text"><div class="alert-title">Tasa de cancelación elevada</div><div class="alert-sub">7.1% — promedio normal es 3.5% — revisar causas frecuentes</div></div>
-                        <div class="alert-time">hoy</div>
+                      <div class="ph"><div><div class="ph-title">Alertas del Sistema</div><div class="ph-sub">Avisos por retrasos y anomalías</div></div><span class="ph-badge" id="admin-alertas-badge" style="background:var(--red-bg);color:var(--red)">0 activas</span></div>
+                      <div id="alertas-container">
+                        <p style="text-align:center; color:var(--text-3); padding:20px;">Cargando alertas...</p>
                       </div>
                     </div>
 
@@ -508,26 +460,21 @@
                     <div id="panel-mod-historial" class="panel">
                       <div class="ph"><div><div class="ph-title">Historial de Pedidos</div><div class="ph-sub">Logs filtrables por fecha, cliente y pago</div></div></div>
                       <div class="hist-filters">
-                        <input class="hist-input" type="date" id="admin-h-desde" value="2026-03-14" style="width:128px">
-                        <input class="hist-input" type="date" id="admin-h-hasta" value="2026-04-27" style="width:128px">
-                        <input class="hist-input" type="text" id="admin-h-cliente" placeholder="Buscar cliente..." style="flex:1;min-width:100px" oninput="filtrarHistAdminModule()">
-                        <select class="hist-input" id="admin-h-pago" onchange="filtrarHistAdminModule()" style="width:110px">
-                          <option value="">Todos los pagos</option>
-                          <option value="Efectivo">Efectivo</option>
-                          <option value="MercadoPago">MercadoPago</option>
-                          <option value="Tarjeta">Tarjeta</option>
-                        </select>
-                        <select class="hist-input" id="admin-h-estado" onchange="filtrarHistAdminModule()" style="width:110px">
+                        <input class="hist-input" type="text" id="admin-buscador" placeholder="Buscar cliente..." style="flex:1;min-width:100px" oninput="adminFiltrar()">
+                        <select class="hist-input" id="admin-filtro-estado" onchange="adminFiltrar()" style="width:110px">
                           <option value="">Todos los estados</option>
                           <option value="Entregado">Entregado</option>
                           <option value="Cancelado">Cancelado</option>
                           <option value="Pendiente">Pendiente</option>
+                          <option value="Preparando">Preparando</option>
+                          <option value="En camino">En camino</option>
                         </select>
                       </div>
-                      <table class="hist-table" id="admin-module-hist-table">
-                        <thead><tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Estado</th><th>Pago</th><th>Total</th></tr></thead>
-                        <tbody id="admin-module-hist-body"></tbody>
+                      <table class="hist-table" style="margin-top: 10px;">
+                        <thead><tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Dirección</th><th>Total</th><th>Estado</th></tr></thead>
+                        <tbody id="tabla-pedidos-admin"></tbody>
                       </table>
+                      <div id="admin-pagination" style="margin-top: 10px;"></div>
                     </div>
 
                     <!-- TIEMPOS -->
@@ -559,43 +506,8 @@
                     <!-- MENU -->
                     <div id="panel-mod-menu" class="panel">
                       <div class="ph"><div><div class="ph-title">Gestión del Menú</div><div class="ph-sub">Activación / desactivación instantánea de platos</div></div></div>
-                      <div class="menu-grid">
-                        <div class="menu-item">
-                          <div style="width:36px;height:36px;border-radius:var(--border-radius-md);background:var(--amber-bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🍔</div>
-                          <div class="menu-info">
-                            <div class="menu-name">Hamburguesa Clásica</div>
-                            <div class="menu-price">$5.500</div>
-                            <div class="menu-stock" style="color:var(--red)">⚠ Stock: 3 unidades</div>
-                          </div>
-                          <label class="toggle"><input type="checkbox" checked onchange="toggleMenuAdmin(this,'Hamburguesa Clásica')"><span class="toggle-slider"></span></label>
-                        </div>
-                        <div class="menu-item">
-                          <div style="width:36px;height:36px;border-radius:var(--border-radius-md);background:var(--amber-bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🍟</div>
-                          <div class="menu-info">
-                            <div class="menu-name">Papas Fritas</div>
-                            <div class="menu-price">$2.500</div>
-                            <div class="menu-stock">Stock: 77 unidades</div>
-                          </div>
-                          <label class="toggle"><input type="checkbox" checked onchange="toggleMenuAdmin(this,'Papas Fritas')"><span class="toggle-slider"></span></label>
-                        </div>
-                        <div class="menu-item">
-                          <div style="width:36px;height:36px;border-radius:var(--border-radius-md);background:var(--coral-bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🍕</div>
-                          <div class="menu-info">
-                            <div class="menu-name">Pizza Muzarella</div>
-                            <div class="menu-price">$8.000</div>
-                            <div class="menu-stock">Stock: 23 unidades</div>
-                          </div>
-                          <label class="toggle"><input type="checkbox" checked onchange="toggleMenuAdmin(this,'Pizza Muzarella')"><span class="toggle-slider"></span></label>
-                        </div>
-                        <div class="menu-item">
-                          <div style="width:36px;height:36px;border-radius:var(--border-radius-md);background:var(--coral-bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🥟</div>
-                          <div class="menu-info">
-                            <div class="menu-name">Empanada de Carne</div>
-                            <div class="menu-price">$1.000</div>
-                            <div class="menu-stock">Stock: 194 unidades</div>
-                          </div>
-                          <label class="toggle"><input type="checkbox" checked onchange="toggleMenuAdmin(this,'Empanada de Carne')"><span class="toggle-slider"></span></label>
-                        </div>
+                      <div class="menu-grid" id="admin-menu-grid">
+                        <p style="text-align:center; color:var(--text-3); padding:20px;">Cargando menú...</p>
                       </div>
                       <div id="admin-menu-log" style="margin-top:10px;font-size:11px;color:var(--teal);padding:6px 10px;border-radius:var(--border-radius-md);background:var(--teal-bg);display:none"></div>
                     </div>
@@ -1256,114 +1168,6 @@
 
     <!-- SCRIPTS INTEGRADOS PARA EL MODULO ADMIN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-    <script>
-    function showAdminPanel(id, btn) {
-      document.querySelectorAll('.adm-wrap .panel').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.adm-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('panel-mod-'+id).classList.add('active');
-      btn.classList.add('active');
-      if (!btn.querySelector('.nav-dot')) {
-        const d = document.createElement('span');
-        d.className = 'nav-dot';
-        btn.insertBefore(d, btn.firstChild);
-      }
-      if (id === 'horas') renderHorasChart();
-    }
-
-    const histDataAdminModule = [
-      {id:56,fecha:'2026-04-20',cliente:'hernan m.',estado:'Pendiente',pago:'Efectivo',total:'$5.000'},
-      {id:55,fecha:'2026-04-13',cliente:'pierre d.',estado:'Pendiente',pago:'MercadoPago',total:'$5.500'},
-      {id:32,fecha:'2026-03-25',cliente:'pierre d.',estado:'Entregado',pago:'Tarjeta',total:'$3.000'},
-      {id:31,fecha:'2026-03-25',cliente:'pierre d.',estado:'En camino',pago:'Efectivo',total:'$8.000'},
-      {id:26,fecha:'2026-03-23',cliente:'Juancito L.',estado:'Entregado',pago:'Efectivo',total:'$2.500'},
-      {id:22,fecha:'2026-03-23',cliente:'Stuart L.',estado:'Entregado',pago:'MercadoPago',total:'$6.500'},
-      {id:13,fecha:'2026-03-23',cliente:'Pedro M.',estado:'Entregado',pago:'Tarjeta',total:'$16.500'},
-      {id:5,fecha:'2026-03-22',cliente:'matias f.',estado:'Entregado',pago:'Efectivo',total:'$24.000'},
-      {id:2,fecha:'2026-03-14',cliente:'Maria G.',estado:'Cancelado',pago:'MercadoPago',total:'$10.000'},
-      {id:1,fecha:'2026-03-14',cliente:'Juan P.',estado:'Entregado',pago:'Efectivo',total:'$8.000'},
-    ];
-
-    const estadoPillAdmin = {
-      'Pendiente':'pill-pend','Preparando':'pill-prep','En camino':'pill-cam','Entregado':'pill-entr','Cancelado':'pill-canc'
-    };
-    const pagoPillAdmin = {'Efectivo':'pago-ef','MercadoPago':'pago-mp','Tarjeta':'pago-tc'};
-
-    function filtrarHistAdminModule() {
-      const cliente = document.getElementById('admin-h-cliente').value.toLowerCase();
-      const pago = document.getElementById('admin-h-pago').value;
-      const estado = document.getElementById('admin-h-estado').value;
-      const filtered = histDataAdminModule.filter(r =>
-        (!cliente || r.cliente.toLowerCase().includes(cliente)) &&
-        (!pago || r.pago === pago) &&
-        (!estado || r.estado === estado)
-      );
-      renderHistAdminModule(filtered);
-    }
-
-    function renderHistAdminModule(data) {
-      const tbody = document.getElementById('admin-module-hist-body');
-      if (!tbody) return;
-      tbody.innerHTML = data.map(r => `
-        <tr>
-          <td>#${r.id}</td>
-          <td>${r.fecha}</td>
-          <td>${r.cliente}</td>
-          <td><span class="pill ${estadoPillAdmin[r.estado]||''}">${r.estado}</span></td>
-          <td><span class="pill ${pagoPillAdmin[r.pago]||''}">${r.pago}</span></td>
-          <td style="font-weight:500">${r.total}</td>
-        </tr>`).join('');
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        if(document.getElementById('admin-module-hist-body')) renderHistAdminModule(histDataAdminModule);
-    });
-
-    function toggleMenuAdmin(el, nombre) {
-      const log = document.getElementById('admin-menu-log');
-      const estado = el.checked ? 'activado' : 'desactivado';
-      log.style.display = 'block';
-      log.textContent = `✓ ${nombre} ${estado} correctamente — ${new Date().toLocaleTimeString('es-AR')}`;
-    }
-
-    let horasChartInstance = null;
-    function renderHorasChart() {
-      if (horasChartInstance) return;
-      const ctx = document.getElementById('horasChart');
-      if (!ctx) return;
-      const labels = ['8h','9h','10h','11h','12h','13h','14h','15h','16h','17h','18h','19h','20h','21h','22h','23h'];
-      const data = [2,3,5,12,18,15,10,7,5,4,6,11,20,24,18,8];
-      horasChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [{
-            label: 'Pedidos',
-            data,
-            backgroundColor: data.map(v => v >= 18 ? '#E24B4A' : v >= 12 ? '#BA7517' : '#378ADD'),
-            borderRadius: 4,
-            borderSkipped: false,
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {legend:{display:false}},
-          scales: {
-            x: {grid:{display:false}, ticks:{font:{size:10}}},
-            y: {grid:{color:'rgba(0,0,0,0.06)'}, ticks:{font:{size:10}}}
-          }
-        }
-      });
-    }
-
-    document.querySelectorAll('.adm-btn').forEach(b => {
-      b.addEventListener('click', () => {
-        document.querySelectorAll('.adm-btn .nav-dot').forEach(d => {
-          if (d.parentElement !== b) d.remove();
-        });
-      });
-    });
-    </script>
 
     <!-- MAIN SCRIPT -->
     <script src="js/script.js"></script>
