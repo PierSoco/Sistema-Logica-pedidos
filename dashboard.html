@@ -6,10 +6,183 @@
     <title>Panel — RepartoGO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
-    <!-- FAVICON CORREGIDO (ruta relativa) -->
     <link rel="icon" type="image/png" href="assets/img/favicon.png">
     <link rel="shortcut icon" href="assets/img/favicon.png">
     
+    <style>
+      /* Variables encapsuladas para no sobreescribir el tema global de RepartoGO */
+      .adm-wrap {
+        --amber:#BA7517;--amber-bg:#FAEEDA;--amber-light:#FAC775;
+        --teal:#0F6E56;--teal-bg:#E1F5EE;--teal-mid:#1D9E75;
+        --blue:#185FA5;--blue-bg:#E6F1FB;--blue-mid:#378ADD;
+        --red:#A32D2D;--red-bg:#FCEBEB;--red-mid:#E24B4A;
+        --green:#3B6D11;--green-bg:#EAF3DE;--green-mid:#639922;
+        --purple:#534AB7;--purple-bg:#EEEDFE;--purple-mid:#7F77DD;
+        --coral:#993C1D;--coral-bg:#FAECE7;--coral-mid:#D85A30;
+        
+        --color-text-primary: #1a1a1a;
+        --color-text-secondary: #6b7280;
+        --color-text-tertiary: #9ca3af;
+        --color-border-secondary: #d1d5db;
+        --color-border-tertiary: #e5e7eb;
+        --color-background-primary: #ffffff;
+        --color-background-secondary: #f9fafb;
+        --color-background-tertiary: #f3f4f6;
+        --border-radius-md: 8px;
+        --border-radius-lg: 12px;
+
+        display:flex; height:620px; border:0.5px solid var(--color-border-tertiary); 
+        border-radius:var(--border-radius-lg); overflow:hidden; background:var(--color-background-primary);
+        font-family: var(--font-sans, system-ui, sans-serif);
+        font-size: 13px;
+        color: var(--color-text-primary);
+      }
+      
+      /* SIDEBAR ADMIN MODULE */
+      .adm-sidebar{width:180px;flex-shrink:0;border-right:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);display:flex;flex-direction:column;overflow-y:auto}
+      .adm-brand{padding:14px 12px 10px;font-size:14px;font-weight:500;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
+      .adm-brand span{font-size:10px;font-weight:400;color:var(--color-text-secondary);display:block;margin-top:1px}
+      .adm-section{font-size:10px;font-weight:500;color:var(--color-text-tertiary);padding:10px 12px 4px;letter-spacing:.06em;text-transform:uppercase}
+      .adm-nav{display:flex;flex-direction:column;gap:1px;padding:0 6px}
+      .adm-btn{display:flex;align-items:center;gap:7px;padding:7px 8px;border:none;background:none;cursor:pointer;border-radius:var(--border-radius-md);font-size:12px;color:var(--color-text-secondary);text-align:left;width:100%;transition:background .15s}
+      .adm-btn:hover{background:var(--color-background-primary);color:var(--color-text-primary)}
+      .adm-btn.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:500}
+      .adm-btn.active .nav-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0}
+      .nav-icon{font-size:13px;width:16px;text-align:center;flex-shrink:0}
+      .nav-badge{margin-left:auto;background:var(--red-bg);color:var(--red);font-size:10px;font-weight:500;padding:1px 5px;border-radius:20px}
+      
+      /* MAIN ADMIN MODULE */
+      .adm-main{flex:1;overflow-y:auto;background:var(--color-background-tertiary)}
+      
+      /* PANELS */
+      .adm-wrap .panel{display:none;padding:16px;animation:fadeIn .15s ease}
+      .adm-wrap .panel.active{display:block}
+      
+      /* PANEL HEADER */
+      .ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+      .ph-title{font-size:16px;font-weight:500;color:var(--color-text-primary); margin:0;}
+      .ph-sub{font-size:11px;color:var(--color-text-secondary);margin-top:1px}
+      .ph-badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:500}
+      .badge-live{background:var(--teal-bg);color:var(--teal)}
+      
+      /* KPI GRID */
+      .adm-wrap .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+      .adm-wrap .kpi-grid-3{grid-template-columns:repeat(3,1fr)}
+      .adm-wrap .kpi-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;position:relative;overflow:hidden}
+      .adm-wrap .kpi-bar{position:absolute;left:0;top:0;bottom:0;width:3px}
+      .adm-wrap .kpi-label{font-size:10px;color:var(--color-text-secondary);margin-bottom:4px}
+      .adm-wrap .kpi-val{font-size:20px;font-weight:500;color:var(--color-text-primary);line-height:1}
+      .adm-wrap .kpi-sub{font-size:10px;color:var(--color-text-secondary);margin-top:3px}
+      .adm-wrap .kpi-trend{font-size:10px;font-weight:500}
+      .adm-wrap .up{color:var(--green)}
+      .adm-wrap .down{color:var(--red)}
+      
+      /* STATUS PILLS */
+      .estado-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:14px}
+      .estado-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 8px;text-align:center}
+      .estado-num{font-size:22px;font-weight:500}
+      .estado-label{font-size:10px;color:var(--color-text-secondary);margin-top:2px}
+      .s-pend{color:var(--amber)}
+      .s-prep{color:var(--blue)}
+      .s-cam{color:var(--purple)}
+      .s-entr{color:var(--green)}
+      .s-canc{color:var(--red)}
+      
+      /* SECTION CARD */
+      .sec-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px;margin-bottom:10px}
+      .sec-title{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+      .sec-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+      
+      /* REPARTIDORES */
+      .rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+      .rep-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-secondary)}
+      .rep-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+      .rep-name{font-size:11px;font-weight:500;color:var(--color-text-primary)}
+      .rep-status{font-size:10px}
+      .rep-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+      .status-disp{background:var(--green-bg);color:var(--green)}
+      .status-ocup{background:var(--amber-bg);color:var(--amber)}
+      .status-desc{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+      
+      /* ALERTAS */
+      .alert-item{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:var(--border-radius-md);margin-bottom:6px;border-left:3px solid}
+      .alert-red{background:var(--red-bg);border-color:var(--red-mid)}
+      .alert-amber{background:var(--amber-bg);border-color:var(--amber-light)}
+      .alert-blue{background:var(--blue-bg);border-color:var(--blue-mid)}
+      .alert-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+      .alert-text{font-size:11px}
+      .alert-title{font-weight:500;color:var(--color-text-primary);margin-bottom:1px}
+      .alert-sub{color:var(--color-text-secondary)}
+      .alert-time{margin-left:auto;font-size:10px;color:var(--color-text-tertiary);flex-shrink:0;padding-top:2px}
+      
+      /* HISTORIAL TABLE */
+      .adm-wrap .hist-filters{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+      .adm-wrap .hist-input{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:5px 8px;font-size:11px;background:var(--color-background-primary);color:var(--color-text-primary);outline:none}
+      .adm-wrap .hist-input:focus{border-color:var(--color-border-secondary)}
+      .adm-wrap .hist-table{width:100%;border-collapse:collapse;font-size:11px}
+      .adm-wrap .hist-table th{text-align:left;padding:6px 8px;color:var(--color-text-secondary);font-weight:400;border-bottom:0.5px solid var(--color-border-tertiary)}
+      .adm-wrap .hist-table td{padding:7px 8px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
+      .adm-wrap .hist-table tr:last-child td{border-bottom:none}
+      .adm-wrap .hist-table tr:hover td{background:var(--color-background-secondary)}
+      .adm-wrap .pill{display:inline-block;font-size:10px;font-weight:500;padding:2px 6px;border-radius:20px}
+      .adm-wrap .pill-pend{background:var(--amber-bg);color:var(--amber)}
+      .adm-wrap .pill-prep{background:var(--blue-bg);color:var(--blue)}
+      .adm-wrap .pill-cam{background:var(--purple-bg);color:var(--purple)}
+      .adm-wrap .pill-entr{background:var(--green-bg);color:var(--green)}
+      .adm-wrap .pill-canc{background:var(--red-bg);color:var(--red)}
+      .adm-wrap .pago-ef{background:var(--green-bg);color:var(--green)}
+      .adm-wrap .pago-mp{background:var(--blue-bg);color:var(--blue)}
+      .adm-wrap .pago-tc{background:var(--purple-bg);color:var(--purple)}
+      
+      /* TIEMPOS */
+      .flow-track{display:flex;align-items:center;gap:0;margin-bottom:12px}
+      .flow-step{flex:1;text-align:center;position:relative}
+      .flow-step::after{content:'';position:absolute;top:14px;right:-50%;width:100%;height:1.5px;background:var(--color-border-tertiary)}
+      .flow-step:last-child::after{display:none}
+      .flow-circle{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:11px;font-weight:500;position:relative;z-index:1}
+      .flow-label{font-size:9px;color:var(--color-text-secondary)}
+      .flow-time{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+      .flow-avg{font-size:9px;color:var(--color-text-tertiary)}
+      
+      .metric-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+      .metric-mini{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 10px}
+      .metric-mini-label{font-size:10px;color:var(--color-text-secondary)}
+      .metric-mini-val{font-size:16px;font-weight:500;color:var(--color-text-primary)}
+      
+      /* MENU */
+      .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+      .menu-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-secondary)}
+      .menu-info{flex:1}
+      .menu-name{font-size:12px;font-weight:500;color:var(--color-text-primary)}
+      .menu-price{font-size:11px;color:var(--color-text-secondary)}
+      .menu-stock{font-size:10px;color:var(--color-text-tertiary)}
+      .toggle{position:relative;width:32px;height:18px;flex-shrink:0}
+      .toggle input{opacity:0;width:0;height:0;position:absolute}
+      .toggle-slider{position:absolute;inset:0;border-radius:9px;background:var(--color-border-secondary);cursor:pointer;transition:.2s}
+      .toggle input:checked+.toggle-slider{background:var(--teal-mid)}
+      .toggle-slider::after{content:'';position:absolute;width:12px;height:12px;border-radius:50%;background:white;top:3px;left:3px;transition:.2s}
+      .toggle input:checked+.toggle-slider::after{transform:translateX(14px)}
+      
+      /* COSTOS */
+      .costo-table{width:100%;border-collapse:collapse;font-size:11px}
+      .costo-table th{text-align:left;padding:6px 8px;color:var(--color-text-secondary);font-weight:400;border-bottom:0.5px solid var(--color-border-tertiary)}
+      .costo-table td{padding:8px 8px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
+      .margin-bar{display:flex;align-items:center;gap:6px}
+      .bar-track{flex:1;height:6px;background:var(--color-border-tertiary);border-radius:3px;overflow:hidden}
+      .bar-fill{height:100%;border-radius:3px}
+      
+      /* ACCESOS */
+      .accesos-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+      .acceso-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;background:var(--color-background-secondary)}
+      .acceso-rol{font-size:11px;font-weight:500;color:var(--color-text-primary);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+      .acceso-perms{display:flex;flex-wrap:wrap;gap:3px}
+      .perm-pill{font-size:9px;padding:2px 5px;border-radius:3px;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary)}
+      .perm-pill.on{background:var(--teal-bg);color:var(--teal);border-color:transparent}
+      .perm-pill.off{background:var(--red-bg);color:var(--red);border-color:transparent;text-decoration:line-through;opacity:.7}
+      
+      /* RENTABILIDAD & HORAS */
+      .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+    </style>
 </head>
 <body>
 
@@ -34,7 +207,6 @@
 
                     <!-- DROPDOWN PANEL -->
                     <div class="user-dropdown" id="user-dropdown" role="menu">
-                        <!-- Perfil header -->
                         <div class="udrop-profile">
                             <div class="udrop-avatar" id="udrop-avatar">?</div>
                             <div class="udrop-info">
@@ -47,7 +219,6 @@
 
                         <div class="udrop-divider"></div>
 
-                        <!-- Items del menú -->
                         <button class="udrop-item" onclick="abrirModalPerfil()">
                             <span class="udrop-item-icon"><i class="fa-solid fa-user-circle"></i></span>
                             <span class="udrop-item-text">
@@ -58,7 +229,6 @@
 
                         <div class="udrop-divider"></div>
 
-                        <!-- Cerrar sesión -->
                         <button class="udrop-item udrop-item-danger" id="btn-cerrar-sesion">
                             <span class="udrop-item-icon"><i class="fa-solid fa-right-from-bracket"></i></span>
                             <span class="udrop-item-text">
@@ -72,7 +242,7 @@
 
         </header>
 
-        <!-- SIDEBAR (visible solo para recepcionista) -->
+        <!-- SIDEBAR -->
         <aside class="app-sidebar hidden" id="app-sidebar">
             <span class="sidebar-section-label">Principal</span>
             <button class="nav-item active" id="nav-pedidos-actuales" onclick="cambiarVista('actuales')">
@@ -104,19 +274,12 @@
 
         <main class="app-container" id="app-main">
 
+            <!-- PANEL SUPERADMIN -->
             <section id="panel-superadmin" class="panel-section hidden">
                 <div class="admin-panel-header">
                     <div>
                         <p class="panel-title">Panel <em>Global</em></p>
-                        <p class="panel-subtitle">Gestión completa del sistema · Todos los restaurantes</p>
-                    </div>
-                    <div class="admin-header-actions">
-                        <div class="superadmin-rest-filter">
-                            <i class="fa-solid fa-store" style="color:var(--amber);font-size:.8rem;"></i>
-                            <select id="sa-filtro-restaurante" class="hist-select" onchange="superadminFiltrarRestaurante()" style="min-width:180px;">
-                                <option value="">Todos los restaurantes</option>
-                            </select>
-                        </div>
+                        <p class="panel-subtitle">Gestión completa del sistema</p>
                     </div>
                 </div>
 
@@ -125,9 +288,9 @@
                     <div class="admin-kpi-card admin-kpi-amber">
                         <div class="admin-kpi-icon"><i class="fa-solid fa-store"></i></div>
                         <div class="admin-kpi-body">
-                            <div class="admin-kpi-label">Restaurantes</div>
-                            <div class="admin-kpi-value" id="sa-stat-restaurantes">—</div>
-                            <div class="admin-kpi-sub">activos en el sistema</div>
+                            <div class="admin-kpi-label">Configuración</div>
+                            <div class="admin-kpi-value" id="sa-stat-restaurantes">Activo</div>
+                            <div class="admin-kpi-sub">estado del sistema</div>
                         </div>
                     </div>
                     <div class="admin-kpi-card admin-kpi-blue">
@@ -185,234 +348,343 @@
                                     <th>Nombre</th>
                                     <th>Email</th>
                                     <th>Rol</th>
-                                    <th>Restaurante</th>
                                     <th>Creación</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-usuarios-body">
                                 <tr>
-                                    <td colspan="7" class="hist-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando usuarios...</td>
+                                    <td colspan="6" class="hist-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando usuarios...</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
-
-                <!-- Modal para Crear/Editar Usuario -->
-                <div id="modal-usuario" class="modal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3 id="modal-titulo">Crear Nuevo Usuario</h3>
-                            <button id="btn-cerrar-modal" class="btn-close">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                        </div>
-
-                        <form id="form-usuario" class="form-usuario">
-                            <input type="hidden" id="usuario-id">
-
-                            <div class="form-group">
-                                <label for="usuario-nombre">
-                                    <i class="fa-solid fa-user"></i>
-                                    Nombre Completo *
-                                </label>
-                                <input 
-                                    type="text" 
-                                    id="usuario-nombre" 
-                                    name="nombre" 
-                                    required
-                                    placeholder="Ej: Juan Pérez"
-                                >
-                            </div>
-
-                            <div class="form-group">
-                                <label for="usuario-email">
-                                    <i class="fa-solid fa-envelope"></i>
-                                    Email *
-                                </label>
-                                <input 
-                                    type="email" 
-                                    id="usuario-email" 
-                                    name="email" 
-                                    required
-                                    placeholder="usuario@ejemplo.com"
-                                >
-                            </div>
-
-                            <div class="form-group">
-                                <label for="usuario-rol">
-                                    <i class="fa-solid fa-user-tag"></i>
-                                    Rol *
-                                </label>
-                                <select id="usuario-rol" name="rol" required>
-                                    <option value="">Seleccionar rol...</option>
-                                    <option value="superadmin">SuperAdmin</option>
-                                    <option value="admin">Admin</option>
-                                    <option value="recepcionista">Recepcionista</option>
-                                    <option value="chef">Chef</option>
-                                    <option value="repartidor">Repartidor</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group" id="password-group">
-                                <label for="usuario-password">
-                                    <i class="fa-solid fa-lock"></i>
-                                    Contraseña <span class="opcional">(dejar vacío para mantener actual)</span>
-                                </label>
-                                <input 
-                                    type="password" 
-                                    id="usuario-password" 
-                                    name="password"
-                                    placeholder="••••••••"
-                                    minlength="6"
-                                >
-                                <small class="help-text">Mínimo 6 caracteres</small>
-                            </div>
-
-                            <div class="form-actions">
-                                <button type="button" onclick="cerrarModal()" class="btn-secondary">
-                                    Cancelar
-                                </button>
-                                <button type="submit" class="btn-primary">
-                                    <i class="fa-solid fa-floppy-disk"></i>
-                                    Guardar Usuario
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
             </section>
 
+            <!-- PANEL ADMIN -->
             <section id="panel-admin" class="panel-section hidden">
                 <div class="admin-panel-header">
                     <div>
                         <p class="panel-title">Adminis<em>tración</em></p>
                         <p class="panel-subtitle">Reportes, estadísticas y gestión operativa del restaurante.</p>
                     </div>
-                    <div class="admin-header-actions">
-                        <span class="auto-reload-indicator" id="admin-reload-ind" title="Actualización automática">
-                            <span class="auto-reload-dot"></span>
-                            <span id="admin-ultima-act">En vivo</span>
-                        </span>
-                        <button id="btn-refresh-admin" class="btn-primary" style="padding:10px 16px;">
-                            <i class="fa-solid fa-rotate-right"></i>
-                            Actualizar
-                        </button>
-                    </div>
                 </div>
 
-                <!-- KPI GRID -->
-                <div class="admin-kpi-grid">
-                    <div class="admin-kpi-card admin-kpi-amber">
-                        <div class="admin-kpi-icon"><i class="fa-solid fa-receipt"></i></div>
-                        <div class="admin-kpi-body">
-                            <div class="admin-kpi-label">Total Pedidos</div>
-                            <div class="admin-kpi-value" id="stat-total-pedidos">—</div>
-                            <div class="admin-kpi-sub" id="stat-pedidos-hoy">— hoy</div>
-                        </div>
-                    </div>
-                    <div class="admin-kpi-card admin-kpi-amber2">
-                        <div class="admin-kpi-icon"><i class="fa-solid fa-clock"></i></div>
-                        <div class="admin-kpi-body">
-                            <div class="admin-kpi-label">Pendientes</div>
-                            <div class="admin-kpi-value" id="stat-pendientes">—</div>
-                            <div class="admin-kpi-sub" id="stat-preparando-cnt">— preparando</div>
-                        </div>
-                    </div>
-                    <div class="admin-kpi-card admin-kpi-blue">
-                        <div class="admin-kpi-icon"><i class="fa-solid fa-motorcycle"></i></div>
-                        <div class="admin-kpi-body">
-                            <div class="admin-kpi-label">En Camino</div>
-                            <div class="admin-kpi-value" id="stat-en-camino">—</div>
-                            <div class="admin-kpi-sub" id="stat-entregados-hoy-cnt">— entregados hoy</div>
-                        </div>
-                    </div>
-                    <div class="admin-kpi-card admin-kpi-teal">
-                        <div class="admin-kpi-icon"><i class="fa-solid fa-dollar-sign"></i></div>
-                        <div class="admin-kpi-body">
-                            <div class="admin-kpi-label">Facturado</div>
-                            <div class="admin-kpi-value" id="stat-facturado">—</div>
-                            <div class="admin-kpi-sub" id="stat-facturado-hoy">— hoy</div>
-                        </div>
-                    </div>
-                    <div class="admin-kpi-card admin-kpi-red">
-                        <div class="admin-kpi-icon"><i class="fa-solid fa-ban"></i></div>
-                        <div class="admin-kpi-body">
-                            <div class="admin-kpi-label">Cancelados</div>
-                            <div class="admin-kpi-value" id="stat-cancelados">—</div>
-                            <div class="admin-kpi-sub">total histórico</div>
-                        </div>
-                    </div>
-                    <div class="admin-kpi-card admin-kpi-purple">
-                        <div class="admin-kpi-icon"><i class="fa-solid fa-chart-line"></i></div>
-                        <div class="admin-kpi-body">
-                            <div class="admin-kpi-label">Ticket Promedio</div>
-                            <div class="admin-kpi-value" id="stat-ticket-prom">—</div>
-                            <div class="admin-kpi-sub">por pedido entregado</div>
-                        </div>
-                    </div>
-                </div>
+                <div class="adm-wrap">
+                  <!-- SIDEBAR -->
+                  <aside class="adm-sidebar">
+                    <div class="adm-section" style="margin-top:10px;">Operaciones</div>
+                    <nav class="adm-nav">
+                      <button class="adm-btn active" onclick="showAdminPanel('pedidos',this)"><span class="nav-dot"></span><span class="nav-icon">📦</span>Pedidos<span class="nav-badge">8</span></button>
+                      <button class="adm-btn" onclick="showAdminPanel('personal',this)"><span class="nav-icon">🛵</span>Personal</button>
+                      <button class="adm-btn" onclick="showAdminPanel('alertas',this)"><span class="nav-icon">🔔</span>Alertas<span class="nav-badge" id="sidebar-alertas-badge" style="display:none;">0</span></button>
+                      <button class="adm-btn" onclick="showAdminPanel('historial',this)"><span class="nav-icon">📋</span>Historial</button>
+                    </nav>
+                    <div class="adm-section">Análisis</div>
+                    <nav class="adm-nav">
+                      <button class="adm-btn" onclick="showAdminPanel('tiempos',this)"><span class="nav-icon">⏱</span>Tiempos</button>
+                      <button class="adm-btn" onclick="showAdminPanel('kpis',this)"><span class="nav-icon">📊</span>KPIs</button>
+                      <button class="adm-btn" onclick="showAdminPanel('rentabilidad',this)"><span class="nav-icon">💹</span>Rentabilidad</button>
+                      <button class="adm-btn" onclick="showAdminPanel('horas',this)"><span class="nav-icon">🕐</span>Horas Pico</button>
+                    </nav>
+                    <div class="adm-section">Gestión</div>
+                    <nav class="adm-nav">
+                      <button class="adm-btn" onclick="showAdminPanel('menu',this)"><span class="nav-icon">🍽</span>Menú</button>
+                      <button class="adm-btn" onclick="showAdminPanel('costos',this)"><span class="nav-icon">💰</span>Costos</button>
+                      <button class="adm-btn" onclick="showAdminPanel('accesos',this)"><span class="nav-icon">🔐</span>Accesos</button>
+                    </nav>
+                  </aside>
 
-                <!-- TABLA DE PEDIDOS -->
-                <div class="crud-container" style="margin-top: 24px;">
-                    <div class="crud-header">
-                        <h2><i class="fa-solid fa-list-ul"></i> Pedidos del Restaurante</h2>
-                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                            <!-- Búsqueda -->
-                            <div class="admin-search-wrap">
-                                <i class="fa-solid fa-magnifying-glass"></i>
-                                <input type="text" id="admin-buscador" placeholder="Buscar por N°, cliente, dirección..." oninput="adminFiltrar()">
-                            </div>
-                            <!-- Filtro estado -->
-                            <select id="admin-filtro-estado" class="hist-select" onchange="adminFiltrar()">
-                                <option value="">Todos los estados</option>
-                                <option value="Pendiente">⏳ Pendiente</option>
-                                <option value="Preparando">👨‍🍳 Preparando</option>
-                                <option value="En camino">🛵 En camino</option>
-                                <option value="Entregado">✅ Entregado</option>
-                                <option value="Cancelado">❌ Cancelado</option>
-                            </select>
-                            <!-- Filtro fecha -->
-                            <select id="admin-filtro-fecha" class="hist-select" onchange="adminFiltrar()">
-                                <option value="">Todas las fechas</option>
-                                <option value="hoy">Hoy</option>
-                                <option value="semana">Esta semana</option>
-                                <option value="mes">Este mes</option>
-                            </select>
-                            <button class="hist-btn-reset" onclick="adminReset()" title="Limpiar filtros">
-                                <i class="fa-solid fa-filter-circle-xmark"></i>
-                            </button>
-                        </div>
-                    </div>
+                  <!-- MAIN CONTENT -->
+                  <main class="adm-main">
 
-                    <!-- Info row -->
-                    <div class="hist-info-row" style="padding:10px 16px;">
-                        <span class="hist-count-label" id="admin-count-label">Cargando...</span>
-                    </div>
-
-                    <div class="hist-table-wrap">
+                    <!-- PEDIDOS -->
+                    <div id="panel-mod-pedidos" class="panel active">
+                      <div class="ph"><div><div class="ph-title">Pedidos</div><div class="ph-sub" id="admin-pedidos-subtitle">Conteo por estado — actualizado recién</div></div><span class="ph-badge badge-live">● EN VIVO</span></div>
+                      <div class="estado-grid">
+                        <div class="estado-card"><div class="estado-num s-pend" id="stat-pendientes">14</div><div class="estado-label">Pendiente</div></div>
+                        <div class="estado-card"><div class="estado-num s-prep" id="stat-preparando-cnt">5</div><div class="estado-label">Preparando</div></div>
+                        <div class="estado-card"><div class="estado-num s-cam" id="stat-en-camino">3</div><div class="estado-label">En camino</div></div>
+                        <div class="estado-card"><div class="estado-num s-entr" id="stat-entregados-hoy-cnt">30</div><div class="estado-label">Entregados hoy</div></div>
+                        <div class="estado-card"><div class="estado-num s-canc" id="stat-cancelados">4</div><div class="estado-label">Cancelado</div></div>
+                      </div>
+                      <div class="kpi-grid">
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--amber-light)"></div><div class="kpi-label">Total hoy</div><div class="kpi-val" id="stat-pedidos-hoy">0</div><div class="kpi-sub">pedidos nuevos</div></div>
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--teal-mid)"></div><div class="kpi-label">Facturado hoy</div><div class="kpi-val" id="stat-facturado-hoy">$0</div><div class="kpi-sub">ingresos del día</div></div>
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--blue-mid)"></div><div class="kpi-label">Ticket prom.</div><div class="kpi-val" id="stat-ticket-prom">$0</div><div class="kpi-sub">general histórico</div></div>
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--red-mid)"></div><div class="kpi-label">Cancelación</div><div class="kpi-val" id="stat-tasa-cancelacion">0%</div><div class="kpi-sub">del total de pedidos</div></div>
+                      </div>
+                      <div class="sec-card">
+                        <div class="sec-title"><span class="sec-dot" style="background:var(--amber-light)"></span>Pedidos activos ahora</div>
                         <table class="hist-table" id="tabla-pedidos-admin-main">
-                            <thead>
-                                <tr>
-                                    <th class="sortable" onclick="adminSort('id')" data-col="id">N° <i class="fa-solid fa-sort sort-icon"></i></th>
-                                    <th>Cliente</th>
-                                    <th>Dirección</th>
-                                    <th>Productos</th>
-                                    <th class="sortable" onclick="adminSort('total')" data-col="total">Total <i class="fa-solid fa-sort sort-icon"></i></th>
-                                    <th class="sortable" onclick="adminSort('fecha')" data-col="fecha">Fecha <i class="fa-solid fa-sort sort-icon"></i></th>
-                                    <th>Estado</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabla-pedidos-admin">
-                                <tr><td colspan="8" class="hist-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando pedidos...</td></tr>
-                            </tbody>
+                          <thead><tr><th>#</th><th>Cliente</th><th>Estado</th><th>Hace</th><th>Total</th></tr></thead>
+                          <tbody id="admin-activos-body">
+                            <tr><td colspan="5" class="hist-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</td></tr>
+                          </tbody>
                         </table>
+                      </div>
                     </div>
 
-                    <!-- Paginación -->
-                    <div class="hist-pagination" id="admin-pagination"></div>
+                    <!-- PERSONAL -->
+                    <div id="panel-mod-personal" class="panel">
+                      <div class="ph"><div><div class="ph-title">Estado del Personal</div><div class="ph-sub">Disponibilidad de personal en vivo</div></div><span class="ph-badge badge-live">● EN VIVO</span></div>
+                      <div class="kpi-grid kpi-grid-3" style="margin-bottom:12px">
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--teal-mid)"></div><div class="kpi-label">Disponibles</div><div class="kpi-val" style="color:var(--teal)">2</div><div class="kpi-sub">listos para salir</div></div>
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--amber-light)"></div><div class="kpi-label">En reparto</div><div class="kpi-val" style="color:var(--amber)">1</div><div class="kpi-sub">con pedido activo</div></div>
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--color-border-tertiary)"></div><div class="kpi-label">Descanso</div><div class="kpi-val" style="color:var(--color-text-secondary)">1</div><div class="kpi-sub">fuera de turno</div></div>
+                      </div>
+                      <div class="sec-card">
+                        <div class="sec-title"><span class="sec-dot" style="background:var(--teal-mid)"></span>Repartidores activos</div>
+                        <div class="rep-grid" id="rep-grid-repartidores">
+                          <p style="font-size:11px;color:var(--text-3);padding:10px;">Cargando personal...</p>
+                        </div>
+                      </div>
+                      <div class="sec-card">
+                        <div class="sec-title"><span class="sec-dot" style="background:var(--blue-mid)"></span>Cocina</div>
+                        <div class="rep-grid" id="rep-grid-cocina">
+                          <p style="font-size:11px;color:var(--text-3);padding:10px;">Cargando personal...</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- ALERTAS -->
+                    <div id="panel-mod-alertas" class="panel">
+                      <div class="ph"><div><div class="ph-title">Alertas del Sistema</div><div class="ph-sub">Avisos por retrasos y anomalías</div></div><span class="ph-badge" id="admin-alertas-badge" style="background:var(--red-bg);color:var(--red)">0 activas</span></div>
+                      <div id="alertas-container">
+                        <p style="text-align:center; color:var(--text-3); padding:20px;">Cargando alertas...</p>
+                      </div>
+                    </div>
+
+                    <!-- HISTORIAL -->
+                    <div id="panel-mod-historial" class="panel">
+                      <div class="ph"><div><div class="ph-title">Historial de Pedidos</div><div class="ph-sub">Logs filtrables por fecha, cliente y pago</div></div></div>
+                      <div class="hist-filters">
+                        <input class="hist-input" type="text" id="admin-buscador" placeholder="Buscar cliente..." style="flex:1;min-width:100px" oninput="adminFiltrar()">
+                        <select class="hist-input" id="admin-filtro-estado" onchange="adminFiltrar()" style="width:110px">
+                          <option value="">Todos los estados</option>
+                          <option value="Entregado">Entregado</option>
+                          <option value="Cancelado">Cancelado</option>
+                          <option value="Pendiente">Pendiente</option>
+                          <option value="Preparando">Preparando</option>
+                          <option value="En camino">En camino</option>
+                        </select>
+                      </div>
+                      <table class="hist-table" style="margin-top: 10px;">
+                        <thead><tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Dirección</th><th>Total</th><th>Estado</th></tr></thead>
+                        <tbody id="tabla-pedidos-admin"></tbody>
+                      </table>
+                      <div id="admin-pagination" style="margin-top: 10px;"></div>
+                    </div>
+
+                    <!-- TIEMPOS -->
+                    <div id="panel-mod-tiempos" class="panel">
+                      <div class="ph"><div><div class="ph-title">Métricas de Tiempos</div><div class="ph-sub">Flujo Pedido → Cocina → Reparto → Entrega</div></div></div>
+                      <div class="sec-card">
+                        <div class="sec-title"><span class="sec-dot" style="background:var(--blue-mid)"></span>Flujo promedio del pedido</div>
+                        <div class="flow-track">
+                          <div class="flow-step"><div class="flow-circle" style="background:var(--amber-bg);color:var(--amber)">📥</div><div class="flow-label">Recepción</div><div class="flow-time">0 min</div><div class="flow-avg">inicio</div></div>
+                          <div class="flow-step"><div class="flow-circle" style="background:var(--blue-bg);color:var(--blue)">👨‍🍳</div><div class="flow-label">Cocina</div><div class="flow-time">12 min</div><div class="flow-avg">prom.</div></div>
+                          <div class="flow-step"><div class="flow-circle" style="background:var(--purple-bg);color:var(--purple)">🛵</div><div class="flow-label">Reparto</div><div class="flow-time">8 min</div><div class="flow-avg">prom.</div></div>
+                          <div class="flow-step"><div class="flow-circle" style="background:var(--teal-bg);color:var(--teal)">✅</div><div class="flow-label">Entrega</div><div class="flow-time">28 min</div><div class="flow-avg">total</div></div>
+                        </div>
+                      </div>
+                      <div class="metric-row">
+                        <div class="metric-mini"><div class="metric-mini-label">Tiempo mínimo</div><div class="metric-mini-val">18 min</div></div>
+                        <div class="metric-mini"><div class="metric-mini-label">Tiempo máximo</div><div class="metric-mini-val">47 min</div></div>
+                        <div class="metric-mini"><div class="metric-mini-label">SLA cumplido</div><div class="metric-mini-val" style="color:var(--teal)">82%</div></div>
+                      </div>
+                      <div class="sec-card">
+                        <div class="sec-title"><span class="sec-dot" style="background:var(--purple-mid)"></span>Comparativa Semanal (Tiempo promedio)</div>
+                        <div style="display:flex;flex-direction:column;gap:6px">
+                          <div style="display:flex;align-items:center;gap:8px;font-size:11px"><span style="width:100px;color:var(--color-text-secondary)">Semana Actual</span><div style="flex:1;height:10px;background:var(--color-border-tertiary);border-radius:5px;overflow:hidden"><div style="width:60%;height:100%;background:var(--amber-light);border-radius:5px"></div></div><span style="width:40px;text-align:right;font-weight:500">28 min</span></div>
+                          <div style="display:flex;align-items:center;gap:8px;font-size:11px"><span style="width:100px;color:var(--color-text-secondary)">Semana Pasada</span><div style="flex:1;height:10px;background:var(--color-border-tertiary);border-radius:5px;overflow:hidden"><div style="width:70%;height:100%;background:var(--blue-mid);border-radius:5px"></div></div><span style="width:40px;text-align:right;font-weight:500">32 min</span></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- MENU -->
+                    <div id="panel-mod-menu" class="panel">
+                      <div class="ph"><div><div class="ph-title">Gestión del Menú</div><div class="ph-sub">Activación / desactivación instantánea de platos</div></div></div>
+                      <div class="menu-grid" id="admin-menu-grid">
+                        <p style="text-align:center; color:var(--text-3); padding:20px;">Cargando menú...</p>
+                      </div>
+                      <div id="admin-menu-log" style="margin-top:10px;font-size:11px;color:var(--teal);padding:6px 10px;border-radius:var(--border-radius-md);background:var(--teal-bg);display:none"></div>
+                    </div>
+
+                    <!-- COSTOS -->
+                    <div id="panel-mod-costos" class="panel">
+                      <div class="ph"><div><div class="ph-title">Costos y Márgenes</div><div class="ph-sub">Seguimiento de precios y margen de ganancia</div></div></div>
+                      <table class="costo-table">
+                        <thead><tr><th>Producto</th><th>Precio venta</th><th>Costo est.</th><th>Margen</th><th>Ventas hoy</th><th>Ingreso</th></tr></thead>
+                        <tbody>
+                          <tr>
+                            <td><span style="font-weight:500">Hamburguesa Clásica</span></td>
+                            <td>$5.500</td>
+                            <td>$3.200</td>
+                            <td><div class="margin-bar"><div class="bar-track"><div class="bar-fill" style="width:42%;background:var(--teal-mid)"></div></div><span style="font-size:10px;color:var(--teal);font-weight:500">42%</span></div></td>
+                            <td>28</td>
+                            <td style="font-weight:500">$154.000</td>
+                          </tr>
+                          <tr>
+                            <td><span style="font-weight:500">Papas Fritas</span></td>
+                            <td>$2.500</td>
+                            <td>$900</td>
+                            <td><div class="margin-bar"><div class="bar-track"><div class="bar-fill" style="width:64%;background:var(--green)"></div></div><span style="font-size:10px;color:var(--green);font-weight:500">64%</span></div></td>
+                            <td>17</td>
+                            <td style="font-weight:500">$42.500</td>
+                          </tr>
+                          <tr>
+                            <td><span style="font-weight:500">Pizza Muzarella</span></td>
+                            <td>$8.000</td>
+                            <td>$5.500</td>
+                            <td><div class="margin-bar"><div class="bar-track"><div class="bar-fill" style="width:31%;background:var(--amber)"></div></div><span style="font-size:10px;color:var(--amber);font-weight:500">31%</span></div></td>
+                            <td>8</td>
+                            <td style="font-weight:500">$64.000</td>
+                          </tr>
+                          <tr>
+                            <td><span style="font-weight:500">Empanada de Carne</span></td>
+                            <td>$1.000</td>
+                            <td>$420</td>
+                            <td><div class="margin-bar"><div class="bar-track"><div class="bar-fill" style="width:58%;background:var(--green)"></div></div><span style="font-size:10px;color:var(--green);font-weight:500">58%</span></div></td>
+                            <td>19</td>
+                            <td style="font-weight:500">$19.000</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      <div style="display:flex;gap:10px;margin-top:10px">
+                        <div class="metric-mini" style="flex:1"><div class="metric-mini-label">Ingreso total hoy</div><div class="metric-mini-val">$279.500</div></div>
+                        <div class="metric-mini" style="flex:1"><div class="metric-mini-label">Margen promedio</div><div class="metric-mini-val" style="color:var(--teal)">49%</div></div>
+                        <div class="metric-mini" style="flex:1"><div class="metric-mini-label">Producto estrella</div><div class="metric-mini-val" style="font-size:13px">Papas Fritas</div></div>
+                      </div>
+                    </div>
+
+                    <!-- ACCESOS -->
+                    <div id="panel-mod-accesos" class="panel">
+                      <div class="ph"><div><div class="ph-title">Accesos y Permisos</div><div class="ph-sub">Permisos restringidos según perfil de usuario</div></div></div>
+                      <div class="accesos-grid">
+                        <div class="acceso-card">
+                          <div class="acceso-rol"><span style="width:8px;height:8px;border-radius:50%;background:var(--red-mid);display:inline-block"></span>Superadmin</div>
+                          <div class="acceso-perms">
+                            <span class="perm-pill on">Panel global</span><span class="perm-pill on">Usuarios</span><span class="perm-pill on">Estadísticas</span><span class="perm-pill on">Costos</span><span class="perm-pill on">KPIs</span>
+                          </div>
+                        </div>
+                        <div class="acceso-card">
+                          <div class="acceso-rol"><span style="width:8px;height:8px;border-radius:50%;background:var(--amber-light);display:inline-block"></span>Admin</div>
+                          <div class="acceso-perms">
+                            <span class="perm-pill on">Pedidos</span><span class="perm-pill on">Menú</span><span class="perm-pill on">Costos</span><span class="perm-pill on">Personal</span><span class="perm-pill on">Historial</span><span class="perm-pill off">Usuarios</span>
+                          </div>
+                        </div>
+                        <div class="acceso-card">
+                          <div class="acceso-rol"><span style="width:8px;height:8px;border-radius:50%;background:var(--blue-mid);display:inline-block"></span>Recepcionista</div>
+                          <div class="acceso-perms">
+                            <span class="perm-pill on">Nuevo pedido</span><span class="perm-pill on">Pedidos actuales</span><span class="perm-pill on">Historial</span><span class="perm-pill off">Menú</span><span class="perm-pill off">Costos</span><span class="perm-pill off">KPIs</span>
+                          </div>
+                        </div>
+                        <div class="acceso-card">
+                          <div class="acceso-rol"><span style="width:8px;height:8px;border-radius:50%;background:var(--teal-mid);display:inline-block"></span>Repartidor</div>
+                          <div class="acceso-perms">
+                            <span class="perm-pill on">Mis pedidos</span><span class="perm-pill on">Estado entrega</span><span class="perm-pill off">Historial</span><span class="perm-pill off">Costos</span><span class="perm-pill off">Menú</span>
+                          </div>
+                        </div>
+                        <div class="acceso-card">
+                          <div class="acceso-rol"><span style="width:8px;height:8px;border-radius:50%;background:var(--purple-mid);display:inline-block"></span>Chef</div>
+                          <div class="acceso-perms">
+                            <span class="perm-pill on">Cola cocina</span><span class="perm-pill on">Estado platos</span><span class="perm-pill on">Stock</span><span class="perm-pill off">Pedidos</span><span class="perm-pill off">Clientes</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- KPIs -->
+                    <div id="panel-mod-kpis" class="panel">
+                      <div class="ph"><div><div class="ph-title">KPIs Operativos</div><div class="ph-sub">Rendimiento en cocina y tiempos de entrega</div></div></div>
+                      <div class="kpi-grid" style="margin-bottom:12px">
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--teal-mid)"></div><div class="kpi-label">Tasa entrega</div><div class="kpi-val" style="color:var(--teal)">89%</div><div class="kpi-sub">pedidos entregados</div></div>
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--blue-mid)"></div><div class="kpi-label">Tiempo cocina</div><div class="kpi-val">12 min</div><div class="kpi-sub kpi-trend up">SLA: 15 min ✓</div></div>
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--amber-light)"></div><div class="kpi-label">Tiempo reparto</div><div class="kpi-val">16 min</div><div class="kpi-sub kpi-trend down">SLA: 12 min ✗</div></div>
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--purple-mid)"></div><div class="kpi-label">Satisfacción</div><div class="kpi-val">4.2★</div><div class="kpi-sub">sobre 5 estrellas</div></div>
+                      </div>
+                      <div class="sec-card">
+                        <div class="sec-title"><span class="sec-dot" style="background:var(--blue-mid)"></span>Efectividad de Entregas a tiempo (Por Turno)</div>
+                        <div style="display:flex;flex-direction:column;gap:8px">
+                          <div style="font-size:11px">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-weight:500">Turno Almuerzo</span><span style="color:var(--teal)">92% efectividad</span></div>
+                            <div style="height:8px;background:var(--color-border-tertiary);border-radius:4px;overflow:hidden"><div style="width:92%;height:100%;background:var(--teal-mid);border-radius:4px"></div></div>
+                          </div>
+                          <div style="font-size:11px">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-weight:500">Turno Cena</span><span style="color:var(--amber)">74% efectividad</span></div>
+                            <div style="height:8px;background:var(--color-border-tertiary);border-radius:4px;overflow:hidden"><div style="width:74%;height:100%;background:var(--amber-light);border-radius:4px"></div></div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="metric-row">
+                        <div class="metric-mini"><div class="metric-mini-label">Pedidos/hora pico</div><div class="metric-mini-val">18</div></div>
+                        <div class="metric-mini"><div class="metric-mini-label">Cancels evitables</div><div class="metric-mini-val" style="color:var(--red)">3</div></div>
+                        <div class="metric-mini"><div class="metric-mini-label">Clientes recurrentes</div><div class="metric-mini-val">68%</div></div>
+                      </div>
+                    </div>
+
+                    <!-- RENTABILIDAD -->
+                    <div id="panel-mod-rentabilidad" class="panel">
+                      <div class="ph"><div><div class="ph-title">Rentabilidad</div><div class="ph-sub">Comparativa ventas vs costos — análisis semanal</div></div></div>
+                      <div class="kpi-grid kpi-grid-3" style="margin-bottom:12px">
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--teal-mid)"></div><div class="kpi-label">Ingresos semana</div><div class="kpi-val">$1.87M</div><div class="kpi-sub kpi-trend up">+15% vs sem. ant.</div></div>
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--red-mid)"></div><div class="kpi-label">Costos semana</div><div class="kpi-val">$960k</div><div class="kpi-sub kpi-trend up">+8% vs sem. ant.</div></div>
+                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--amber-light)"></div><div class="kpi-label">Ganancia neta</div><div class="kpi-val" style="color:var(--teal)">$910k</div><div class="kpi-sub kpi-trend up">+23% vs sem. ant.</div></div>
+                      </div>
+                      <div class="sec-card">
+                        <div class="sec-title"><span class="sec-dot" style="background:var(--teal-mid)"></span>Ventas vs Costos (Comparativa Semanal)</div>
+                        <div style="display:flex;flex-direction:column;gap:10px">
+                          <div style="font-size:11px">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:500">Esta semana</span><span style="color:var(--color-text-secondary)">$1.87M ventas · $960k costos</span></div>
+                            <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;gap:1px">
+                              <div style="flex:1.87;background:var(--teal-mid)"></div>
+                              <div style="flex:0.96;background:var(--red-mid)"></div>
+                            </div>
+                            <div style="display:flex;gap:12px;margin-top:3px"><span style="color:var(--teal)">■ Ventas</span><span style="color:var(--red)">■ Costos</span><span style="color:var(--color-text-secondary);margin-left:auto">Margen: 49%</span></div>
+                          </div>
+                          <div style="font-size:11px">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:500">Semana anterior</span><span style="color:var(--color-text-secondary)">$1.62M ventas · $880k costos</span></div>
+                            <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;gap:1px">
+                              <div style="flex:1.62;background:var(--blue-mid)"></div>
+                              <div style="flex:0.88;background:var(--coral-mid)"></div>
+                            </div>
+                            <div style="display:flex;gap:12px;margin-top:3px"><span style="color:var(--blue)">■ Ventas</span><span style="color:var(--coral)">■ Costos</span><span style="color:var(--color-text-secondary);margin-left:auto">Margen: 45%</span></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- HORAS PICO -->
+                    <div id="panel-mod-horas" class="panel">
+                      <div class="ph"><div><div class="ph-title">Horas Pico</div><div class="ph-sub">Gráficos de demanda para refuerzo de turnos</div></div></div>
+                      <div class="sec-card">
+                        <div class="sec-title"><span class="sec-dot" style="background:var(--amber-light)"></span>Demanda por franja horaria — promedio semanal</div>
+                        <div id="chart-horas" style="position:relative;width:100%;height:200px">
+                          <canvas id="horasChart" role="img" aria-label="Gráfico de demanda de pedidos por hora del día">Demanda: 11h pico almuerzo, 20-21h pico cena</canvas>
+                        </div>
+                      </div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px">
+                        <div class="acceso-card" style="text-align:center">
+                          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Pico almuerzo</div>
+                          <div style="font-size:18px;font-weight:500;color:var(--amber)">11:00–13:00</div>
+                          <div style="font-size:10px;color:var(--color-text-tertiary)">~18 pedidos/hora</div>
+                        </div>
+                        <div class="acceso-card" style="text-align:center">
+                          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Pico cena</div>
+                          <div style="font-size:18px;font-weight:500;color:var(--red)">20:00–22:00</div>
+                          <div style="font-size:10px;color:var(--color-text-tertiary)">~24 pedidos/hora</div>
+                        </div>
+                        <div class="acceso-card" style="text-align:center">
+                          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Refuerzo sugerido</div>
+                          <div style="font-size:18px;font-weight:500;color:var(--teal)">+2 repartidores</div>
+                          <div style="font-size:10px;color:var(--color-text-tertiary)">en pico de cena</div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </main>
                 </div>
             </section>
 
@@ -498,9 +770,7 @@
                 </div>
             </section>
 
-            <!-- ==========================================
-                 PANEL RECEPCIONISTA: HISTORIAL COMPLETO
-                 ========================================== -->
+            <!-- PANEL RECEPCIONISTA: HISTORIAL COMPLETO -->
             <section id="panel-historial-recepcionista" class="panel-section hidden">
                 <p class="panel-title">Histo<em>rial</em></p>
                 <p class="panel-subtitle">Todos los pedidos · Pendiente → Cancelado</p>
@@ -531,7 +801,6 @@
 
                 <!-- TOOLBAR: BÚSQUEDA + FILTROS -->
                 <div class="hist-toolbar">
-                    <!-- Buscador -->
                     <div class="hist-search-wrap">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <input type="text" id="hist-buscador"
@@ -542,7 +811,6 @@
                         </button>
                     </div>
 
-                    <!-- Filtros -->
                     <div class="hist-filters">
                         <select id="hist-filtro-estado" class="hist-select" onchange="historialFiltrar()">
                             <option value="">Todos los estados</option>
@@ -658,10 +926,9 @@
             </section>
 
 
-            <!-- MODAL: NUEVO PEDIDO — DISEÑO POR STEPS -->
+            <!-- MODAL: NUEVO PEDIDO -->
             <div id="modal-nuevo-pedido" class="modal-overlay">
                 <div class="modal-sheet">
-
                     <!-- Header -->
                     <div class="modal-sheet-header">
                         <div class="modal-sheet-header-left">
@@ -802,7 +1069,6 @@
                             </button>
                         </div>
                     </div>
-
                 </div>
             </div>
 
@@ -830,13 +1096,9 @@
         </main>
     </div>
 
-    <!-- ==========================================
-         PANEL LATERAL — PERFIL DE USUARIO
-         ========================================== -->
+    <!-- PANEL LATERAL — PERFIL DE USUARIO -->
     <div class="perfil-backdrop" id="perfil-backdrop" onclick="cerrarModalPerfil()"></div>
     <aside class="perfil-drawer" id="perfil-drawer" aria-label="Perfil de usuario">
-
-        <!-- Header del drawer -->
         <div class="perfil-drawer-header">
             <span class="perfil-drawer-title">Mi perfil</span>
             <button class="perfil-drawer-close" onclick="cerrarModalPerfil()" title="Cerrar">
@@ -844,7 +1106,6 @@
             </button>
         </div>
 
-        <!-- Hero del usuario -->
         <div class="perfil-hero">
             <div class="perfil-hero-avatar" id="perfil-avatar-big">?</div>
             <div class="perfil-hero-info">
@@ -853,10 +1114,8 @@
             </div>
         </div>
 
-        <!-- Campos de datos -->
         <div class="perfil-body">
             <p class="perfil-section-label"><i class="fa-solid fa-id-card"></i> Información de cuenta</p>
-
             <div class="perfil-card">
                 <div class="perfil-row">
                     <div class="perfil-row-icon" style="background:rgba(245,166,35,.12);color:var(--amber);">
@@ -899,7 +1158,6 @@
                 </div>
             </div>
 
-            <!-- Sesión -->
             <p class="perfil-section-label" style="margin-top:24px;"><i class="fa-solid fa-right-from-bracket"></i> Sesión</p>
             <button class="perfil-logout-btn" onclick="document.getElementById('btn-cerrar-sesion').click()">
                 <i class="fa-solid fa-right-from-bracket"></i>
@@ -908,6 +1166,10 @@
         </div>
     </aside>
 
+    <!-- SCRIPTS INTEGRADOS PARA EL MODULO ADMIN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+    <!-- MAIN SCRIPT -->
     <script src="js/script.js"></script>
 
 </body>

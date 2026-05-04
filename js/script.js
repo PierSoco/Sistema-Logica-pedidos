@@ -1574,14 +1574,20 @@ const ADMIN_STATE = {
     porPagina:    30,
     sortCol:      'id',
     sortDir:      'desc',
+    stats:        null,
+    menu:         [],
+    horas:        null
 };
 
 async function cargarEstadisticas() {
     try {
         const response = await fetch('./backend/funciones.php?action=getEstadisticas');
         const result   = await response.json();
-        if (result.status === 'success') renderizarEstadisticas(result.data);
-        else mostrarMensaje('error', result.message);
+        if (result.status === 'success') {
+            ADMIN_STATE.stats = result.data;
+            renderizarEstadisticas(result.data);
+            generarAlertasAdmin();
+        } else mostrarMensaje('error', result.message);
     } catch (error) {
         console.error('Error:', error);
     }
@@ -1598,17 +1604,23 @@ function renderizarEstadisticas(stats) {
     set('stat-facturado',     fmt(stats.total_facturado || 0));
     set('stat-ticket-prom',   '$' + parseFloat(stats.ticket_promedio || 0).toLocaleString('es-AR', {minimumFractionDigits:0}));
 
-    set('stat-pedidos-hoy',       (stats.pedidos_hoy    || 0) + ' hoy');
-    set('stat-preparando-cnt',    (stats.preparando     || 0) + ' preparando');
-    set('stat-entregados-hoy-cnt',(stats.entregados_hoy || 0) + ' entregados hoy');
-    set('stat-facturado-hoy',     fmt(stats.facturado_hoy || 0) + ' hoy');
+        set('stat-pedidos-hoy',       stats.pedidos_hoy    || 0);
+        set('stat-preparando-cnt',    stats.preparando     || 0);
+        set('stat-entregados-hoy-cnt',stats.entregados_hoy || 0);
+        set('stat-facturado-hoy',     fmt(stats.facturado_hoy || 0));
+
+        // Calcular tasa de cancelación real
+        const tasaCanc = stats.total_pedidos > 0 ? ((stats.cancelados / stats.total_pedidos) * 100).toFixed(1) : 0;
+        set('stat-tasa-cancelacion', tasaCanc + '%');
 
     // Indicador actualización
     const ahora = new Date();
     const hora  = ahora.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
     const lbl   = document.getElementById('admin-ultima-act');
+        const sub   = document.getElementById('admin-pedidos-subtitle');
     const ind   = document.getElementById('admin-reload-ind');
     if (lbl) lbl.textContent = `Act. ${hora}`;
+        if (sub) sub.textContent = `Conteo por estado — actualizado a las ${hora} hs`;
     if (ind) { ind.classList.add('pulsing'); setTimeout(() => ind.classList.remove('pulsing'), 2000); }
 }
 
@@ -1620,7 +1632,9 @@ async function cargarTodosPedidos() {
         const result   = await response.json();
         if (result.status === 'success') {
             ADMIN_STATE.todos = result.data;
+            adminRenderizarActivos();
             adminFiltrar();
+            generarAlertasAdmin();
         } else {
             mostrarMensaje('error', result.message);
         }
@@ -1710,6 +1724,59 @@ function adminReset() {
     adminFiltrar();
 }
 
+// Helper para calcular tiempo transcurrido (ej: "15m", "1h 5m")
+function calcularTiempoTranscurrido(fechaSql) {
+    if (!fechaSql) return '—';
+    const partes = fechaSql.split(/[- :]/);
+    if (partes.length < 6) return '—';
+    const d = new Date(partes[0], partes[1]-1, partes[2], partes[3], partes[4], partes[5]);
+    const diffMs = new Date() - d;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Recién';
+    if (diffMins < 60) return diffMins + 'm';
+    const diffHrs = Math.floor(diffMins / 60);
+    if (diffHrs < 24) return diffHrs + 'h ' + (diffMins % 60) + 'm';
+    return Math.floor(diffHrs / 24) + 'd';
+}
+
+function adminRenderizarActivos() {
+    const tbody = document.getElementById('admin-activos-body');
+    if (!tbody) return;
+    
+    // Filtrar activos y priorizar visualización de los MÁS ANTIGUOS (los que más urgen)
+    const activos = ADMIN_STATE.todos
+        .filter(p => ['Pendiente', 'Preparando', 'En camino'].includes(p.Estado))
+        .sort((a, b) => new Date(a.fecha_raw || 0) - new Date(b.fecha_raw || 0))
+        .slice(0, 5);
+    
+    if (activos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="hist-loading"><i class="fa-solid fa-inbox" style="display:block; font-size:1.8rem; margin-bottom:8px; opacity:.4;"></i> No hay pedidos activos en este momento</td></tr>';
+        return;
+    }
+
+    const estadoPillAdmin = {
+        'pendiente': 'pill-pend',
+        'preparando': 'pill-prep',
+        'en-camino': 'pill-cam',
+        'entregado': 'pill-entr',
+        'cancelado': 'pill-canc'
+    };
+
+    tbody.innerHTML = activos.map(p => {
+        const estadoCls = (p.Estado || '').toLowerCase().replace(' ', '-');
+        const pillClass = estadoPillAdmin[estadoCls] || '';
+        const tiempoRel = calcularTiempoTranscurrido(p.fecha_raw);
+        return `<tr class="hist-row-clickable" onclick="verDetallePedido(${p.ID_pedido})" title="Ver detalle del pedido #${p.ID_pedido}">
+            <td>#${p.ID_pedido}</td>
+            <td style="font-weight:500">${escapeHtml(p.c_nombre||'')} ${escapeHtml(p.c_apellido||'')}</td>
+            <td><span class="pill ${pillClass}">${p.Estado}</span></td>
+            <td style="color:var(--text-3); font-size:0.8rem;"><i class="fa-regular fa-clock" style="margin-right:4px;"></i>${tiempoRel}</td>
+            <td style="font-weight:700; color:var(--teal);">$${parseFloat(p.Total||0).toLocaleString('es-AR',{minimumFractionDigits:0})}</td>
+        </tr>`;
+    }).join('');
+}
+
 function adminRenderizarPagina() {
     const { filtrados, paginaActual, porPagina } = ADMIN_STATE;
     const total     = filtrados.length;
@@ -1732,29 +1799,25 @@ function adminRenderizarPagina() {
 
     tbody.innerHTML = pagina.map(p => {
         const estadoCls = (p.Estado || '').toLowerCase().replace(' ', '-');
-        const estadoEmoji = {'pendiente':'⏳','preparando':'👨‍🍳','en-camino':'🛵','entregado':'✅','cancelado':'❌'}[estadoCls] || '•';
+        const estadoPillAdmin = {
+            'pendiente': 'pill-pend',
+            'preparando': 'pill-prep',
+            'en-camino': 'pill-cam',
+            'entregado': 'pill-entr',
+            'cancelado': 'pill-canc'
+        };
+        const pillClass = estadoPillAdmin[estadoCls] || '';
         const piso = p.piso_depto ? ` <small>· ${escapeHtml(p.piso_depto)}</small>` : '';
         const loc  = p.Localidad  ? `<br><small style="color:var(--text-3)">${escapeHtml(p.Localidad)}</small>` : '';
-        return `<tr class="hist-row-clickable" onclick="verDetallePedido(${p.ID_pedido})" title="Ver pedido #${p.ID_pedido}">
+        return `<tr>
             <td><span class="hist-id">#${p.ID_pedido}</span></td>
-            <td>
-                <div class="hist-cliente-nombre">${escapeHtml(p.c_nombre||'')} ${escapeHtml(p.c_apellido||'')}</div>
-                <div class="hist-cliente-tel"><i class="fa-solid fa-phone" style="font-size:.65rem;margin-right:3px;"></i>${escapeHtml(p.c_telefono||'—')}</div>
-            </td>
+            <td>${p.fecha_creacion||'—'}</td>
+            <td>${escapeHtml(p.c_nombre||'')} ${escapeHtml(p.c_apellido||'')}</td>
             <td>
                 <div class="hist-dir">${escapeHtml(p.Calle||'')} ${escapeHtml(p.Numero||'')}${piso}${loc}</div>
             </td>
-            <td>
-                <div class="hist-productos" title="${escapeHtml(p.detalles_resumen||'')}">${escapeHtml(p.detalles_resumen||'—')}</div>
-            </td>
-            <td><span class="hist-total">$${parseFloat(p.Total||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></td>
-            <td><span class="hist-fecha">${p.fecha_creacion||'—'}</span></td>
-            <td><span class="estado-pill ${estadoCls}">${estadoEmoji} ${p.Estado||''}</span></td>
-            <td onclick="event.stopPropagation()">
-                <button class="hist-btn-ver" title="Ver detalle" onclick="verDetallePedido(${p.ID_pedido})">
-                    <i class="fa-solid fa-eye"></i>
-                </button>
-            </td>
+            <td style="font-weight:500">$${parseFloat(p.Total||0).toLocaleString('es-AR',{minimumFractionDigits:0})}</td>
+            <td><span class="pill ${pillClass}">${p.Estado||''}</span></td>
         </tr>`;
     }).join('');
 
@@ -1786,12 +1849,24 @@ function adminIrPagina(n) {
 function iniciarLogicaAdmin() {
     cargarEstadisticas();
     cargarTodosPedidos();
+    cargarMenuAdmin();
+    cargarPersonalAdmin();
+    cargarHorasPicoAdmin();
+
+    document.querySelectorAll('.adm-btn').forEach(b => {
+        b.addEventListener('click', () => {
+            document.querySelectorAll('.adm-btn .nav-dot').forEach(d => { if (d.parentElement !== b) d.remove(); });
+        });
+    });
 
     const btnRefresh = document.getElementById('btn-refresh-admin');
     if (btnRefresh) {
         btnRefresh.addEventListener('click', () => {
             cargarEstadisticas();
             cargarTodosPedidos();
+            cargarMenuAdmin();
+            cargarPersonalAdmin();
+            cargarHorasPicoAdmin();
         });
     }
 
@@ -1801,8 +1876,191 @@ function iniciarLogicaAdmin() {
         if (panelAdmin && !panelAdmin.classList.contains('hidden')) {
             cargarEstadisticas();
             cargarTodosPedidos();
+            cargarMenuAdmin();
+            cargarPersonalAdmin();
         }
     }, 60000);
+}
+
+function showAdminPanel(id, btn) {
+    document.querySelectorAll('.adm-wrap .panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.adm-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-mod-'+id).classList.add('active');
+    btn.classList.add('active');
+    if (!btn.querySelector('.nav-dot')) {
+        const d = document.createElement('span');
+        d.className = 'nav-dot';
+        btn.insertBefore(d, btn.firstChild);
+    }
+    if (id === 'horas') renderHorasChart();
+}
+
+// --- MODULO ADMIN: MENÚ DINÁMICO ---
+async function cargarMenuAdmin() {
+    try {
+        const res = await fetch('./backend/funciones.php?action=getAdminMenu');
+        const r = await res.json();
+        if(r.status === 'success') {
+            ADMIN_STATE.menu = r.data;
+            renderizarMenuAdmin();
+            generarAlertasAdmin();
+        }
+    } catch(e) {}
+}
+
+function renderizarMenuAdmin() {
+    const grid = document.getElementById('admin-menu-grid');
+    if (!grid) return;
+    grid.innerHTML = ADMIN_STATE.menu.map(p => {
+        const checked = p.Activo == 1 ? 'checked' : '';
+        const stockVal = p.Stock !== null ? p.Stock : 999;
+        const stockTxt = stockVal < 999 ? `Stock: ${stockVal} unidades` : 'Stock: Ilimitado';
+        const stockStyle = stockVal <= 5 ? 'color:var(--red)' : 'color:var(--text-3)';
+        const emoji = p.Nombre_producto.toLowerCase().includes('hamburguesa') ? '🍔' : 
+                      p.Nombre_producto.toLowerCase().includes('papa') ? '🍟' : 
+                      p.Nombre_producto.toLowerCase().includes('pizza') ? '🍕' : '🍽';
+        return `
+        <div class="menu-item">
+            <div style="width:36px;height:36px;border-radius:var(--border-radius-md);background:var(--amber-bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${emoji}</div>
+            <div class="menu-info">
+                <div class="menu-name">${escapeHtml(p.Nombre_producto)}</div>
+                <div class="menu-price">$${parseFloat(p.Precio).toLocaleString('es-AR')}</div>
+                <div class="menu-stock" style="${stockStyle}">${stockVal <= 5 ? '⚠ ' : ''}${stockTxt}</div>
+            </div>
+            <label class="toggle">
+                <input type="checkbox" ${checked} onchange="toggleMenuAdminDirect(${p.ID_producto}, this, '${escapeHtml(p.Nombre_producto)}')">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>`;
+    }).join('');
+}
+
+function toggleMenuAdminDirect(id, el, nombre) {
+    const activo = el.checked ? 1 : 0;
+    fetch('./backend/funciones.php?action=toggleProducto', {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id, activo})
+    }).then(r => r.json()).then(r => {
+        if(r.status === 'success') {
+            const log = document.getElementById('admin-menu-log');
+            if(log) {
+                log.style.display = 'block';
+                log.textContent = `✓ ${nombre} ${activo ? 'activado' : 'desactivado'} correctamente — ${new Date().toLocaleTimeString('es-AR')}`;
+            }
+            const prod = ADMIN_STATE.menu.find(p => p.ID_producto == id);
+            if (prod) prod.Activo = activo;
+            generarAlertasAdmin();
+        } else el.checked = !el.checked;
+    });
+}
+
+// --- MODULO ADMIN: PERSONAL ---
+async function cargarPersonalAdmin() {
+    try {
+        const res = await fetch('./backend/funciones.php?action=getAdminPersonal');
+        const r = await res.json();
+        if(r.status === 'success') renderizarPersonalAdmin(r.data);
+    } catch(e) {}
+}
+
+function renderizarPersonalAdmin(personal) {
+    const gridRep = document.getElementById('rep-grid-repartidores');
+    const gridCocina = document.getElementById('rep-grid-cocina');
+    if (!gridRep || !gridCocina) return;
+
+    const activos = ADMIN_STATE.todos.filter(p => ['Pendiente', 'Preparando', 'En camino'].includes(p.Estado));
+    const enCamino = activos.filter(p => p.Estado === 'En camino').length;
+    const enCocina = activos.filter(p => ['Pendiente', 'Preparando'].includes(p.Estado)).length;
+    let enRepartoCount = 0; let cocinandoCount = 0;
+
+    const repartidores = personal.filter(u => (u.Rol||'').toLowerCase() === 'repartidor');
+    const chefs = personal.filter(u => (u.Rol||'').toLowerCase() === 'chef');
+
+    gridRep.innerHTML = repartidores.length ? repartidores.map((u, i) => {
+        const ocupado = i < enCamino; if(ocupado) enRepartoCount++;
+        const iniciales = (u.Nombre.charAt(0) + (u.Apellido ? u.Apellido.charAt(0) : '')).toUpperCase();
+        const statusHtml = ocupado ? `<div class="rep-status status-ocup">🟡 En camino</div>` : `<div class="rep-status status-disp">🟢 Disponible</div>`;
+        return `<div class="rep-item"><div class="rep-avatar" style="background:var(--${ocupado?'amber':'teal'}-bg);color:var(--${ocupado?'amber':'teal'})">${iniciales}</div><div style="flex:1"><div class="rep-name">${escapeHtml(u.Nombre)} ${escapeHtml(u.Apellido||'')}</div>${statusHtml}</div></div>`;
+    }).join('') : '<p style="font-size:11px;color:var(--text-3);padding:10px;">Sin repartidores registrados</p>';
+
+    gridCocina.innerHTML = chefs.length ? chefs.map((u, i) => {
+        const ocupado = enCocina > 0; if(ocupado && i===0) cocinandoCount = chefs.length;
+        const iniciales = (u.Nombre.charAt(0) + (u.Apellido ? u.Apellido.charAt(0) : '')).toUpperCase();
+        const statusHtml = ocupado ? `<div class="rep-status status-ocup">🟡 Cocinando</div>` : `<div class="rep-status status-disp">🟢 Disponible</div>`;
+        return `<div class="rep-item"><div class="rep-avatar" style="background:var(--${ocupado?'amber':'green'}-bg);color:var(--${ocupado?'amber':'green'})">${iniciales}</div><div style="flex:1"><div class="rep-name">${escapeHtml(u.Nombre)} ${escapeHtml(u.Apellido||'')}</div>${statusHtml}</div></div>`;
+    }).join('') : '<p style="font-size:11px;color:var(--text-3);padding:10px;">Sin personal de cocina</p>';
+
+    const kpiVals = document.querySelectorAll('#panel-mod-personal .kpi-val');
+    if (kpiVals.length >= 3) {
+        kpiVals[0].textContent = personal.length - enRepartoCount - (enCocina>0?chefs.length:0); 
+        kpiVals[1].textContent = enRepartoCount;
+        kpiVals[2].textContent = enCocina>0? chefs.length : 0;
+        kpiVals[2].previousElementSibling.textContent = 'En cocina';
+        kpiVals[2].nextElementSibling.textContent = 'preparando pedidos';
+        kpiVals[2].style.color = 'var(--amber)';
+        kpiVals[2].previousElementSibling.previousElementSibling.style.background = 'var(--amber-light)';
+    }
+}
+
+// --- MODULO ADMIN: HORAS PICO ---
+async function cargarHorasPicoAdmin() {
+    try {
+        const res = await fetch('./backend/funciones.php?action=getAdminHorasPico');
+        const r = await res.json();
+        if(r.status === 'success') renderHorasChart(r.data);
+    } catch(e) {}
+}
+
+let horasChartInstance = null;
+function renderHorasChart(dataValues = null) {
+    if(!dataValues && !ADMIN_STATE.horas) return;
+    if(dataValues) ADMIN_STATE.horas = dataValues;
+    const data = ADMIN_STATE.horas;
+    const ctx = document.getElementById('horasChart');
+    if (!ctx) return;
+
+    if (horasChartInstance) {
+        horasChartInstance.data.datasets[0].data = data;
+        horasChartInstance.data.datasets[0].backgroundColor = data.map(v => v >= 18 ? '#E24B4A' : v >= 12 ? '#BA7517' : '#378ADD');
+        horasChartInstance.update(); return;
+    }
+    horasChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: ['8h','9h','10h','11h','12h','13h','14h','15h','16h','17h','18h','19h','20h','21h','22h','23h'],
+            datasets: [{ label: 'Pedidos', data, backgroundColor: data.map(v => v >= 18 ? '#E24B4A' : v >= 12 ? '#BA7517' : '#378ADD'), borderRadius: 4 }]
+        }, options: { responsive: true, maintainAspectRatio: false, plugins: {legend:{display:false}}, scales: { x: {grid:{display:false}}, y: {grid:{color:'rgba(0,0,0,0.06)'}} } }
+    });
+}
+
+// --- MODULO ADMIN: MOTOR ALERTAS ---
+function generarAlertasAdmin() {
+    const container = document.getElementById('alertas-container');
+    if (!container) return;
+    let alertas = []; const ahora = new Date();
+
+    ADMIN_STATE.todos.forEach(p => {
+        if(['Pendiente', 'Preparando', 'En camino'].includes(p.Estado) && p.fecha_raw) {
+            const pt = p.fecha_raw.split(/[- :]/);
+            if(pt.length >= 6) {
+                const diff = Math.floor((ahora - new Date(pt[0], pt[1]-1, pt[2], pt[3], pt[4], pt[5])) / 60000);
+                if(diff > 45) alertas.push({ type: 'red', icon: '🚨', time: diff+'m', title: `Pedido #${p.ID_pedido} — retraso crítico`, sub: `En estado "${p.Estado}" hace ${diff} minutos.` });
+                else if(diff > 30) alertas.push({ type: 'amber', icon: '⚠️', time: diff+'m', title: `Pedido #${p.ID_pedido} — demora detectada`, sub: `En estado "${p.Estado}" hace ${diff} minutos.` });
+            }
+        }
+    });
+    ADMIN_STATE.menu.forEach(p => { if(p.Activo == 1 && p.Stock !== null && p.Stock <= 5) alertas.push({ type: 'amber', icon: '🍔', time: 'ahora', title: `Stock crítico — ${p.Nombre_producto}`, sub: `Quedan ${p.Stock} unidades.` }); });
+    if(ADMIN_STATE.stats && ADMIN_STATE.stats.total_pedidos > 0 && (ADMIN_STATE.stats.cancelados / ADMIN_STATE.stats.total_pedidos) * 100 > 8) {
+        alertas.push({ type: 'blue', icon: '💡', time: 'hoy', title: `Tasa de cancelación elevada`, sub: `Superior al 8%. Revisar causas.` });
+    }
+
+    const bh = document.getElementById('admin-alertas-badge'); const bs = document.getElementById('sidebar-alertas-badge');
+    if (bh) { bh.textContent = `${alertas.length} activas`; bh.style.background = alertas.length > 0 ? 'var(--red-bg)' : 'var(--green-bg)'; bh.style.color = alertas.length > 0 ? 'var(--red)' : 'var(--green)'; }
+    if (bs) { bs.textContent = alertas.length; bs.style.display = alertas.length > 0 ? 'inline-block' : 'none'; }
+
+    if(alertas.length === 0) container.innerHTML = `<div style="padding:30px;text-align:center;color:var(--text-3);"><i class="fa-solid fa-check-circle" style="font-size:24px;margin-bottom:8px;"></i><br>No hay alertas activas.</div>`;
+    else {
+        const pesos = {red: 1, amber: 2, blue: 3}; alertas.sort((a,b) => pesos[a.type] - pesos[b.type]);
+        container.innerHTML = alertas.map(a => `<div class="alert-item ${a.type==='red'?'alert-red':(a.type==='amber'?'alert-amber':'alert-blue')}"><div class="alert-icon">${a.icon}</div><div class="alert-text"><div class="alert-title">${a.title}</div><div class="alert-sub">${a.sub}</div></div><div class="alert-time">${a.time}</div></div>`).join('');
+    }
 }
 
 // ==========================================
