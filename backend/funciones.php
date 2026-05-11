@@ -124,6 +124,9 @@ if (isset($_GET['action'])) {
         case 'getAdminPersonal':
             obtenerAdminPersonal($pdo);
             break;
+        case 'getAdminAdvancedStats':
+            obtenerAdminAdvancedStats($pdo);
+            break;
     }
     exit;
 }
@@ -660,6 +663,54 @@ function obtenerAdminPersonal($pdo) {
             ORDER BY u.Nombre ASC
         ");
         echo json_encode(['status' => 'success', 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+    } catch(PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+}
+
+function obtenerAdminAdvancedStats($pdo) {
+    validarRol(['admin', 'superadmin']);
+    try {
+        $id_restaurante = $_SESSION['user_restaurante'] ?? null;
+        $rol = strtolower(trim($_SESSION['user_rol'] ?? ''));
+        $filtroRest = ($id_restaurante && $rol !== 'superadmin') ? "AND p.ID_restaurante = " . intval($id_restaurante) : "";
+        $filtroRestProd = ($id_restaurante && $rol !== 'superadmin') ? "AND pr.ID_restaurante = " . intval($id_restaurante) : "";
+        
+        // 1. Costos y Productos Más Vendidos Hoy
+        $stmtCostos = $pdo->query("
+            SELECT 
+                pr.Nombre_producto,
+                pr.Precio as precio_venta,
+                (pr.Precio * 0.4) as costo_est,
+                COALESCE(SUM(dp.Cantidad), 0) as ventas_hoy,
+                COALESCE(SUM(dp.Subtotal), 0) as ingreso
+            FROM productos pr
+            LEFT JOIN detalle_pedido dp ON pr.ID_producto = dp.ID_producto
+            LEFT JOIN pedidos p ON dp.ID_pedido = p.ID_pedido AND DATE(p.fecha_creacion) = CURDATE()
+            WHERE pr.Activo = 1 $filtroRestProd
+            GROUP BY pr.ID_producto
+            ORDER BY ventas_hoy DESC, pr.Nombre_producto ASC
+            LIMIT 5
+        ");
+        $costos = $stmtCostos->fetchAll(PDO::FETCH_ASSOC);
+
+        // 2. Rentabilidad Semanal (Esta semana vs Semana anterior)
+        $ventasSemana = $pdo->query("SELECT COALESCE(SUM(Total), 0) FROM pedidos WHERE Estado = 'Entregado' AND fecha_creacion >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) $filtroRest")->fetchColumn();
+        $ventasSemanaAnt = $pdo->query("SELECT COALESCE(SUM(Total), 0) FROM pedidos WHERE Estado = 'Entregado' AND fecha_creacion >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) AND fecha_creacion < DATE_SUB(CURDATE(), INTERVAL 7 DAY) $filtroRest")->fetchColumn();
+        
+        $costosSemana = $ventasSemana * 0.4;
+        $costosSemanaAnt = $ventasSemanaAnt * 0.4;
+
+        echo json_encode([
+            'status' => 'success',
+            'data' => [
+                'costos' => $costos,
+                'rentabilidad' => [
+                    'semana_actual' => ['ventas' => (float)$ventasSemana, 'costos' => (float)$costosSemana, 'ganancia' => (float)($ventasSemana - $costosSemana)],
+                    'semana_anterior' => ['ventas' => (float)$ventasSemanaAnt, 'costos' => (float)$costosSemanaAnt, 'ganancia' => (float)($ventasSemanaAnt - $costosSemanaAnt)]
+                ]
+            ]
+        ]);
     } catch(PDOException $e) {
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
     }
