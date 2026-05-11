@@ -376,15 +376,13 @@
                   <aside class="adm-sidebar">
                     <div class="adm-section" style="margin-top:10px;">Operaciones</div>
                     <nav class="adm-nav">
-                      <button class="adm-btn active" onclick="showAdminPanel('pedidos',this)"><span class="nav-dot"></span><span class="nav-icon">📦</span>Pedidos<span class="nav-badge">8</span></button>
+                      <button class="adm-btn active" onclick="showAdminPanel('pedidos',this)"><span class="nav-dot"></span><span class="nav-icon">📦</span>Pedidos<span class="nav-badge" id="admin-pedidos-badge">0</span></button>
                       <button class="adm-btn" onclick="showAdminPanel('personal',this)"><span class="nav-icon">🛵</span>Personal</button>
                       <button class="adm-btn" onclick="showAdminPanel('alertas',this)"><span class="nav-icon">🔔</span>Alertas<span class="nav-badge" id="sidebar-alertas-badge" style="display:none;">0</span></button>
                       <button class="adm-btn" onclick="showAdminPanel('historial',this)"><span class="nav-icon">📋</span>Historial</button>
                     </nav>
                     <div class="adm-section">Análisis</div>
                     <nav class="adm-nav">
-                      <button class="adm-btn" onclick="showAdminPanel('tiempos',this)"><span class="nav-icon">⏱</span>Tiempos</button>
-                      <button class="adm-btn" onclick="showAdminPanel('kpis',this)"><span class="nav-icon">📊</span>KPIs</button>
                       <button class="adm-btn" onclick="showAdminPanel('rentabilidad',this)"><span class="nav-icon">💹</span>Rentabilidad</button>
                       <button class="adm-btn" onclick="showAdminPanel('horas',this)"><span class="nav-icon">🕐</span>Horas Pico</button>
                     </nav>
@@ -477,32 +475,6 @@
                       <div id="admin-pagination" style="margin-top: 10px;"></div>
                     </div>
 
-                    <!-- TIEMPOS -->
-                    <div id="panel-mod-tiempos" class="panel">
-                      <div class="ph"><div><div class="ph-title">Métricas de Tiempos</div><div class="ph-sub">Flujo Pedido → Cocina → Reparto → Entrega</div></div></div>
-                      <div class="sec-card">
-                        <div class="sec-title"><span class="sec-dot" style="background:var(--blue-mid)"></span>Flujo promedio del pedido</div>
-                        <div class="flow-track">
-                          <div class="flow-step"><div class="flow-circle" style="background:var(--amber-bg);color:var(--amber)">📥</div><div class="flow-label">Recepción</div><div class="flow-time">0 min</div><div class="flow-avg">inicio</div></div>
-                          <div class="flow-step"><div class="flow-circle" style="background:var(--blue-bg);color:var(--blue)">👨‍🍳</div><div class="flow-label">Cocina</div><div class="flow-time">12 min</div><div class="flow-avg">prom.</div></div>
-                          <div class="flow-step"><div class="flow-circle" style="background:var(--purple-bg);color:var(--purple)">🛵</div><div class="flow-label">Reparto</div><div class="flow-time">8 min</div><div class="flow-avg">prom.</div></div>
-                          <div class="flow-step"><div class="flow-circle" style="background:var(--teal-bg);color:var(--teal)">✅</div><div class="flow-label">Entrega</div><div class="flow-time">28 min</div><div class="flow-avg">total</div></div>
-                        </div>
-                      </div>
-                      <div class="metric-row">
-                        <div class="metric-mini"><div class="metric-mini-label">Tiempo mínimo</div><div class="metric-mini-val">18 min</div></div>
-                        <div class="metric-mini"><div class="metric-mini-label">Tiempo máximo</div><div class="metric-mini-val">47 min</div></div>
-                        <div class="metric-mini"><div class="metric-mini-label">SLA cumplido</div><div class="metric-mini-val" style="color:var(--teal)">82%</div></div>
-                      </div>
-                      <div class="sec-card">
-                        <div class="sec-title"><span class="sec-dot" style="background:var(--purple-mid)"></span>Comparativa Semanal (Tiempo promedio)</div>
-                        <div style="display:flex;flex-direction:column;gap:6px">
-                          <div style="display:flex;align-items:center;gap:8px;font-size:11px"><span style="width:100px;color:var(--color-text-secondary)">Semana Actual</span><div style="flex:1;height:10px;background:var(--color-border-tertiary);border-radius:5px;overflow:hidden"><div style="width:60%;height:100%;background:var(--amber-light);border-radius:5px"></div></div><span style="width:40px;text-align:right;font-weight:500">28 min</span></div>
-                          <div style="display:flex;align-items:center;gap:8px;font-size:11px"><span style="width:100px;color:var(--color-text-secondary)">Semana Pasada</span><div style="flex:1;height:10px;background:var(--color-border-tertiary);border-radius:5px;overflow:hidden"><div style="width:70%;height:100%;background:var(--blue-mid);border-radius:5px"></div></div><span style="width:40px;text-align:right;font-weight:500">32 min</span></div>
-                        </div>
-                      </div>
-                    </div>
-
                     <!-- MENU -->
                     <div id="panel-mod-menu" class="panel">
                       <div class="ph"><div><div class="ph-title">Gestión del Menú</div><div class="ph-sub">Activación / desactivación instantánea de platos</div></div></div>
@@ -566,7 +538,7 @@
                         <div class="acceso-card">
                           <div class="acceso-rol"><span style="width:8px;height:8px;border-radius:50%;background:var(--red-mid);display:inline-block"></span>Superadmin</div>
                           <div class="acceso-perms">
-                            <span class="perm-pill on">Panel global</span><span class="perm-pill on">Usuarios</span><span class="perm-pill on">Estadísticas</span><span class="perm-pill on">Costos</span><span class="perm-pill on">KPIs</span>
+                            <span class="perm-pill on">Panel global</span><span class="perm-pill on">Usuarios</span><span class="perm-pill on">Estadísticas</span><span class="perm-pill on">Costos</span>
                           </div>
                         </div>
                         <div class="acceso-card">
@@ -578,7 +550,7 @@
                         <div class="acceso-card">
                           <div class="acceso-rol"><span style="width:8px;height:8px;border-radius:50%;background:var(--blue-mid);display:inline-block"></span>Recepcionista</div>
                           <div class="acceso-perms">
-                            <span class="perm-pill on">Nuevo pedido</span><span class="perm-pill on">Pedidos actuales</span><span class="perm-pill on">Historial</span><span class="perm-pill off">Menú</span><span class="perm-pill off">Costos</span><span class="perm-pill off">KPIs</span>
+                            <span class="perm-pill on">Nuevo pedido</span><span class="perm-pill on">Pedidos actuales</span><span class="perm-pill on">Historial</span><span class="perm-pill off">Menú</span><span class="perm-pill off">Costos</span>
                           </div>
                         </div>
                         <div class="acceso-card">
@@ -593,35 +565,6 @@
                             <span class="perm-pill on">Cola cocina</span><span class="perm-pill on">Estado platos</span><span class="perm-pill on">Stock</span><span class="perm-pill off">Pedidos</span><span class="perm-pill off">Clientes</span>
                           </div>
                         </div>
-                      </div>
-                    </div>
-
-                    <!-- KPIs -->
-                    <div id="panel-mod-kpis" class="panel">
-                      <div class="ph"><div><div class="ph-title">KPIs Operativos</div><div class="ph-sub">Rendimiento en cocina y tiempos de entrega</div></div></div>
-                      <div class="kpi-grid" style="margin-bottom:12px">
-                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--teal-mid)"></div><div class="kpi-label">Tasa entrega</div><div class="kpi-val" style="color:var(--teal)">89%</div><div class="kpi-sub">pedidos entregados</div></div>
-                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--blue-mid)"></div><div class="kpi-label">Tiempo cocina</div><div class="kpi-val">12 min</div><div class="kpi-sub kpi-trend up">SLA: 15 min ✓</div></div>
-                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--amber-light)"></div><div class="kpi-label">Tiempo reparto</div><div class="kpi-val">16 min</div><div class="kpi-sub kpi-trend down">SLA: 12 min ✗</div></div>
-                        <div class="kpi-card"><div class="kpi-bar" style="background:var(--purple-mid)"></div><div class="kpi-label">Satisfacción</div><div class="kpi-val">4.2★</div><div class="kpi-sub">sobre 5 estrellas</div></div>
-                      </div>
-                      <div class="sec-card">
-                        <div class="sec-title"><span class="sec-dot" style="background:var(--blue-mid)"></span>Efectividad de Entregas a tiempo (Por Turno)</div>
-                        <div style="display:flex;flex-direction:column;gap:8px">
-                          <div style="font-size:11px">
-                            <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-weight:500">Turno Almuerzo</span><span style="color:var(--teal)">92% efectividad</span></div>
-                            <div style="height:8px;background:var(--color-border-tertiary);border-radius:4px;overflow:hidden"><div style="width:92%;height:100%;background:var(--teal-mid);border-radius:4px"></div></div>
-                          </div>
-                          <div style="font-size:11px">
-                            <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-weight:500">Turno Cena</span><span style="color:var(--amber)">74% efectividad</span></div>
-                            <div style="height:8px;background:var(--color-border-tertiary);border-radius:4px;overflow:hidden"><div style="width:74%;height:100%;background:var(--amber-light);border-radius:4px"></div></div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="metric-row">
-                        <div class="metric-mini"><div class="metric-mini-label">Pedidos/hora pico</div><div class="metric-mini-val">18</div></div>
-                        <div class="metric-mini"><div class="metric-mini-label">Cancels evitables</div><div class="metric-mini-val" style="color:var(--red)">3</div></div>
-                        <div class="metric-mini"><div class="metric-mini-label">Clientes recurrentes</div><div class="metric-mini-val">68%</div></div>
                       </div>
                     </div>
 

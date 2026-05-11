@@ -1613,6 +1613,9 @@ function renderizarEstadisticas(stats) {
         const tasaCanc = stats.total_pedidos > 0 ? ((stats.cancelados / stats.total_pedidos) * 100).toFixed(1) : 0;
         set('stat-tasa-cancelacion', tasaCanc + '%');
 
+    // Badge de Pedidos Activos en la sidebar de Admin
+    set('admin-pedidos-badge', (stats.pendientes || 0) + (stats.preparando || 0) + (stats.en_camino || 0));
+
     // Indicador actualización
     const ahora = new Date();
     const hora  = ahora.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
@@ -1747,7 +1750,7 @@ function adminRenderizarActivos() {
     // Filtrar activos y priorizar visualización de los MÁS ANTIGUOS (los que más urgen)
     const activos = ADMIN_STATE.todos
         .filter(p => ['Pendiente', 'Preparando', 'En camino'].includes(p.Estado))
-        .sort((a, b) => new Date(a.fecha_raw || 0) - new Date(b.fecha_raw || 0))
+        .sort((a, b) => new Date((a.fecha_raw || '').replace(' ', 'T') || 0) - new Date((b.fecha_raw || '').replace(' ', 'T') || 0))
         .slice(0, 5);
     
     if (activos.length === 0) {
@@ -1852,6 +1855,7 @@ function iniciarLogicaAdmin() {
     cargarMenuAdmin();
     cargarPersonalAdmin();
     cargarHorasPicoAdmin();
+    cargarEstadisticasAvanzadasAdmin();
 
     document.querySelectorAll('.adm-btn').forEach(b => {
         b.addEventListener('click', () => {
@@ -1867,6 +1871,7 @@ function iniciarLogicaAdmin() {
             cargarMenuAdmin();
             cargarPersonalAdmin();
             cargarHorasPicoAdmin();
+            cargarEstadisticasAvanzadasAdmin();
         });
     }
 
@@ -1878,6 +1883,7 @@ function iniciarLogicaAdmin() {
             cargarTodosPedidos();
             cargarMenuAdmin();
             cargarPersonalAdmin();
+            cargarEstadisticasAvanzadasAdmin();
         }
     }, 60000);
 }
@@ -2060,6 +2066,142 @@ function generarAlertasAdmin() {
     else {
         const pesos = {red: 1, amber: 2, blue: 3}; alertas.sort((a,b) => pesos[a.type] - pesos[b.type]);
         container.innerHTML = alertas.map(a => `<div class="alert-item ${a.type==='red'?'alert-red':(a.type==='amber'?'alert-amber':'alert-blue')}"><div class="alert-icon">${a.icon}</div><div class="alert-text"><div class="alert-title">${a.title}</div><div class="alert-sub">${a.sub}</div></div><div class="alert-time">${a.time}</div></div>`).join('');
+    }
+}
+
+// --- MÓDULOS ADMIN AVANZADOS ---
+
+async function cargarEstadisticasAvanzadasAdmin() {
+    try {
+        const res = await fetch('./backend/funciones.php?action=getAdminAdvancedStats');
+        const r = await res.json();
+        if (r.status === 'success') {
+            renderizarCostos(r.data.costos);
+            renderizarRentabilidad(r.data.rentabilidad);
+        }
+    } catch (e) {
+        console.error("Error cargando estadísticas avanzadas:", e);
+    }
+}
+
+function renderizarCostos(costos) {
+    const tbody = document.querySelector('#panel-mod-costos .costo-table tbody');
+    if (!tbody) return;
+    
+    if (!costos || costos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-3);padding:20px;">No hay datos para mostrar.</td></tr>';
+        return;
+    }
+
+    let ingresoTotal = 0;
+    let costoTotal = 0;
+    
+    tbody.innerHTML = costos.map(c => {
+        const precio = parseFloat(c.precio_venta);
+        const costo = parseFloat(c.costo_est);
+        const margenPorc = precio > 0 ? Math.round(((precio - costo) / precio) * 100) : 0;
+        const ingreso = parseFloat(c.ingreso);
+        
+        ingresoTotal += ingreso;
+        costoTotal += costo * parseInt(c.ventas_hoy);
+        
+        let colorClass = 'var(--teal-mid)';
+        if (margenPorc < 35) colorClass = 'var(--amber)';
+        if (margenPorc < 20) colorClass = 'var(--red-mid)';
+        if (margenPorc >= 55) colorClass = 'var(--green)';
+
+        return `<tr>
+            <td><span style="font-weight:500">${escapeHtml(c.Nombre_producto)}</span></td>
+            <td>$${precio.toLocaleString('es-AR', {minimumFractionDigits:0})}</td>
+            <td>$${costo.toLocaleString('es-AR', {minimumFractionDigits:0})}</td>
+            <td><div class="margin-bar"><div class="bar-track"><div class="bar-fill" style="width:${margenPorc}%;background:${colorClass}"></div></div><span style="font-size:10px;color:${colorClass};font-weight:500">${margenPorc}%</span></div></td>
+            <td>${c.ventas_hoy}</td>
+            <td style="font-weight:500">$${ingreso.toLocaleString('es-AR', {minimumFractionDigits:0})}</td>
+        </tr>`;
+    }).join('');
+
+    const margenPromedio = ingresoTotal > 0 ? Math.round(((ingresoTotal - costoTotal) / ingresoTotal) * 100) : 0;
+    const productoEstrella = costos.length > 0 && costos[0].ventas_hoy > 0 ? costos[0].Nombre_producto : '—';
+
+    const miniVals = document.querySelectorAll('#panel-mod-costos .metric-mini-val');
+    if(miniVals.length >= 3) {
+        miniVals[0].textContent = `$${ingresoTotal.toLocaleString('es-AR', {minimumFractionDigits:0})}`;
+        miniVals[1].textContent = `${margenPromedio}%`;
+        miniVals[2].textContent = productoEstrella;
+    }
+}
+
+function renderizarRentabilidad(rent) {
+    const formatMoney = (val) => {
+        if (val >= 1000000) return '$' + (val / 1000000).toFixed(2) + 'M';
+        if (val >= 1000) return '$' + (val / 1000).toFixed(1) + 'k';
+        return '$' + val.toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:0});
+    };
+
+    const sa = rent.semana_actual;
+    const ant = rent.semana_anterior;
+
+    const diffIngresos = ant.ventas > 0 ? ((sa.ventas - ant.ventas) / ant.ventas * 100).toFixed(1) : (sa.ventas > 0 ? 100 : 0);
+    const diffCostos = ant.costos > 0 ? ((sa.costos - ant.costos) / ant.costos * 100).toFixed(1) : (sa.costos > 0 ? 100 : 0);
+    const diffGanancia = ant.ganancia > 0 ? ((sa.ganancia - ant.ganancia) / ant.ganancia * 100).toFixed(1) : (sa.ganancia > 0 ? 100 : 0);
+
+    const getTrendHTML = (diff, invert = false) => {
+        const val = parseFloat(diff);
+        let upClass = 'up'; let downClass = 'down';
+        if (invert) { upClass = 'down'; downClass = 'up'; }
+        if (val > 0) return `<div class="kpi-sub kpi-trend ${upClass}">+${val}% vs sem. ant.</div>`;
+        if (val < 0) return `<div class="kpi-sub kpi-trend ${downClass}">${val}% vs sem. ant.</div>`;
+        return `<div class="kpi-sub kpi-trend">0% vs sem. ant.</div>`;
+    };
+
+    const panel = document.getElementById('panel-mod-rentabilidad');
+    if (!panel) return;
+
+    const kpiVals = panel.querySelectorAll('.kpi-val');
+    const kpiCards = panel.querySelectorAll('.kpi-card');
+    
+    if(kpiVals.length >= 3 && kpiCards.length >= 3) {
+        kpiVals[0].textContent = formatMoney(sa.ventas);
+        kpiCards[0].querySelector('.kpi-sub').outerHTML = getTrendHTML(diffIngresos);
+
+        kpiVals[1].textContent = formatMoney(sa.costos);
+        kpiCards[1].querySelector('.kpi-sub').outerHTML = getTrendHTML(diffCostos, true);
+
+        kpiVals[2].textContent = formatMoney(sa.ganancia);
+        kpiCards[2].querySelector('.kpi-sub').outerHTML = getTrendHTML(diffGanancia);
+    }
+
+    const totalSa = sa.ventas > 0 ? sa.ventas : 1;
+    const flexVentasSa = (sa.ventas / totalSa * 2).toFixed(2);
+    const flexCostosSa = (sa.costos / totalSa * 2).toFixed(2);
+
+    const totalAnt = ant.ventas > 0 ? ant.ventas : 1;
+    const flexVentasAnt = (ant.ventas / totalAnt * 2).toFixed(2);
+    const flexCostosAnt = (ant.costos / totalAnt * 2).toFixed(2);
+
+    const margenSa = sa.ventas > 0 ? Math.round((sa.ganancia / sa.ventas) * 100) : 0;
+    const margenAnt = ant.ventas > 0 ? Math.round((ant.ganancia / ant.ventas) * 100) : 0;
+
+    const divComparativas = panel.querySelector('.sec-card > div[style*="flex-direction:column"]');
+    if (divComparativas) {
+        divComparativas.innerHTML = `
+            <div style="font-size:11px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:500">Esta semana</span><span style="color:var(--color-text-secondary)">${formatMoney(sa.ventas)} ventas · ${formatMoney(sa.costos)} costos</span></div>
+                <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;gap:1px">
+                    <div style="flex:${flexVentasSa};background:var(--teal-mid)"></div>
+                    <div style="flex:${flexCostosSa};background:var(--red-mid)"></div>
+                </div>
+                <div style="display:flex;gap:12px;margin-top:3px"><span style="color:var(--teal)">■ Ventas</span><span style="color:var(--red)">■ Costos</span><span style="color:var(--color-text-secondary);margin-left:auto">Margen: ${margenSa}%</span></div>
+            </div>
+            <div style="font-size:11px;margin-top:10px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:500">Semana anterior</span><span style="color:var(--color-text-secondary)">${formatMoney(ant.ventas)} ventas · ${formatMoney(ant.costos)} costos</span></div>
+                <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;gap:1px">
+                    <div style="flex:${flexVentasAnt};background:var(--blue-mid)"></div>
+                    <div style="flex:${flexCostosAnt};background:var(--coral-mid)"></div>
+                </div>
+                <div style="display:flex;gap:12px;margin-top:3px"><span style="color:var(--blue)">■ Ventas</span><span style="color:var(--coral)">■ Costos</span><span style="color:var(--color-text-secondary);margin-left:auto">Margen: ${margenAnt}%</span></div>
+            </div>
+        `;
     }
 }
 
