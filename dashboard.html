@@ -191,7 +191,7 @@
         <header class="app-header">
             <div class="brand"> 
                 <div class="brand-icon"><img src="/assets/img/logo.png" alt=""> </div>
-                Recep<em>ción</em>
+                <span id="brand-rol-texto"><em></em></span>
             </div>
             <div class="header-right">
                 <!-- USER DROPDOWN TRIGGER -->
@@ -577,24 +577,30 @@
                         <div class="kpi-card"><div class="kpi-bar" style="background:var(--amber-light)"></div><div class="kpi-label">Ganancia neta</div><div class="kpi-val" style="color:var(--teal)">$910k</div><div class="kpi-sub kpi-trend up">+23% vs sem. ant.</div></div>
                       </div>
                       <div class="sec-card">
-                        <div class="sec-title"><span class="sec-dot" style="background:var(--teal-mid)"></span>Ventas vs Costos (Comparativa Semanal)</div>
-                        <div style="display:flex;flex-direction:column;gap:10px">
-                          <div style="font-size:11px">
-                            <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:500">Esta semana</span><span style="color:var(--color-text-secondary)">$1.87M ventas · $960k costos</span></div>
-                            <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;gap:1px">
-                              <div style="flex:1.87;background:var(--teal-mid)"></div>
-                              <div style="flex:0.96;background:var(--red-mid)"></div>
-                            </div>
-                            <div style="display:flex;gap:12px;margin-top:3px"><span style="color:var(--teal)">■ Ventas</span><span style="color:var(--red)">■ Costos</span><span style="color:var(--color-text-secondary);margin-left:auto">Margen: 49%</span></div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
+                          <div class="sec-title" style="margin-bottom:0"><span class="sec-dot" style="background:var(--teal-mid)"></span>Ventas vs Costos — Lun a Dom</div>
+                          <div style="display:flex;gap:4px;">
+                            <button id="rent-btn-lines" onclick="rentSetMode('lines')"
+                              style="font-size:11px;padding:3px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);cursor:pointer;font-weight:500;">
+                              Líneas
+                            </button>
+                            <button id="rent-btn-bars" onclick="rentSetMode('bars')"
+                              style="font-size:11px;padding:3px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:transparent;color:var(--color-text-secondary);cursor:pointer;">
+                              Barras
+                            </button>
                           </div>
-                          <div style="font-size:11px">
-                            <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:500">Semana anterior</span><span style="color:var(--color-text-secondary)">$1.62M ventas · $880k costos</span></div>
-                            <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;gap:1px">
-                              <div style="flex:1.62;background:var(--blue-mid)"></div>
-                              <div style="flex:0.88;background:var(--coral-mid)"></div>
-                            </div>
-                            <div style="display:flex;gap:12px;margin-top:3px"><span style="color:var(--blue)">■ Ventas</span><span style="color:var(--coral)">■ Costos</span><span style="color:var(--color-text-secondary);margin-left:auto">Margen: 45%</span></div>
-                          </div>
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:10px;color:var(--color-text-secondary);">
+                          <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:18px;height:2.5px;background:#1D9E75;border-radius:2px;"></span>Ventas esta sem.</span>
+                          <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:18px;height:0;border-top:2.5px dashed #1D9E75;"></span>Ventas sem. ant.</span>
+                          <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:18px;height:2.5px;background:#E24B4A;border-radius:2px;"></span>Costos esta sem.</span>
+                          <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:18px;height:0;border-top:2.5px dashed #E24B4A;"></span>Costos sem. ant.</span>
+                        </div>
+                        <div style="position:relative;width:100%;height:200px;">
+                          <canvas id="rentabilidadChart" role="img"
+                            aria-label="Gráfico de líneas: ventas y costos diarios esta semana vs semana anterior">
+                            Comparativa diaria de ventas y costos — semana actual vs semana anterior.
+                          </canvas>
                         </div>
                       </div>
                     </div>

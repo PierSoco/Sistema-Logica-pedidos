@@ -695,19 +695,56 @@ function obtenerAdminAdvancedStats($pdo) {
         $costos = $stmtCostos->fetchAll(PDO::FETCH_ASSOC);
 
         // 2. Rentabilidad Semanal (Esta semana vs Semana anterior)
-        $ventasSemana = $pdo->query("SELECT COALESCE(SUM(Total), 0) FROM pedidos WHERE Estado = 'Entregado' AND fecha_creacion >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) $filtroRest")->fetchColumn();
-        $ventasSemanaAnt = $pdo->query("SELECT COALESCE(SUM(Total), 0) FROM pedidos WHERE Estado = 'Entregado' AND fecha_creacion >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) AND fecha_creacion < DATE_SUB(CURDATE(), INTERVAL 7 DAY) $filtroRest")->fetchColumn();
+        $ventasSemana = $pdo->query("SELECT COALESCE(SUM(Total), 0) FROM pedidos p WHERE Estado = 'Entregado' AND fecha_creacion >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) $filtroRest")->fetchColumn();
+        $ventasSemanaAnt = $pdo->query("SELECT COALESCE(SUM(Total), 0) FROM pedidos p WHERE Estado = 'Entregado' AND fecha_creacion >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) AND fecha_creacion < DATE_SUB(CURDATE(), INTERVAL 7 DAY) $filtroRest")->fetchColumn();
         
         $costosSemana = $ventasSemana * 0.4;
         $costosSemanaAnt = $ventasSemanaAnt * 0.4;
+
+        // 3. Ventas diarias por día de semana (Lun=0 … Dom=6) — esta semana y anterior
+        // DAYOFWEEK: 1=Dom, 2=Lun, 3=Mar, 4=Mié, 5=Jue, 6=Vie, 7=Sáb
+        $dowMap = [2 => 0, 3 => 1, 4 => 2, 5 => 3, 6 => 4, 7 => 5, 1 => 6];
+        $diasActual   = array_fill(0, 7, 0.0);
+        $diasAnterior = array_fill(0, 7, 0.0);
+
+        $stmtDiasActual = $pdo->query("
+            SELECT DAYOFWEEK(DATE(fecha_creacion)) AS dow,
+                   COALESCE(SUM(Total), 0) AS ventas
+            FROM pedidos p
+            WHERE Estado = 'Entregado'
+              AND fecha_creacion >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+              $filtroRest
+            GROUP BY dow
+        ");
+        foreach ($stmtDiasActual->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $idx = $dowMap[(int)$row['dow']] ?? null;
+            if ($idx !== null) $diasActual[$idx] = (float)$row['ventas'];
+        }
+
+        $stmtDiasAnt = $pdo->query("
+            SELECT DAYOFWEEK(DATE(fecha_creacion)) AS dow,
+                   COALESCE(SUM(Total), 0) AS ventas
+            FROM pedidos p
+            WHERE Estado = 'Entregado'
+              AND fecha_creacion >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+              AND fecha_creacion <  DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+              $filtroRest
+            GROUP BY dow
+        ");
+        foreach ($stmtDiasAnt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $idx = $dowMap[(int)$row['dow']] ?? null;
+            if ($idx !== null) $diasAnterior[$idx] = (float)$row['ventas'];
+        }
 
         echo json_encode([
             'status' => 'success',
             'data' => [
                 'costos' => $costos,
                 'rentabilidad' => [
-                    'semana_actual' => ['ventas' => (float)$ventasSemana, 'costos' => (float)$costosSemana, 'ganancia' => (float)($ventasSemana - $costosSemana)],
-                    'semana_anterior' => ['ventas' => (float)$ventasSemanaAnt, 'costos' => (float)$costosSemanaAnt, 'ganancia' => (float)($ventasSemanaAnt - $costosSemanaAnt)]
+                    'semana_actual'   => ['ventas' => (float)$ventasSemana,    'costos' => (float)$costosSemana,    'ganancia' => (float)($ventasSemana    - $costosSemana)],
+                    'semana_anterior' => ['ventas' => (float)$ventasSemanaAnt, 'costos' => (float)$costosSemanaAnt, 'ganancia' => (float)($ventasSemanaAnt - $costosSemanaAnt)],
+                    'dias_actual'     => array_values($diasActual),
+                    'dias_anterior'   => array_values($diasAnterior)
                 ]
             ]
         ]);

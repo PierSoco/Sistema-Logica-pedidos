@@ -67,6 +67,7 @@ async function iniciarLogicaRecepcionista() {
     _recepcionistaIniciado = true;
     console.log("Cargando ecosistema de Recepción...");
 
+    cargarRolEnUI();
     // Activar sidebar y layout de 2 columnas
     const sidebar = document.getElementById('app-sidebar');
     const wrapper = document.querySelector('.app-wrapper');
@@ -1899,6 +1900,9 @@ function showAdminPanel(id, btn) {
         btn.insertBefore(d, btn.firstChild);
     }
     if (id === 'horas') renderHorasChart();
+    if (id === 'rentabilidad' && typeof rentabilidadChartInstance !== 'undefined' && rentabilidadChartInstance) {
+        rentabilidadChartInstance.resize();
+    }
 }
 
 // --- MODULO ADMIN: MENÚ DINÁMICO ---
@@ -2017,6 +2021,8 @@ async function cargarHorasPicoAdmin() {
 }
 
 let horasChartInstance = null;
+let rentabilidadChartInstance = null;
+let rentabilidadChartMode = 'lines'; // 'lines' | 'bars'
 function renderHorasChart(dataValues = null) {
     if(!dataValues && !ADMIN_STATE.horas) return;
     if(dataValues) ADMIN_STATE.horas = dataValues;
@@ -2134,20 +2140,20 @@ function renderizarCostos(costos) {
 function renderizarRentabilidad(rent) {
     const formatMoney = (val) => {
         if (val >= 1000000) return '$' + (val / 1000000).toFixed(2) + 'M';
-        if (val >= 1000) return '$' + (val / 1000).toFixed(1) + 'k';
+        if (val >= 1000)    return '$' + (val / 1000).toFixed(1) + 'k';
         return '$' + val.toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:0});
     };
 
-    const sa = rent.semana_actual;
+    const sa  = rent.semana_actual;
     const ant = rent.semana_anterior;
 
-    const diffIngresos = ant.ventas > 0 ? ((sa.ventas - ant.ventas) / ant.ventas * 100).toFixed(1) : (sa.ventas > 0 ? 100 : 0);
-    const diffCostos = ant.costos > 0 ? ((sa.costos - ant.costos) / ant.costos * 100).toFixed(1) : (sa.costos > 0 ? 100 : 0);
-    const diffGanancia = ant.ganancia > 0 ? ((sa.ganancia - ant.ganancia) / ant.ganancia * 100).toFixed(1) : (sa.ganancia > 0 ? 100 : 0);
+    const diffIngresos = ant.ventas  > 0 ? ((sa.ventas  - ant.ventas)  / ant.ventas  * 100).toFixed(1) : (sa.ventas  > 0 ? 100 : 0);
+    const diffCostos   = ant.costos  > 0 ? ((sa.costos  - ant.costos)  / ant.costos  * 100).toFixed(1) : (sa.costos  > 0 ? 100 : 0);
+    const diffGanancia = ant.ganancia> 0 ? ((sa.ganancia- ant.ganancia)/ ant.ganancia* 100).toFixed(1) : (sa.ganancia> 0 ? 100 : 0);
 
     const getTrendHTML = (diff, invert = false) => {
         const val = parseFloat(diff);
-        let upClass = 'up'; let downClass = 'down';
+        let upClass = 'up', downClass = 'down';
         if (invert) { upClass = 'down'; downClass = 'up'; }
         if (val > 0) return `<div class="kpi-sub kpi-trend ${upClass}">+${val}% vs sem. ant.</div>`;
         if (val < 0) return `<div class="kpi-sub kpi-trend ${downClass}">${val}% vs sem. ant.</div>`;
@@ -2157,52 +2163,189 @@ function renderizarRentabilidad(rent) {
     const panel = document.getElementById('panel-mod-rentabilidad');
     if (!panel) return;
 
-    const kpiVals = panel.querySelectorAll('.kpi-val');
+    // ── KPI cards ──
+    const kpiVals  = panel.querySelectorAll('.kpi-val');
     const kpiCards = panel.querySelectorAll('.kpi-card');
-    
-    if(kpiVals.length >= 3 && kpiCards.length >= 3) {
+    if (kpiVals.length >= 3 && kpiCards.length >= 3) {
         kpiVals[0].textContent = formatMoney(sa.ventas);
         kpiCards[0].querySelector('.kpi-sub').outerHTML = getTrendHTML(diffIngresos);
-
         kpiVals[1].textContent = formatMoney(sa.costos);
         kpiCards[1].querySelector('.kpi-sub').outerHTML = getTrendHTML(diffCostos, true);
-
         kpiVals[2].textContent = formatMoney(sa.ganancia);
         kpiCards[2].querySelector('.kpi-sub').outerHTML = getTrendHTML(diffGanancia);
     }
 
-    const totalSa = sa.ventas > 0 ? sa.ventas : 1;
-    const flexVentasSa = (sa.ventas / totalSa * 2).toFixed(2);
-    const flexCostosSa = (sa.costos / totalSa * 2).toFixed(2);
+    // ── Chart de líneas/barras Lun–Dom ──
+    const diasActual   = rent.dias_actual   || Array(7).fill(0);
+    const diasAnterior = rent.dias_anterior || Array(7).fill(0);
+    // Costos = 40% de las ventas (mismo factor que en backend)
+    const costosActual   = diasActual.map(v   => Math.round(v   * 0.4));
+    const costosAnterior = diasAnterior.map(v => Math.round(v   * 0.4));
 
-    const totalAnt = ant.ventas > 0 ? ant.ventas : 1;
-    const flexVentasAnt = (ant.ventas / totalAnt * 2).toFixed(2);
-    const flexCostosAnt = (ant.costos / totalAnt * 2).toFixed(2);
+    _renderRentChart(diasActual, diasAnterior, costosActual, costosAnterior);
+}
 
-    const margenSa = sa.ventas > 0 ? Math.round((sa.ganancia / sa.ventas) * 100) : 0;
-    const margenAnt = ant.ventas > 0 ? Math.round((ant.ganancia / ant.ventas) * 100) : 0;
+// Colores fijos para Chart.js (no acepta CSS vars)
+const RENT_TEAL       = '#1D9E75';
+const RENT_TEAL_ALPHA = 'rgba(29,158,117,0.45)';
+const RENT_RED        = '#E24B4A';
+const RENT_RED_ALPHA  = 'rgba(226,75,74,0.4)';
+const RENT_GRID       = 'rgba(0,0,0,0.07)';
+const RENT_TICK       = '#888780';
+const DIAS_LABELS     = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 
-    const divComparativas = panel.querySelector('.sec-card > div[style*="flex-direction:column"]');
-    if (divComparativas) {
-        divComparativas.innerHTML = `
-            <div style="font-size:11px">
-                <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:500">Esta semana</span><span style="color:var(--color-text-secondary)">${formatMoney(sa.ventas)} ventas · ${formatMoney(sa.costos)} costos</span></div>
-                <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;gap:1px">
-                    <div style="flex:${flexVentasSa};background:var(--teal-mid)"></div>
-                    <div style="flex:${flexCostosSa};background:var(--red-mid)"></div>
-                </div>
-                <div style="display:flex;gap:12px;margin-top:3px"><span style="color:var(--teal)">■ Ventas</span><span style="color:var(--red)">■ Costos</span><span style="color:var(--color-text-secondary);margin-left:auto">Margen: ${margenSa}%</span></div>
-            </div>
-            <div style="font-size:11px;margin-top:10px;">
-                <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:500">Semana anterior</span><span style="color:var(--color-text-secondary)">${formatMoney(ant.ventas)} ventas · ${formatMoney(ant.costos)} costos</span></div>
-                <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;gap:1px">
-                    <div style="flex:${flexVentasAnt};background:var(--blue-mid)"></div>
-                    <div style="flex:${flexCostosAnt};background:var(--coral-mid)"></div>
-                </div>
-                <div style="display:flex;gap:12px;margin-top:3px"><span style="color:var(--blue)">■ Ventas</span><span style="color:var(--coral)">■ Costos</span><span style="color:var(--color-text-secondary);margin-left:auto">Margen: ${margenAnt}%</span></div>
-            </div>
-        `;
+function _buildRentDatasets(mode, ventasAct, ventasAnt, costosAct, costosAnt) {
+    const isBars = mode === 'bars';
+    return [
+        {
+            label: 'Ventas esta sem.',
+            data: ventasAct,
+            type: isBars ? 'bar' : 'line',
+            borderColor: RENT_TEAL,
+            backgroundColor: isBars ? RENT_TEAL_ALPHA : 'transparent',
+            borderWidth: isBars ? 0 : 2.5,
+            borderDash: [],
+            pointBackgroundColor: RENT_TEAL,
+            pointRadius: isBars ? 0 : 3,
+            pointHoverRadius: isBars ? 0 : 5,
+            tension: 0.35,
+            order: 1
+        },
+        {
+            label: 'Ventas sem. ant.',
+            data: ventasAnt,
+            type: isBars ? 'bar' : 'line',
+            borderColor: RENT_TEAL_ALPHA,
+            backgroundColor: isBars ? 'rgba(29,158,117,0.2)' : 'transparent',
+            borderWidth: isBars ? 0 : 2,
+            borderDash: isBars ? [] : [6, 4],
+            pointBackgroundColor: RENT_TEAL_ALPHA,
+            pointRadius: isBars ? 0 : 3,
+            pointHoverRadius: isBars ? 0 : 4,
+            tension: 0.35,
+            order: 2
+        },
+        {
+            label: 'Costos esta sem.',
+            data: costosAct,
+            type: isBars ? 'bar' : 'line',
+            borderColor: RENT_RED,
+            backgroundColor: isBars ? RENT_RED_ALPHA : 'transparent',
+            borderWidth: isBars ? 0 : 2.5,
+            borderDash: [],
+            pointBackgroundColor: RENT_RED,
+            pointRadius: isBars ? 0 : 3,
+            pointHoverRadius: isBars ? 0 : 5,
+            tension: 0.35,
+            order: 3
+        },
+        {
+            label: 'Costos sem. ant.',
+            data: costosAnt,
+            type: isBars ? 'bar' : 'line',
+            borderColor: RENT_RED_ALPHA,
+            backgroundColor: isBars ? 'rgba(226,75,74,0.18)' : 'transparent',
+            borderWidth: isBars ? 0 : 2,
+            borderDash: isBars ? [] : [6, 4],
+            pointBackgroundColor: RENT_RED_ALPHA,
+            pointRadius: isBars ? 0 : 3,
+            pointHoverRadius: isBars ? 0 : 4,
+            tension: 0.35,
+            order: 4
+        }
+    ];
+}
+
+function _renderRentChart(ventasAct, ventasAnt, costosAct, costosAnt) {
+    const canvas = document.getElementById('rentabilidadChart');
+    if (!canvas) return;
+
+    // Guardar datos para el toggle
+    canvas._rentData = { ventasAct, ventasAnt, costosAct, costosAnt };
+
+    const opts = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#fff',
+                borderColor: 'rgba(0,0,0,0.1)',
+                borderWidth: 1,
+                titleColor: '#1a1a1a',
+                bodyColor: '#6b7280',
+                padding: 9,
+                callbacks: {
+                    label: ctx => {
+                        const v = ctx.parsed.y;
+                        const f = v >= 1000000 ? '$'+(v/1000000).toFixed(2)+'M'
+                                : v >= 1000    ? '$'+(v/1000).toFixed(1)+'k'
+                                : '$'+Math.round(v).toLocaleString('es-AR');
+                        return ' ' + ctx.dataset.label + ': ' + f;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                grid: { color: RENT_GRID, drawBorder: false },
+                ticks: { color: RENT_TICK, font: { size: 11 }, autoSkip: false },
+                border: { display: false }
+            },
+            y: {
+                grid: { color: RENT_GRID, drawBorder: false },
+                ticks: {
+                    color: RENT_TICK,
+                    font: { size: 10 },
+                    callback: v => {
+                        if (v >= 1000000) return '$'+(v/1000000).toFixed(1)+'M';
+                        if (v >= 1000)    return '$'+(v/1000).toFixed(0)+'k';
+                        return '$'+v;
+                    }
+                },
+                border: { display: false }
+            }
+        }
+    };
+
+    if (rentabilidadChartInstance) {
+        rentabilidadChartInstance.data.datasets = _buildRentDatasets(
+            rentabilidadChartMode, ventasAct, ventasAnt, costosAct, costosAnt
+        );
+        rentabilidadChartInstance.update();
+        return;
     }
+
+    rentabilidadChartInstance = new Chart(canvas, {
+        type: rentabilidadChartMode === 'bars' ? 'bar' : 'line',
+        data: {
+            labels: DIAS_LABELS,
+            datasets: _buildRentDatasets(rentabilidadChartMode, ventasAct, ventasAnt, costosAct, costosAnt)
+        },
+        options: opts
+    });
+}
+
+function rentSetMode(mode) {
+    rentabilidadChartMode = mode;
+    // Actualizar estilos de botones
+    const btnLines = document.getElementById('rent-btn-lines');
+    const btnBars  = document.getElementById('rent-btn-bars');
+    const activeStyle   = 'font-size:11px;padding:3px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);cursor:pointer;font-weight:500;';
+    const inactiveStyle = 'font-size:11px;padding:3px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:transparent;color:var(--color-text-secondary);cursor:pointer;';
+    if (btnLines) btnLines.style.cssText = mode === 'lines' ? activeStyle : inactiveStyle;
+    if (btnBars)  btnBars.style.cssText  = mode === 'bars'  ? activeStyle : inactiveStyle;
+
+    const canvas = document.getElementById('rentabilidadChart');
+    if (!canvas || !canvas._rentData) return;
+    const { ventasAct, ventasAnt, costosAct, costosAnt } = canvas._rentData;
+
+    if (rentabilidadChartInstance) {
+        rentabilidadChartInstance.destroy();
+        rentabilidadChartInstance = null;
+    }
+    _renderRentChart(ventasAct, ventasAnt, costosAct, costosAnt);
 }
 
 // ==========================================
@@ -2920,7 +3063,7 @@ async function guardarNuevaPassword() {
 // SOPORTE PARA LA TECLA "ENTER" EN LOS INPUTS
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-    
+    actualizarRolBrand();
     // 1. Para login.html (Ejecuta loginUsuario)
     const loginInputs = document.querySelectorAll('#username, #password');
     if (loginInputs.length > 0) {
@@ -3641,3 +3784,74 @@ window.solicitarRecuperacion = async function() {
         }
     });
 })();
+
+// ==========================================
+// ACTUALIZAR TÍTULO SEGÚN ROL
+// ==========================================
+async function cargarRolEnUI() {
+    try {
+        // Consultamos al backend los datos de la sesión actual
+        const res = await fetch('./backend/funciones.php?action=getSessionData');
+        const result = await res.json();
+        
+        if (result.status === 'success') {
+            const rolUsuario = result.data.rol.toLowerCase(); // ej: 'admin', 'recepcionista'
+            const tituloRol = document.getElementById("titulo-rol");
+            
+            if (tituloRol) {
+                switch(rolUsuario) {
+                    case "admin":
+                    case "superadmin":
+                        tituloRol.innerHTML = "Adminis<em>trador</em>";
+                        break;
+                    case "chef":
+                    case "cocinero":
+                        tituloRol.innerHTML = "Coci<em>na</em>";
+                        break;
+                    case "recepcionista":
+                    default:
+                        tituloRol.innerHTML = "Recep<em>ción</em>";
+                        break;
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error al cargar el rol para la UI:", error);
+    }
+}
+
+function actualizarRolBrand() {
+    // 1. Obtenemos el rol de la sesión desde localStorage
+    // Si por algún motivo no hay rol, por defecto pondrá 'recepcionista'
+    const rol = (localStorage.getItem('user_rol') || 'recepcionista').toLowerCase();
+    
+    // 2. Seleccionamos el elemento del logo
+    const brandTexto = document.getElementById('brand-rol-texto');
+
+    if (brandTexto) {
+        // 3. Cambiamos el texto respetando el diseño HTML según el rol
+        switch (rol) {
+            case 'administrador':
+                brandTexto.innerHTML = 'Adminis<em>trador</em>';
+                break;
+            case 'superadmin':
+                brandTexto.innerHTML = 'Super<em>admin</em>';
+                break;
+            case 'repartidor':
+                brandTexto.innerHTML = 'Repar<em>tidor</em>';
+                break;
+            case 'chef':
+                brandTexto.innerHTML = 'Ch<em>ef</em>'; // o 'Coci<em>na</em>' si prefieres
+                break;
+            case 'recepcionista':
+            default:
+                brandTexto.innerHTML = 'Recep<em>ción</em>';
+                break;
+        }
+    }
+}
+
+// 4. Ejecutamos la función apenas cargue la página
+document.addEventListener('DOMContentLoaded', () => {
+    actualizarRolBrand();
+});
